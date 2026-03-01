@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>GreenLight UI 三套设计方案预览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #1a1a2e; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+  h1 { color: #fff; font-size: 28px; margin-bottom: 8px; }
+  .subtitle { color: #8E8E93; font-size: 14px; margin-bottom: 40px; }
+  .designs { display: flex; gap: 60px; flex-wrap: wrap; justify-content: center; }
+  .design-col { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .design-label { color: #fff; font-size: 16px; font-weight: 600; }
+  .design-desc { color: #8E8E93; font-size: 12px; max-width: 300px; text-align: center; }
+
+  /* ========== A: Liquid Glass ========== */
+  .popover-a { width: 340px; background: linear-gradient(180deg, #F0F2F5, #E8EBF0); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .popover-a .header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; height: 52px; }
+  .popover-a .header .title { font-size: 15px; font-weight: 600; color: #1C1C1E; }
+  .popover-a .header .icons { display: flex; gap: 12px; color: #8E8E93; font-size: 18px; }
+  .divider-a { height: 0.5px; background: #D1D1D6; }
+  .section-a { padding: 10px 18px; }
+  .section-title-a { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .section-title-a .label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+  .dot-red { width: 10px; height: 10px; border-radius: 50%; background: #FF3B30; }
+  .dot-green { width: 10px; height: 10px; border-radius: 50%; background: #34C759; }
+  .dot-green-sm { width: 8px; height: 8px; border-radius: 50%; background: #34C759; }
+  .card-a { background: rgba(255,255,255,0.6); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .card-a .top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card-a .app-icon { width: 32px; height: 32px; border-radius: 7px; flex-shrink: 0; }
+  .icon-purple { background: linear-gradient(180deg, #667EEA, #764BA2); }
+  .icon-orange { background: linear-gradient(180deg, #F97316, #EF4444); }
+  .card-a .app-name { font-size: 13px; font-weight: 500; color: #1C1C1E; }
+  .card-a .app-path { font-size: 10px; color: #8E8E93; }
+  .card-a .btns { display: flex; gap: 8px; }
+  .btn-unlock-a { flex: 1; height: 30px; border-radius: 7px; background: #F0F0F5; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 500; color: #636366; border: none; cursor: pointer; }
+  .btn-fix-a { flex: 1; height: 30px; border-radius: 7px; background: #34C759; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 500; color: #fff; border: none; cursor: pointer; }
+  .row-a { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.4); border-radius: 8px; margin-bottom: 6px; }
+  .row-a .left { display: flex; align-items: center; gap: 8px; }
+  .row-a .right { display: flex; align-items: center; gap: 8px; }
+  .row-a .name { font-size: 12px; font-weight: 500; color: #1C1C1E; }
+  .row-a .badge { font-size: 10px; font-weight: 600; color: #34C759; }
+  .row-a .time { font-size: 10px; color: #8E8E93; }
+  .footer-a { display: flex; justify-content: space-between; align-items: center; padding: 0 18px; height: 42px; }
+  .footer-a .left { display: flex; align-items: center; gap: 6px; }
+  .footer-a .glow { width: 8px; height: 8px; border-radius: 50%; background: #34C759; box-shadow: 0 0 6px rgba(52,199,89,0.4); }
+  .footer-a .text { font-size: 12px; font-weight: 500; color: #636366; }
+  .footer-a .status { font-size: 11px; font-weight: 600; color: #34C759; }
+
+  /* ========== B: Deep Space ========== */
+  .popover-b { width: 340px; background: #141416; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .popover-b .header { padding: 14px 18px; }
+  .popover-b .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .popover-b .title { font-size: 14px; font-weight: 600; color: #00FF88; letter-spacing: 2px; font-family: 'SF Mono', 'Menlo', monospace; }
+  .popover-b .version { font-size: 10px; color: #636366; font-family: monospace; }
+  .popover-b .status-bar { display: flex; justify-content: space-between; align-items: center; height: 28px; background: #1C1C1E; border-radius: 6px; padding: 0 10px; }
+  .popover-b .status-text { font-size: 10px; font-weight: 600; color: #FF4444; letter-spacing: 1px; font-family: monospace; }
+  .dot-red-glow { width: 8px; height: 8px; border-radius: 50%; background: #FF4444; box-shadow: 0 0 8px rgba(255,68,68,0.53); }
+  .divider-b { height: 1px; background: #2C2C2E; }
+  .section-b { padding: 10px 18px; }
+  .section-title-b { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .section-title-b .label { font-size: 10px; font-weight: 600; color: #FF4444; letter-spacing: 1.5px; font-family: monospace; }
+  .section-title-b .count { font-size: 10px; color: #636366; font-family: monospace; }
+  .card-b { background: #1C1C1E; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid rgba(255,68,68,0.2); }
+  .card-b .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .card-b .app-name { font-size: 12px; font-weight: 500; color: #E5E5EA; }
+  .card-b .blocked { font-size: 9px; font-weight: 600; color: #FF4444; letter-spacing: 1px; }
+  .card-b .path { font-size: 9px; color: #636366; margin-bottom: 8px; }
+  .card-b .btns { display: flex; gap: 8px; }
+  .btn-b1 { flex: 1; height: 28px; border-radius: 6px; background: #2C2C2E; border: 1px solid rgba(0,255,136,0.2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #00FF88; letter-spacing: 0.5px; cursor: pointer; }
+  .btn-b2 { flex: 1; height: 28px; border-radius: 6px; background: rgba(0,255,136,0.13); border: 1px solid rgba(0,255,136,0.33); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #00FF88; letter-spacing: 0.5px; cursor: pointer; }
+  .card-b-compact { background: #1C1C1E; border-radius: 8px; padding: 12px; border: 1px solid rgba(255,68,68,0.2); display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .section-title-b.green .label { color: #00FF88; }
+  .row-b { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; margin-bottom: 4px; }
+  .row-b .left { display: flex; align-items: center; gap: 8px; }
+  .dot-green-glow { width: 6px; height: 6px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 4px rgba(0,255,136,0.4); }
+  .row-b .name { font-size: 11px; color: #E5E5EA; }
+  .row-b .right { display: flex; align-items: center; gap: 10px; }
+  .row-b .badge { font-size: 10px; color: #00FF88; }
+  .row-b .time { font-size: 10px; color: #636366; }
+  .footer-b { display: flex; justify-content: space-between; align-items: center; padding: 0 18px; height: 44px; background: #0C0C0E; }
+  .footer-b .label { font-size: 10px; font-weight: 500; color: #636366; letter-spacing: 1px; }
+  .footer-b .value { display: flex; align-items: center; gap: 8px; }
+  .footer-b .num { font-size: 18px; font-weight: 700; color: #00FF88; text-shadow: 0 0 10px rgba(0,255,136,0.27); }
+  .footer-b .glow { width: 8px; height: 8px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 8px rgba(0,255,136,0.53); }
+
+  /* ========== C: Warm Natural ========== */
+  .popover-c { width: 340px; background: #F7F5F0; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); font-family: 'Outfit', sans-serif; }
+  .popover-c .header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; height: 52px; }
+  .popover-c .header .title { font-size: 16px; font-weight: 600; color: #1A1918; }
+  .popover-c .header .icons { display: flex; gap: 12px; color: #9C9B99; font-size: 18px; }
+  .section-c { padding: 8px 16px; }
+  .section-c .section-label { font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+  .section-c .section-label.red { color: #D08068; }
+  .section-c .section-label.green { color: #3D8A5A; }
+  .card-c { background: #FFFFFF; border-radius: 14px; padding: 14px; margin-bottom: 8px; box-shadow: 0 2px 12px rgba(26,25,24,0.03); border: 1px solid rgba(208,128,104,0.2); }
+  .card-c .top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .card-c .left-bar { display: flex; align-items: center; gap: 4px; }
+  .card-c .bar { width: 3px; height: 36px; border-radius: 2px; background: #D08068; }
+  .card-c .app-icon { width: 34px; height: 34px; border-radius: 8px; }
+  .card-c .app-name { font-size: 13px; font-weight: 600; color: #1A1918; }
+  .card-c .app-desc { font-size: 11px; color: #6D6C6A; }
+  .card-c .btns { display: flex; gap: 8px; }
+  .btn-c1 { flex: 1; height: 32px; border-radius: 10px; background: #EDECEA; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #6D6C6A; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
+  .btn-c2 { flex: 1; height: 32px; border-radius: 10px; background: #3D8A5A; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #fff; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
+  .row-c { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #FFFFFF; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 1px 6px rgba(26,25,24,0.02); }
+  .row-c .left { display: flex; align-items: center; gap: 8px; }
+  .dot-natural { width: 8px; height: 8px; border-radius: 50%; background: #3D8A5A; }
+  .row-c .name { font-size: 12px; font-weight: 500; color: #1A1918; }
+  .row-c .right { display: flex; align-items: center; gap: 8px; }
+  .badge-c { padding: 2px 8px; border-radius: 100px; background: #C8F0D8; font-size: 10px; font-weight: 600; color: #3D8A5A; }
+  .row-c .time { font-size: 10px; color: #9C9B99; }
+  .footer-c { display: flex; justify-content: center; padding: 12px 16px; }
+  .footer-pill { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 100px; background: #C8F0D8; }
+  .footer-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #3D8A5A; }
+  .footer-pill .text { font-size: 12px; font-weight: 600; color: #3D8A5A; }
+</style>
+</head>
+<body>
+<h1>🚦 GreenLight UI 设计方案</h1>
+<p class="subtitle">三套 Menu Bar Popover 风格对比 — 请选择你偏好的方向</p>
+
+<div class="designs">
+
+<!-- ===== A: Liquid Glass ===== -->
+<div class="design-col">
+  <div class="design-label">🅰 Liquid Glass</div>
+  <div class="design-desc">Apple 原生毛玻璃风，融入 macOS Tahoe 设计语言</div>
+  <div class="popover-a">
+    <div class="header">
+      <span class="title">GreenLight</span>
+      <div class="icons">⚙️ 🔍</div>
+    </div>
+    <div class="divider-a"></div>
+    <div class="section-a">
+      <div class="section-title-a">
+        <span class="label"><span class="dot-red"></span> <span style="color:#FF3B30">Blocked (2)</span></span>
+        <span style="color:#8E8E93;font-size:14px">⌄</span>
+      </div>
+      <div class="card-a">
+        <div class="top">
+          <div class="app-icon icon-purple"></div>
+          <div><div class="app-name">Antigravity Tools</div><div class="app-path">/Applications/Antigravity Tools.app</div></div>
+        </div>
+        <div class="btns">
+          <button class="btn-unlock-a">🔓 Unlock</button>
+          <button class="btn-fix-a">▶ Unlock + Open</button>
+        </div>
+      </div>
+      <div class="card-a" style="padding:12px;display:flex;align-items:center;gap:10px;">
+        <div class="app-icon icon-orange"></div>
+        <div><div class="app-name">DevProxy</div><div class="app-path">/Applications/DevProxy.app</div></div>
+      </div>
+    </div>
+    <div class="divider-a"></div>
+    <div class="section-a">
+      <div class="section-title-a">
+        <span class="label"><span class="dot-green"></span> <span style="color:#34C759">Cleared (12)</span></span>
+        <span style="color:#8E8E93;font-size:14px">⌄</span>
+      </div>
+      <div class="row-a"><div class="left"><span class="dot-green-sm"></span><span class="name">Sketch</span></div><div class="right"><span class="badge">x3</span><span class="time">2h ago</span></div></div>
+      <div class="row-a"><div class="left"><span class="dot-green-sm"></span><span class="name">VS Code</span></div><div class="right"><span class="badge">x1</span><span class="time">yesterday</span></div></div>
+      <div class="row-a"><div class="left"><span class="dot-green-sm"></span><span class="name">Docker</span></div><div class="right"><span class="badge">x2</span><span class="time">3d ago</span></div></div>
+    </div>
+    <div class="divider-a"></div>
+    <div class="footer-a">
+      <div class="left"><span class="glow"></span><span class="text">67 apps cleared</span></div>
+      <span class="status">All green</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== B: Deep Space ===== -->
+<div class="design-col">
+  <div class="design-label">🅱 Deep Space</div>
+  <div class="design-desc">深空指挥中心风，霓虹绿光效，面向开发者/极客</div>
+  <div class="popover-b">
+    <div class="header">
+      <div class="title-row">
+        <span class="title">GREENLIGHT</span>
+        <span class="version">v1.0.0</span>
+      </div>
+      <div class="status-bar">
+        <span class="status-text">STATUS: ALERT</span>
+        <span class="dot-red-glow"></span>
+      </div>
+    </div>
+    <div class="divider-b"></div>
+    <div class="section-b">
+      <div class="section-title-b">
+        <span class="label">INTERCEPTED</span>
+        <span class="count">2 items</span>
+      </div>
+      <div class="card-b">
+        <div class="top"><span class="app-name">Antigravity Tools</span><span class="blocked">BLOCKED</span></div>
+        <div class="path">/Applications/Antigravity Tools.app</div>
+        <div class="btns">
+          <button class="btn-b1">UNLOCK</button>
+          <button class="btn-b2">UNLOCK + RUN</button>
+        </div>
+      </div>
+      <div class="card-b-compact">
+        <span class="app-name" style="color:#E5E5EA;font-size:12px">DevProxy</span>
+        <span class="blocked" style="font-size:9px;font-weight:600;color:#FF4444;letter-spacing:1px">BLOCKED</span>
+      </div>
+    </div>
+    <div class="divider-b"></div>
+    <div class="section-b">
+      <div class="section-title-b green">
+        <span class="label" style="color:#00FF88">CLEARED</span>
+        <span class="count">12 apps</span>
+      </div>
+      <div class="row-b"><div class="left"><span class="dot-green-glow"></span><span class="name">Sketch</span></div><div class="right"><span class="badge">x3</span><span class="time">2h</span></div></div>
+      <div class="row-b"><div class="left"><span class="dot-green-glow"></span><span class="name">VS Code</span></div><div class="right"><span class="badge">x1</span><span class="time">1d</span></div></div>
+      <div class="row-b"><div class="left"><span class="dot-green-glow"></span><span class="name">Docker</span></div><div class="right"><span class="badge"></span><span class="time"></span></div></div>
+    </div>
+    <div class="divider-b"></div>
+    <div class="footer-b">
+      <span class="label">TOTAL CLEARED:</span>
+      <div class="value"><span class="num">067</span><span class="glow"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== C: Warm Natural ===== -->
+<div class="design-col">
+  <div class="design-label">🅲 Warm Natural</div>
+  <div class="design-desc">清新自然风，温暖亲切，面向普通用户</div>
+  <div class="popover-c">
+    <div class="header">
+      <span class="title">GreenLight</span>
+      <div class="icons">⚙️ 🔍</div>
+    </div>
+    <div class="section-c">
+      <div class="section-label red">Needs Attention</div>
+      <div class="card-c">
+        <div class="top">
+          <div class="left-bar">
+            <div class="bar"></div>
+            <div class="app-icon icon-purple"></div>
+          </div>
+          <div><div class="app-name">Antigravity Tools</div><div class="app-desc">Blocked by Gatekeeper</div></div>
+        </div>
+        <div class="btns">
+          <button class="btn-c1">Unlock</button>
+          <button class="btn-c2">Unlock + Open</button>
+        </div>
+      </div>
+    </div>
+    <div class="section-c">
+      <div class="section-label green">Cleared Apps</div>
+      <div class="row-c"><div class="left"><span class="dot-natural"></span><span class="name">Sketch</span></div><div class="right"><span class="badge-c">x3</span><span class="time">2h ago</span></div></div>
+      <div class="row-c"><div class="left"><span class="dot-natural"></span><span class="name">VS Code</span></div><div class="right"><span class="badge-c">x1</span><span class="time">yesterday</span></div></div>
+      <div class="row-c"><div class="left"><span class="dot-natural"></span><span class="name">Docker</span></div><div class="right"><span class="badge-c">x2</span><span class="time"></span></div></div>
+    </div>
+    <div class="footer-c">
+      <div class="footer-pill"><span class="dot"></span><span class="text">67 apps cleared</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

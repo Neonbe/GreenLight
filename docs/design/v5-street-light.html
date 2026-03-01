@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GreenLight V5 — Street Light</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0B0B0E;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 40%, rgba(34, 197, 94, 0.04) 0%, transparent 50%), radial-gradient(ellipse at 30% 55%, rgba(239, 68, 68, 0.03) 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+            z-index: 0
+        }
+
+        .popover {
+            position: relative;
+            z-index: 1;
+            width: 420px;
+            background: rgba(20, 20, 22, 0.92);
+            backdrop-filter: blur(50px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 24px 24px;
+            box-shadow: 0 50px 130px rgba(0, 0, 0, 0.6)
+        }
+
+        /* Header */
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px
+        }
+
+        .brand {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 4px;
+            text-transform: uppercase
+        }
+
+        .gear {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background .2s
+        }
+
+        .gear:hover {
+            background: rgba(255, 255, 255, 0.1)
+        }
+
+        /* Main layout: traffic light + lanes */
+        .main {
+            display: flex;
+            gap: 0;
+            align-items: stretch
+        }
+
+        /* ===== TRAFFIC LIGHT (CSS 3D) ===== */
+        .traffic-light {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2
+        }
+
+        /* Housing */
+        .tl-housing {
+            width: 62px;
+            background: linear-gradient(135deg, #2A2A2E 0%, #1A1A1E 40%, #0E0E10 100%);
+            border-radius: 14px;
+            padding: 10px 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.04)
+        }
+
+        .tl-housing::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 6px;
+            right: 6px;
+            height: 12px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+            border-radius: 10px 10px 0 0
+        }
+
+        /* Pole */
+        .tl-pole {
+            width: 14px;
+            height: 40px;
+            background: linear-gradient(90deg, #1A1A1E, #2A2A2E, #1A1A1E);
+            border-radius: 0 0 4px 4px;
+            margin-top: -2px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3)
+        }
+
+        .tl-base {
+            width: 40px;
+            height: 8px;
+            background: linear-gradient(90deg, #1A1A1E, #2A2A2E, #1A1A1E);
+            border-radius: 0 0 6px 6px;
+            margin-top: -1px
+        }
+
+        /* Lights */
+        .tl-light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform .2s
+        }
+
+        .tl-light:hover {
+            transform: scale(1.08)
+        }
+
+        .tl-light::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            z-index: 1
+        }
+
+        .tl-light::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            width: 14px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            filter: blur(3px);
+            z-index: 2
+        }
+
+        /* Visor hoods */
+        .tl-light .visor {
+            position: absolute;
+            top: -3px;
+            left: -6px;
+            width: 52px;
+            height: 18px;
+            background: linear-gradient(180deg, #1A1A1E, transparent);
+            border-radius: 8px 8px 0 0;
+            z-index: 0
+        }
+
+        .tl-light.green {
+            background: radial-gradient(circle at 40% 38%, #86EFAC, #22C55E 50%, #15803D 85%, #0A4A1F);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 50px rgba(34, 197, 94, 0.15)
+        }
+
+        .tl-light.green::before {
+            background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.15), transparent 60%)
+        }
+
+        .tl-light.red {
+            background: radial-gradient(circle at 40% 38%, #FCA5A5, #EF4444 50%, #B91C1C 85%, #5B0E0E);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 0 50px rgba(239, 68, 68, 0.15)
+        }
+
+        .tl-light.red::before {
+            background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.15), transparent 60%)
+        }
+
+        .tl-light.red .visor {
+            display: none
+        }
+
+        .tl-light.blue {
+            background: radial-gradient(circle at 40% 38%, #93C5FD, #3B82F6 50%, #1D4ED8 85%, #0C2461);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 50px rgba(59, 130, 246, 0.15)
+        }
+
+        .tl-light.blue::before {
+            background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.15), transparent 60%)
+        }
+
+        /* ===== LANES (color bars extending right) ===== */
+        .lanes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: -8px;
+            padding-top: 4px
+        }
+
+        .lane {
+            display: flex;
+            align-items: center;
+            border-radius: 0 14px 14px 0;
+            padding: 10px 14px 10px 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 56px;
+            cursor: default;
+            transition: all .2s
+        }
+
+        .lane::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.12;
+            z-index: 0;
+            transition: opacity .2s
+        }
+
+        .lane:hover::before {
+            opacity: 0.2
+        }
+
+        .lane.green-l {
+            border: 1px solid rgba(34, 197, 94, 0.12);
+            border-left: none
+        }
+
+        .lane.green-l::before {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.05) 80%)
+        }
+
+        .lane.red-l {
+            border: 1px solid rgba(239, 68, 68, 0.12);
+            border-left: none
+        }
+
+        .lane.red-l::before {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05) 80%)
+        }
+
+        .lane.blue-l {
+            border: 1px solid rgba(59, 130, 246, 0.12);
+            border-left: none
+        }
+
+        .lane.blue-l::before {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.05) 80%)
+        }
+
+        .lane-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%
+        }
+
+        .lane-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex-shrink: 0;
+            min-width: 50px
+        }
+
+        .lane-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            color: #fff
+        }
+
+        .lane-count {
+            font-size: 22px;
+            font-weight: 800
+        }
+
+        .lane.green-l .lane-count {
+            color: #22C55E
+        }
+
+        .lane.red-l .lane-count {
+            color: #EF4444
+        }
+
+        .lane.blue-l .lane-count {
+            color: #3B82F6
+        }
+
+        .lane-divider {
+            width: 1px;
+            height: 32px;
+            opacity: 0.1;
+            background: #fff;
+            flex-shrink: 0
+        }
+
+        .lane-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1
+        }
+
+        .app-ico {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
+            flex-shrink: 0
+        }
+
+        .app-ico::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none
+        }
+
+        .app-ico:hover {
+            transform: scale(1.18) translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            z-index: 10
+        }
+
+        .app-ico:active {
+            transform: scale(0.92)
+        }
+
+        .app-ico .nm {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 500;
+            padding: 2px 7px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s;
+            z-index: 20
+        }
+
+        .app-ico:hover .nm {
+            opacity: 1
+        }
+
+        /* Color classes */
+        .i1 {
+            background: linear-gradient(135deg, #667EEA, #764BA2)
+        }
+
+        .i2 {
+            background: linear-gradient(135deg, #F97316, #EF4444)
+        }
+
+        .i3 {
+            background: linear-gradient(135deg, #06B6D4, #3B82F6)
+        }
+
+        .i4 {
+            background: linear-gradient(135deg, #8B5CF6, #D946EF)
+        }
+
+        .i5 {
+            background: linear-gradient(135deg, #10B981, #059669)
+        }
+
+        .i6 {
+            background: linear-gradient(135deg, #F59E0B, #D97706)
+        }
+
+        .i7 {
+            background: linear-gradient(135deg, #EC4899, #F43F5E)
+        }
+
+        .i8 {
+            background: linear-gradient(135deg, #6366F1, #4F46E5)
+        }
+
+        .i9 {
+            background: linear-gradient(135deg, #14B8A6, #0D9488)
+        }
+
+        /* Scanning shimmer */
+        .lane.blue-l .app-ico {
+            animation: shm 2.5s ease-in-out infinite
+        }
+
+        @keyframes shm {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .45
+            }
+        }
+
+        /* Red pulse */
+        .tl-light.red {
+            animation: rpulse 2s ease-in-out infinite
+        }
+
+        @keyframes rpulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(239, 68, 68, .5), 0 0 50px rgba(239, 68, 68, .15)
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(239, 68, 68, .7), 0 0 70px rgba(239, 68, 68, .25)
+            }
+        }
+
+        /* ===== Bubble ===== */
+        .ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 90
+        }
+
+        .ov.s {
+            display: block
+        }
+
+        .bub {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            background: rgba(26, 26, 28, .97);
+            backdrop-filter: blur(30px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, .07);
+            padding: 14px;
+            min-width: 210px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+            animation: bi .25s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        .bub.s {
+            display: block
+        }
+
+        @keyframes bi {
+            from {
+                opacity: 0;
+                transform: scale(.85) translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0)
+            }
+        }
+
+        .bh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .05)
+        }
+
+        .bic {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            flex-shrink: 0
+        }
+
+        .bn {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff
+        }
+
+        .bp {
+            font-size: 9px;
+            color: rgba(255, 255, 255, .3);
+            margin-top: 2px
+        }
+
+        .bb {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .bbtn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s
+        }
+
+        .bbtn.s2 {
+            background: rgba(255, 255, 255, .06);
+            color: rgba(255, 255, 255, .8)
+        }
+
+        .bbtn.s2:hover {
+            background: rgba(255, 255, 255, .12)
+        }
+
+        .bbtn.p1 {
+            background: #22C55E;
+            color: #fff
+        }
+
+        .bbtn.p1:hover {
+            background: #16A34A
+        }
+
+        .bbtn.p1.danger {
+            background: #EF4444
+        }
+
+        .bbtn.p1.danger:hover {
+            background: #DC2626
+        }
+    </style>
+</head>
+
+<body>
+    <div class="popover">
+        <div class="hdr">
+            <span class="brand">GreenLight</span>
+            <div class="gear">⚙</div>
+        </div>
+
+        <div class="main">
+            <!-- PHYSICAL TRAFFIC LIGHT -->
+            <div class="traffic-light">
+                <div class="tl-housing">
+                    <div class="tl-light green">
+                        <div class="visor"></div>
+                    </div>
+                    <div class="tl-light red"></div>
+                    <div class="tl-light blue"></div>
+                </div>
+                <div class="tl-pole"></div>
+                <div class="tl-base"></div>
+            </div>
+
+            <!-- COLOR BARS -->
+            <div class="lanes">
+                <!-- GREEN LANE -->
+                <div class="lane green-l">
+                    <div class="lane-content">
+                        <div class="lane-info">
+                            <div class="lane-label">Cleared</div>
+                            <div class="lane-count">7</div>
+                        </div>
+                        <div class="lane-divider"></div>
+                        <div class="lane-icons">
+                            <div class="app-ico i5" data-n="Sketch" data-p="/Applications/Sketch.app" data-s="g"><span
+                                    class="nm">Sketch</span></div>
+                            <div class="app-ico i3" data-n="VS Code" data-p="/Applications/VS Code.app" data-s="g"><span
+                                    class="nm">VS Code</span></div>
+                            <div class="app-ico i8" data-n="Figma" data-p="/Applications/Figma.app" data-s="g"><span
+                                    class="nm">Figma</span></div>
+                            <div class="app-ico i9" data-n="Docker" data-p="/Applications/Docker.app" data-s="g"><span
+                                    class="nm">Docker</span></div>
+                            <div class="app-ico i6" data-n="Notion" data-p="/Applications/Notion.app" data-s="g"><span
+                                    class="nm">Notion</span></div>
+                            <div class="app-ico i4" data-n="Arc" data-p="/Applications/Arc.app" data-s="g"><span
+                                    class="nm">Arc</span></div>
+                            <div class="app-ico i1" data-n="Raycast" data-p="/Applications/Raycast.app" data-s="g"><span
+                                    class="nm">Raycast</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RED LANE -->
+                <div class="lane red-l">
+                    <div class="lane-content">
+                        <div class="lane-info">
+                            <div class="lane-label">Blocked</div>
+                            <div class="lane-count">2</div>
+                        </div>
+                        <div class="lane-divider"></div>
+                        <div class="lane-icons">
+                            <div class="app-ico i1" data-n="Antigravity" data-p="/Applications/Antigravity.app"
+                                data-s="r"><span class="nm">Antigravity</span></div>
+                            <div class="app-ico i2" data-n="DevProxy" data-p="/Applications/DevProxy.app" data-s="r">
+                                <span class="nm">DevProxy</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BLUE LANE -->
+                <div class="lane blue-l">
+                    <div class="lane-content">
+                        <div class="lane-info">
+                            <div class="lane-label">Scanning</div>
+                            <div class="lane-count">1</div>
+                        </div>
+                        <div class="lane-divider"></div>
+                        <div class="lane-icons">
+                            <div class="app-ico i7" data-n="CleanMyMac" data-p="/Applications/CleanMyMac.app"
+                                data-s="b"><span class="nm">CleanMyMac</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ov" id="ov"></div>
+    <div class="bub" id="ab">
+        <div class="bh">
+            <div class="bic i1" id="abI"></div>
+            <div>
+                <div class="bn" id="abN">App</div>
+                <div class="bp" id="abP">/p</div>
+            </div>
+        </div>
+        <div class="bb" id="abB"></div>
+    </div>
+
+    <script>
+        const ab = document.getElementById('ab'), ov = document.getElementById('ov');
+        document.querySelectorAll('.app-ico').forEach(d => {
+            d.addEventListener('click', e => {
+                e.stopPropagation();
+                document.getElementById('abN').textContent = d.dataset.n;
+                document.getElementById('abP').textContent = d.dataset.p;
+                const c = d.className.match(/i\d/)?.[0] || 'i1';
+                document.getElementById('abI').className = 'bic ' + c;
+                let h = '';
+                if (d.dataset.s === 'r') h = '<button class="bbtn s2" onclick="cl()">🔓 Unlock</button><button class="bbtn p1" onclick="cl()">▶ Unlock + Open</button>';
+                else if (d.dataset.s === 'g') h = '<button class="bbtn s2" onclick="cl()">ℹ️ Info</button><button class="bbtn s2" onclick="cl()">📂 Show in Finder</button>';
+                else h = '<button class="bbtn s2" onclick="cl()">⏳ Scanning…</button>';
+                document.getElementById('abB').innerHTML = h;
+                const r = d.getBoundingClientRect();
+                ab.style.left = Math.min(r.right + 10, innerWidth - 230) + 'px';
+                ab.style.top = Math.max(r.top - 20, 10) + 'px';
+                ab.classList.add('s'); ov.classList.add('s');
+            });
+        });
+        function cl() { ab.classList.remove('s'); ov.classList.remove('s') }
+        ov.addEventListener('click', cl);
+    </script>
+</body>
+
+</html>

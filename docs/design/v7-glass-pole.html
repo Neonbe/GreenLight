@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GreenLight V7 — Glass Pole</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%)
+        }
+
+        .popover {
+            position: relative;
+            z-index: 1;
+            width: 430px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(60px) saturate(1.4);
+            -webkit-backdrop-filter: blur(60px) saturate(1.4);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 22px 22px 24px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px
+        }
+
+        .brand {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 4px;
+            text-transform: uppercase
+        }
+
+        .hdr-btns {
+            display: flex;
+            gap: 6px
+        }
+
+        .hdr-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background .2s;
+            color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.04)
+        }
+
+        .hdr-btn:hover {
+            background: rgba(255, 255, 255, 0.12)
+        }
+
+        .main {
+            display: flex;
+            gap: 0
+        }
+
+        /* ===== GLASS TRAFFIC LIGHT ===== */
+        .glass-tl {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2
+        }
+
+        .glass-housing {
+            width: 72px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.04), 0 8px 30px rgba(0, 0, 0, 0.3)
+        }
+
+        /* 3D depth lines */
+        .glass-housing::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            top: 4px;
+            bottom: 4px;
+            border-radius: 17px;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .glass-pole {
+            width: 8px;
+            height: 32px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+            border-radius: 0 0 4px 4px;
+            margin-top: -1px
+        }
+
+        .glass-base {
+            width: 28px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+            margin-top: -1px
+        }
+
+        .gl {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform .25s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        .gl:hover {
+            transform: scale(1.12)
+        }
+
+        /* Glass reflection */
+        .gl::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            width: 16px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            filter: blur(3px);
+            z-index: 2
+        }
+
+        /* Surrounding ring */
+        .gl::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.08)
+        }
+
+        .gl.green {
+            background: radial-gradient(circle at 38% 35%, #A7F3D0, #22C55E 45%, #15803D 80%, #0A4A1F);
+            box-shadow: 0 0 22px rgba(34, 197, 94, 0.5), 0 0 50px rgba(34, 197, 94, 0.12), 0 3px 8px rgba(0, 0, 0, 0.3)
+        }
+
+        .gl.red {
+            background: radial-gradient(circle at 38% 35%, #FECACA, #EF4444 45%, #B91C1C 80%, #5B0E0E);
+            box-shadow: 0 0 22px rgba(239, 68, 68, 0.5), 0 0 50px rgba(239, 68, 68, 0.12), 0 3px 8px rgba(0, 0, 0, 0.3);
+            animation: rp 2.5s ease-in-out infinite
+        }
+
+        @keyframes rp {
+
+            0%,
+            100% {
+                box-shadow: 0 0 22px rgba(239, 68, 68, .5), 0 0 50px rgba(239, 68, 68, .12), 0 3px 8px rgba(0, 0, 0, .3)
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(239, 68, 68, .7), 0 0 70px rgba(239, 68, 68, .2), 0 3px 8px rgba(0, 0, 0, .3)
+            }
+        }
+
+        .gl.blue {
+            background: radial-gradient(circle at 38% 35%, #BFDBFE, #3B82F6 45%, #1D4ED8 80%, #0C2461);
+            box-shadow: 0 0 22px rgba(59, 130, 246, 0.5), 0 0 50px rgba(59, 130, 246, 0.12), 0 3px 8px rgba(0, 0, 0, 0.3)
+        }
+
+        /* ===== LANES (glass cards) ===== */
+        .lanes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: -10px
+        }
+
+        .lane {
+            display: flex;
+            align-items: center;
+            border-radius: 0 16px 16px 0;
+            padding: 10px 14px 10px 22px;
+            position: relative;
+            overflow: hidden;
+            min-height: 58px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-left: none;
+            backdrop-filter: blur(10px);
+            transition: all .25s
+        }
+
+        .lane:hover {
+            background: rgba(255, 255, 255, 0.06)
+        }
+
+        /* Color accent line */
+        .lane::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            border-radius: 2px;
+            z-index: 1
+        }
+
+        /* Light ray */
+        .lane::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 60%;
+            opacity: 0.04;
+            z-index: 0
+        }
+
+        .lane.gl-l::before {
+            background: #22C55E;
+            box-shadow: 0 0 10px #22C55E
+        }
+
+        .lane.gl-l::after {
+            background: linear-gradient(90deg, #22C55E, transparent)
+        }
+
+        .lane.rl-l::before {
+            background: #EF4444;
+            box-shadow: 0 0 10px #EF4444
+        }
+
+        .lane.rl-l::after {
+            background: linear-gradient(90deg, #EF4444, transparent)
+        }
+
+        .lane.bl-l::before {
+            background: #3B82F6;
+            box-shadow: 0 0 10px #3B82F6
+        }
+
+        .lane.bl-l::after {
+            background: linear-gradient(90deg, #3B82F6, transparent)
+        }
+
+        .lc {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%
+        }
+
+        .li {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 46px;
+            flex-shrink: 0
+        }
+
+        .ll {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3)
+        }
+
+        .ln {
+            font-size: 20px;
+            font-weight: 800
+        }
+
+        .lane.gl-l .ln {
+            color: #34D399
+        }
+
+        .lane.rl-l .ln {
+            color: #F87171
+        }
+
+        .lane.bl-l .ln {
+            color: #60A5FA
+        }
+
+        .ld {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.07);
+            flex-shrink: 0
+        }
+
+        .lic {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1
+        }
+
+        .ai {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
+            flex-shrink: 0
+        }
+
+        .ai::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none
+        }
+
+        .ai:hover {
+            transform: scale(1.2) translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 10
+        }
+
+        .ai:active {
+            transform: scale(0.9)
+        }
+
+        .ai .nm {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 500;
+            padding: 2px 7px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s;
+            z-index: 20
+        }
+
+        .ai:hover .nm {
+            opacity: 1
+        }
+
+        .c1 {
+            background: linear-gradient(135deg, #667EEA, #764BA2)
+        }
+
+        .c2 {
+            background: linear-gradient(135deg, #F97316, #EF4444)
+        }
+
+        .c3 {
+            background: linear-gradient(135deg, #06B6D4, #3B82F6)
+        }
+
+        .c4 {
+            background: linear-gradient(135deg, #8B5CF6, #D946EF)
+        }
+
+        .c5 {
+            background: linear-gradient(135deg, #10B981, #059669)
+        }
+
+        .c6 {
+            background: linear-gradient(135deg, #F59E0B, #D97706)
+        }
+
+        .c7 {
+            background: linear-gradient(135deg, #EC4899, #F43F5E)
+        }
+
+        .c8 {
+            background: linear-gradient(135deg, #6366F1, #4F46E5)
+        }
+
+        .c9 {
+            background: linear-gradient(135deg, #14B8A6, #0D9488)
+        }
+
+        .lane.bl-l .ai {
+            animation: shm 2.5s ease-in-out infinite
+        }
+
+        @keyframes shm {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        /* === Status glow bar at bottom === */
+        .status-bar {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.04)
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.12)
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22C55E;
+            box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+            animation: sdot 2s ease-in-out infinite
+        }
+
+        @keyframes sdot {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        .status-text {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(34, 197, 94, 0.7)
+        }
+
+        /* ===== Bubble ===== */
+        .ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 90
+        }
+
+        .ov.s {
+            display: block
+        }
+
+        .bub {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            background: rgba(20, 20, 30, .95);
+            backdrop-filter: blur(40px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            padding: 14px;
+            min-width: 210px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+            animation: bi .25s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        .bub.s {
+            display: block
+        }
+
+        @keyframes bi {
+            from {
+                opacity: 0;
+                transform: scale(.85) translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0)
+            }
+        }
+
+        .bh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .05)
+        }
+
+        .bic {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            flex-shrink: 0
+        }
+
+        .bn {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff
+        }
+
+        .bp {
+            font-size: 9px;
+            color: rgba(255, 255, 255, .3);
+            margin-top: 2px
+        }
+
+        .bb {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .bbtn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s
+        }
+
+        .bbtn.s2 {
+            background: rgba(255, 255, 255, .06);
+            color: rgba(255, 255, 255, .8)
+        }
+
+        .bbtn.s2:hover {
+            background: rgba(255, 255, 255, .12)
+        }
+
+        .bbtn.p1 {
+            background: #22C55E;
+            color: #fff
+        }
+
+        .bbtn.p1:hover {
+            background: #16A34A
+        }
+    </style>
+</head>
+
+<body>
+    <div class="popover">
+        <div class="hdr"><span class="brand">GreenLight</span>
+            <div class="hdr-btns">
+                <div class="hdr-btn">🔍</div>
+                <div class="hdr-btn">⚙</div>
+            </div>
+        </div>
+        <div class="main">
+            <div class="glass-tl">
+                <div class="glass-housing">
+                    <div class="gl green"></div>
+                    <div class="gl red"></div>
+                    <div class="gl blue"></div>
+                </div>
+                <div class="glass-pole"></div>
+                <div class="glass-base"></div>
+            </div>
+            <div class="lanes">
+                <div class="lane gl-l">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Cleared</div>
+                            <div class="ln">7</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c5" data-n="Sketch" data-p="/Applications/Sketch.app" data-s="g"><span
+                                    class="nm">Sketch</span></div>
+                            <div class="ai c3" data-n="VS Code" data-p="/Applications/VS Code.app" data-s="g"><span
+                                    class="nm">VS Code</span></div>
+                            <div class="ai c8" data-n="Figma" data-p="/Applications/Figma.app" data-s="g"><span
+                                    class="nm">Figma</span></div>
+                            <div class="ai c9" data-n="Docker" data-p="/Applications/Docker.app" data-s="g"><span
+                                    class="nm">Docker</span></div>
+                            <div class="ai c6" data-n="Notion" data-p="/Applications/Notion.app" data-s="g"><span
+                                    class="nm">Notion</span></div>
+                            <div class="ai c4" data-n="Arc" data-p="/Applications/Arc.app" data-s="g"><span
+                                    class="nm">Arc</span></div>
+                            <div class="ai c1" data-n="Raycast" data-p="/Applications/Raycast.app" data-s="g"><span
+                                    class="nm">Raycast</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lane rl-l">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Blocked</div>
+                            <div class="ln">2</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c1" data-n="Antigravity" data-p="/Applications/Antigravity.app" data-s="r">
+                                <span class="nm">Antigravity</span></div>
+                            <div class="ai c2" data-n="DevProxy" data-p="/Applications/DevProxy.app" data-s="r"><span
+                                    class="nm">DevProxy</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lane bl-l">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Scanning</div>
+                            <div class="ln">1</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c7" data-n="CleanMyMac" data-p="/Applications/CleanMyMac.app" data-s="b">
+                                <span class="nm">CleanMyMac</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-badge">
+                <div class="status-dot"></div><span class="status-text">System Protected</span>
+            </div>
+        </div>
+    </div>
+    <div class="ov" id="ov"></div>
+    <div class="bub" id="ab">
+        <div class="bh">
+            <div class="bic c1" id="abI"></div>
+            <div>
+                <div class="bn" id="abN">App</div>
+                <div class="bp" id="abP">/p</div>
+            </div>
+        </div>
+        <div class="bb" id="abB"></div>
+    </div>
+    <script>
+        const ab = document.getElementById('ab'), ov = document.getElementById('ov');
+        document.querySelectorAll('.ai').forEach(d => { d.addEventListener('click', e => { e.stopPropagation(); document.getElementById('abN').textContent = d.dataset.n; document.getElementById('abP').textContent = d.dataset.p; const c = d.className.match(/c\d/)?.[0] || 'c1'; document.getElementById('abI').className = 'bic ' + c; let h = ''; if (d.dataset.s === 'r') h = '<button class="bbtn s2" onclick="cl()">🔓 Unlock</button><button class="bbtn p1" onclick="cl()">▶ Unlock + Open</button>'; else if (d.dataset.s === 'g') h = '<button class="bbtn s2" onclick="cl()">ℹ️ Info</button><button class="bbtn s2" onclick="cl()">📂 Show in Finder</button>'; else h = '<button class="bbtn s2" onclick="cl()">⏳ Scanning…</button>'; document.getElementById('abB').innerHTML = h; const r = d.getBoundingClientRect(); ab.style.left = Math.min(r.right + 10, innerWidth - 230) + 'px'; ab.style.top = Math.max(r.top - 20, 10) + 'px'; ab.classList.add('s'); ov.classList.add('s') }) });
+        function cl() { ab.classList.remove('s'); ov.classList.remove('s') }
+        ov.addEventListener('click', cl);
+    </script>
+</body>
+
+</html>

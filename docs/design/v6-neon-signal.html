@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GreenLight V6 — Neon Signal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #06060A;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden
+        }
+
+        /* Subtle starfield feel */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 25% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 60%), radial-gradient(ellipse at 25% 55%, rgba(239, 68, 68, 0.02) 0%, transparent 50%)
+        }
+
+        .popover {
+            position: relative;
+            z-index: 1;
+            width: 440px;
+            background: rgba(12, 12, 16, 0.95);
+            backdrop-filter: blur(40px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 22px 24px 24px;
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6)
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px
+        }
+
+        .brand {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 5px;
+            text-transform: uppercase
+        }
+
+        .gear {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background .2s;
+            color: rgba(255, 255, 255, 0.3)
+        }
+
+        .gear:hover {
+            background: rgba(255, 255, 255, 0.08)
+        }
+
+        .main {
+            display: flex;
+            gap: 0
+        }
+
+        /* ===== NEON TRAFFIC LIGHT ===== */
+        .neon-tl {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2
+        }
+
+        .neon-housing {
+            width: 68px;
+            padding: 14px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.015);
+            position: relative
+        }
+
+        /* Neon outline glow on housing */
+        .neon-housing::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 16px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.02);
+            z-index: -1
+        }
+
+        .neon-pole {
+            width: 3px;
+            height: 36px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            margin-top: -1px;
+            border-radius: 0 0 2px 2px
+        }
+
+        .neon-base {
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            margin-top: -1px
+        }
+
+        /* Neon light balls */
+        .nl {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform .2s
+        }
+
+        .nl:hover {
+            transform: scale(1.1)
+        }
+
+        /* Outer neon ring */
+        .nl::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 1.5px solid;
+            opacity: 0.4
+        }
+
+        /* Inner glow sphere */
+        .nl::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            filter: blur(4px)
+        }
+
+        .nl.g {
+            background: radial-gradient(circle at 38% 35%, #86EFAC, #22C55E 60%, #15803D);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.45), 0 0 60px rgba(34, 197, 94, 0.12)
+        }
+
+        .nl.g::before {
+            border-color: #22C55E
+        }
+
+        .nl.g::after {
+            background: rgba(34, 197, 94, 0.3)
+        }
+
+        .nl.r {
+            background: radial-gradient(circle at 38% 35%, #FCA5A5, #EF4444 60%, #B91C1C);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.45), 0 0 60px rgba(239, 68, 68, 0.12);
+            animation: rpulse 2s ease-in-out infinite
+        }
+
+        .nl.r::before {
+            border-color: #EF4444;
+            animation: ringPulse 2s ease-in-out infinite
+        }
+
+        .nl.r::after {
+            background: rgba(239, 68, 68, 0.3)
+        }
+
+        @keyframes rpulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 25px rgba(239, 68, 68, .45), 0 0 60px rgba(239, 68, 68, .12)
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(239, 68, 68, .65), 0 0 80px rgba(239, 68, 68, .2)
+            }
+        }
+
+        @keyframes ringPulse {
+
+            0%,
+            100% {
+                opacity: .4
+            }
+
+            50% {
+                opacity: .7
+            }
+        }
+
+        .nl.b {
+            background: radial-gradient(circle at 38% 35%, #93C5FD, #3B82F6 60%, #1D4ED8);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.45), 0 0 60px rgba(59, 130, 246, 0.12)
+        }
+
+        .nl.b::before {
+            border-color: #3B82F6
+        }
+
+        .nl.b::after {
+            background: rgba(59, 130, 246, 0.3)
+        }
+
+        /* ===== LANES ===== */
+        .lanes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-left: -6px
+        }
+
+        .lane {
+            display: flex;
+            align-items: center;
+            border-radius: 0 16px 16px 0;
+            padding: 8px 14px 8px 18px;
+            position: relative;
+            overflow: hidden;
+            min-height: 58px;
+            transition: all .2s
+        }
+
+        /* Gradient ray extending from light */
+        .lane::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            z-index: 0;
+            opacity: 0.08;
+            transition: opacity .2s
+        }
+
+        .lane:hover::before {
+            opacity: 0.15
+        }
+
+        /* Neon border line */
+        .lane::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 4px;
+            bottom: 4px;
+            width: 2px;
+            border-radius: 1px;
+            z-index: 1
+        }
+
+        .lane.gl::before {
+            background: linear-gradient(90deg, #22C55E 0%, transparent 70%)
+        }
+
+        .lane.gl::after {
+            background: #22C55E;
+            box-shadow: 0 0 8px #22C55E
+        }
+
+        .lane.rl::before {
+            background: linear-gradient(90deg, #EF4444 0%, transparent 70%)
+        }
+
+        .lane.rl::after {
+            background: #EF4444;
+            box-shadow: 0 0 8px #EF4444
+        }
+
+        .lane.bl::before {
+            background: linear-gradient(90deg, #3B82F6 0%, transparent 70%)
+        }
+
+        .lane.bl::after {
+            background: #3B82F6;
+            box-shadow: 0 0 8px #3B82F6
+        }
+
+        .lc {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%
+        }
+
+        .li {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 48px;
+            flex-shrink: 0
+        }
+
+        .ll {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35)
+        }
+
+        .ln {
+            font-size: 20px;
+            font-weight: 800
+        }
+
+        .lane.gl .ln {
+            color: #22C55E
+        }
+
+        .lane.rl .ln {
+            color: #EF4444
+        }
+
+        .lane.bl .ln {
+            color: #3B82F6
+        }
+
+        .ld {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.06);
+            flex-shrink: 0
+        }
+
+        .lic {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1
+        }
+
+        .ai {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            cursor: pointer;
+            position: relative;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
+            flex-shrink: 0
+        }
+
+        .ai::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            pointer-events: none
+        }
+
+        .ai:hover {
+            transform: scale(1.2) translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            z-index: 10
+        }
+
+        .ai:active {
+            transform: scale(0.9)
+        }
+
+        .ai .nm {
+            position: absolute;
+            bottom: -17px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.92);
+            color: #fff;
+            font-size: 8px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s;
+            z-index: 20
+        }
+
+        .ai:hover .nm {
+            opacity: 1
+        }
+
+        .c1 {
+            background: linear-gradient(135deg, #667EEA, #764BA2)
+        }
+
+        .c2 {
+            background: linear-gradient(135deg, #F97316, #EF4444)
+        }
+
+        .c3 {
+            background: linear-gradient(135deg, #06B6D4, #3B82F6)
+        }
+
+        .c4 {
+            background: linear-gradient(135deg, #8B5CF6, #D946EF)
+        }
+
+        .c5 {
+            background: linear-gradient(135deg, #10B981, #059669)
+        }
+
+        .c6 {
+            background: linear-gradient(135deg, #F59E0B, #D97706)
+        }
+
+        .c7 {
+            background: linear-gradient(135deg, #EC4899, #F43F5E)
+        }
+
+        .c8 {
+            background: linear-gradient(135deg, #6366F1, #4F46E5)
+        }
+
+        .c9 {
+            background: linear-gradient(135deg, #14B8A6, #0D9488)
+        }
+
+        .lane.bl .ai {
+            animation: shm 2.5s ease-in-out infinite
+        }
+
+        @keyframes shm {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        /* ===== Bubble ===== */
+        .ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 90
+        }
+
+        .ov.s {
+            display: block
+        }
+
+        .bub {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            background: rgba(16, 16, 20, .97);
+            backdrop-filter: blur(30px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, .06);
+            padding: 14px;
+            min-width: 210px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .7);
+            animation: bi .25s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        .bub.s {
+            display: block
+        }
+
+        @keyframes bi {
+            from {
+                opacity: 0;
+                transform: scale(.85) translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0)
+            }
+        }
+
+        .bh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04)
+        }
+
+        .bic {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            flex-shrink: 0
+        }
+
+        .bn {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff
+        }
+
+        .bp {
+            font-size: 9px;
+            color: rgba(255, 255, 255, .3);
+            margin-top: 2px
+        }
+
+        .bb {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .bbtn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s
+        }
+
+        .bbtn.s2 {
+            background: rgba(255, 255, 255, .05);
+            color: rgba(255, 255, 255, .8)
+        }
+
+        .bbtn.s2:hover {
+            background: rgba(255, 255, 255, .1)
+        }
+
+        .bbtn.p1 {
+            background: #22C55E;
+            color: #fff
+        }
+
+        .bbtn.p1:hover {
+            background: #16A34A
+        }
+    </style>
+</head>
+
+<body>
+    <div class="popover">
+        <div class="hdr"><span class="brand">GreenLight</span>
+            <div class="gear">⚙</div>
+        </div>
+        <div class="main">
+            <div class="neon-tl">
+                <div class="neon-housing">
+                    <div class="nl g"></div>
+                    <div class="nl r"></div>
+                    <div class="nl b"></div>
+                </div>
+                <div class="neon-pole"></div>
+                <div class="neon-base"></div>
+            </div>
+            <div class="lanes">
+                <div class="lane gl">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Cleared</div>
+                            <div class="ln">7</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c5" data-n="Sketch" data-p="/Applications/Sketch.app" data-s="g"><span
+                                    class="nm">Sketch</span></div>
+                            <div class="ai c3" data-n="VS Code" data-p="/Applications/VS Code.app" data-s="g"><span
+                                    class="nm">VS Code</span></div>
+                            <div class="ai c8" data-n="Figma" data-p="/Applications/Figma.app" data-s="g"><span
+                                    class="nm">Figma</span></div>
+                            <div class="ai c9" data-n="Docker" data-p="/Applications/Docker.app" data-s="g"><span
+                                    class="nm">Docker</span></div>
+                            <div class="ai c6" data-n="Notion" data-p="/Applications/Notion.app" data-s="g"><span
+                                    class="nm">Notion</span></div>
+                            <div class="ai c4" data-n="Arc" data-p="/Applications/Arc.app" data-s="g"><span
+                                    class="nm">Arc</span></div>
+                            <div class="ai c1" data-n="Raycast" data-p="/Applications/Raycast.app" data-s="g"><span
+                                    class="nm">Raycast</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lane rl">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Blocked</div>
+                            <div class="ln">2</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c1" data-n="Antigravity" data-p="/Applications/Antigravity.app" data-s="r">
+                                <span class="nm">Antigravity</span></div>
+                            <div class="ai c2" data-n="DevProxy" data-p="/Applications/DevProxy.app" data-s="r"><span
+                                    class="nm">DevProxy</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lane bl">
+                    <div class="lc">
+                        <div class="li">
+                            <div class="ll">Scanning</div>
+                            <div class="ln">1</div>
+                        </div>
+                        <div class="ld"></div>
+                        <div class="lic">
+                            <div class="ai c7" data-n="CleanMyMac" data-p="/Applications/CleanMyMac.app" data-s="b">
+                                <span class="nm">CleanMyMac</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ov" id="ov"></div>
+    <div class="bub" id="ab">
+        <div class="bh">
+            <div class="bic c1" id="abI"></div>
+            <div>
+                <div class="bn" id="abN">App</div>
+                <div class="bp" id="abP">/p</div>
+            </div>
+        </div>
+        <div class="bb" id="abB"></div>
+    </div>
+    <script>
+        const ab = document.getElementById('ab'), ov = document.getElementById('ov');
+        document.querySelectorAll('.ai').forEach(d => { d.addEventListener('click', e => { e.stopPropagation(); document.getElementById('abN').textContent = d.dataset.n; document.getElementById('abP').textContent = d.dataset.p; const c = d.className.match(/c\d/)?.[0] || 'c1'; document.getElementById('abI').className = 'bic ' + c; let h = ''; if (d.dataset.s === 'r') h = '<button class="bbtn s2" onclick="cl()">🔓 Unlock</button><button class="bbtn p1" onclick="cl()">▶ Unlock + Open</button>'; else if (d.dataset.s === 'g') h = '<button class="bbtn s2" onclick="cl()">ℹ️ Info</button><button class="bbtn s2" onclick="cl()">📂 Show in Finder</button>'; else h = '<button class="bbtn s2" onclick="cl()">⏳ Scanning…</button>'; document.getElementById('abB').innerHTML = h; const r = d.getBoundingClientRect(); ab.style.left = Math.min(r.right + 10, innerWidth - 230) + 'px'; ab.style.top = Math.max(r.top - 20, 10) + 'px'; ab.classList.add('s'); ov.classList.add('s') }) });
+        function cl() { ab.classList.remove('s'); ov.classList.remove('s') }
+        ov.addEventListener('click', cl);
+    </script>
+</body>
+
+</html>
