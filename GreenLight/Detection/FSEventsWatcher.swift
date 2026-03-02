@@ -153,31 +153,35 @@ class FSEventsWatcher: ObservableObject {
         // 清理过期记录
         recentPaths = recentPaths.filter { now.timeIntervalSince($0.value) < deduplicationWindow }
         
-        // §3.1 P1: quarantine 预过滤（排除无 quarantine 的 app）
+        // §3.1 P1: quarantine 预过滤（排除无 quarantine 的 app，getxattr 纳秒级不阻塞）
         guard Self.hasQuarantine(at: appPath) else {
             GLLog.fsEvents.debug("Quarantine check: \(appPath), hasQuarantine=false, skipped")
             return
         }
         
-        // §3.2: spctl --assess 二次确认（最终判定）
-        let gkResult = assessor.assess(appPath: appPath)
-        guard gkResult == .rejected else {
-            let appName = URL(fileURLWithPath: appPath).lastPathComponent
-            GLLog.fsEvents.info("FSEvents detected + assess: \(appName), result=\(String(describing: gkResult)), not blocked")
-            return
+        // §3.2: spctl --assess 二次确认（异步执行，避免阻塞主线程 ~3 秒）
+        let assessor = self.assessor
+        let onDetection = self.onDetection
+        DispatchQueue.global(qos: .userInitiated).async {
+            let gkResult = assessor.assess(appPath: appPath)
+            guard gkResult == .rejected else {
+                let appName = URL(fileURLWithPath: appPath).lastPathComponent
+                GLLog.fsEvents.info("FSEvents detected + assess: \(appName), result=\(String(describing: gkResult)), not blocked")
+                return
+            }
+            
+            let appURL = URL(fileURLWithPath: appPath)
+            let bundleId = Bundle(url: appURL)?.bundleIdentifier
+            GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent), result=rejected, bundleId=\(bundleId ?? "nil")")
+            
+            let event = DetectionEvent(
+                source: .fsEvents,
+                appPath: appURL,
+                bundleId: bundleId,
+                timestamp: now
+            )
+            onDetection?(event)
         }
-        
-        let appURL = URL(fileURLWithPath: appPath)
-        let bundleId = Bundle(url: appURL)?.bundleIdentifier
-        GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent), result=rejected, bundleId=\(bundleId ?? "nil")")
-        
-        let event = DetectionEvent(
-            source: .fsEvents,
-            appPath: appURL,
-            bundleId: bundleId,
-            timestamp: now
-        )
-        onDetection?(event)
     }
     
     private func extractAppPath(from path: String) -> String? {
