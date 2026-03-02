@@ -8,8 +8,9 @@ struct DetectionEvent {
     let timestamp: Date
     
     enum Source: Hashable {
-        case logStream
-        case fsEvents
+        case logStream   // Channel A：syspolicyd 直接路径匹配（最高置信）
+        case fsEvents    // Channel B：FSEvents 实时文件变动（高置信）
+        case scan        // Fallback：批量扫描结果（低置信）
     }
 }
 

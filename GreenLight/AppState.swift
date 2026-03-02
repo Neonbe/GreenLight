@@ -31,10 +31,18 @@ class AppState: ObservableObject {
             GLLog.state.notice("Re-blocked (update): \(record.appName)")
         } else if let existingIndex = blockedApps.firstIndex(where: { $0.path == event.appPath.path }) {
             if blockedApps[existingIndex].status == .dismissed {
-                // dismissed 的 app 被重新检测到 → 重置为 blocked（新一轮检测）
+                // §3.6: 按最高置信来源判断是否 re-block
+                let hasRealtimeSignal = event.sources.contains(.logStream)
+                    || event.sources.contains(.fsEvents)
+                if !hasRealtimeSignal {
+                    // 仅来自 scan → 不重置 dismissed
+                    GLLog.state.debug("Scan result for dismissed app, skip: \(event.appName)")
+                    return
+                }
+                // 来自实时检测 → 重置为 blocked
                 blockedApps[existingIndex].status = .blocked
                 blockedApps[existingIndex].firstDetected = event.timestamp
-                GLLog.state.notice("Re-blocked (dismissed → blocked): \(event.appName)")
+                GLLog.state.notice("Re-blocked (dismissed → blocked, realtime): \(event.appName)")
             } else {
                 // 已经是 .blocked，跳过
                 GLLog.state.debug("Already blocked, skip: \(event.appPath.path)")

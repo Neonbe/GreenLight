@@ -9,9 +9,16 @@ class FSEventsWatcher: ObservableObject {
     /// 检测到事件时的回调
     var onDetection: ((DetectionEvent) -> Void)?
     
+    /// GK 判定器（可注入，便于测试）
+    var assessor: GatekeeperAssessing = GatekeeperAssessor()
+    
     /// 内部去重（3 秒窗口）
     private var recentPaths: [String: Date] = [:]
     private let deduplicationWindow: TimeInterval = 3.0
+    
+    /// §3.5: 近期候选路径（30 秒内有 FS 活动的 .app 路径），供目标化 fallback scan 使用
+    private(set) var recentCandidates: [String: Date] = [:]
+    private let candidateWindow: TimeInterval = 30.0
     
     /// 当前监控中的目录列表
     private(set) var currentMonitoredDirectories: [URL] = []
@@ -77,40 +84,41 @@ class FSEventsWatcher: ObservableObject {
         return getxattr(path, "com.apple.quarantine", nil, 0, 0, XATTR_NOFOLLOW) > 0
     }
     
-    // MARK: - 快速扫描
+    // MARK: - 目标化补漏扫描（§3.5）
     
+    /// 目标化 scan：仅遍历 recentCandidates + spctl 二次确认
     func scanApps(in directories: [URL]? = nil) -> [DetectionEvent] {
-        let dirs = directories ?? currentMonitoredDirectories
+        let now = Date()
+        
+        // 清理过期候选
+        recentCandidates = recentCandidates.filter { now.timeIntervalSince($0.value) < candidateWindow }
+        
+        let candidates = Array(recentCandidates.keys)
+        GLLog.fsEvents.info("Fallback scan: \(candidates.count) recent candidates")
+        
+        guard !candidates.isEmpty else { return [] }
+        
         var results: [DetectionEvent] = []
-        let fm = FileManager.default
-        
-        GLLog.fsEvents.info("Scan started, directories=\(dirs.count)")
-        
-        for dir in dirs {
-            guard let enumerator = fm.enumerator(
-                at: dir,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles]
-            ) else { continue }
+        for path in candidates {
+            guard Self.hasQuarantine(at: path) else { continue }
             
-            for case let fileURL as URL in enumerator {
-                guard fileURL.pathExtension == "app" else { continue }
-                // 跳过 .app 内部（不递归进入 bundle）
-                enumerator.skipDescendants()
-                
-                if Self.hasQuarantine(at: fileURL.path) {
-                    GLLog.fsEvents.info("Scan found: \(fileURL.lastPathComponent)")
-                    results.append(DetectionEvent(
-                        source: .fsEvents,
-                        appPath: fileURL,
-                        bundleId: Bundle(url: fileURL)?.bundleIdentifier,
-                        timestamp: Date()
-                    ))
-                }
+            let gkResult = assessor.assess(appPath: path)
+            guard gkResult == .rejected else {
+                GLLog.fsEvents.debug("Fallback scan: \(URL(fileURLWithPath: path).lastPathComponent), GK=\(String(describing: gkResult)), skipped")
+                continue
             }
+            
+            let appURL = URL(fileURLWithPath: path)
+            GLLog.fsEvents.info("Fallback scan found rejected: \(appURL.lastPathComponent)")
+            results.append(DetectionEvent(
+                source: .scan,
+                appPath: appURL,
+                bundleId: Bundle(url: appURL)?.bundleIdentifier,
+                timestamp: now
+            ))
         }
         
-        GLLog.fsEvents.notice("Scan completed: \(results.count) quarantined apps found")
+        GLLog.fsEvents.notice("Fallback scan completed: \(results.count) rejected apps found")
         return results
     }
     
@@ -128,8 +136,13 @@ class FSEventsWatcher: ObservableObject {
             return
         }
         
-        // 内部去重（3 秒窗口）
+        // §3.5: 维护 recentCandidates（所有有 FS 活动的 .app 路径，供 fallback scan 使用）
         let now = Date()
+        recentCandidates[appPath] = now
+        // 清理过期候选
+        recentCandidates = recentCandidates.filter { now.timeIntervalSince($0.value) < candidateWindow }
+        
+        // 内部去重（3 秒窗口）
         if let lastSeen = recentPaths[appPath], now.timeIntervalSince(lastSeen) < deduplicationWindow {
             let elapsed = String(format: "%.1f", now.timeIntervalSince(lastSeen))
             GLLog.fsEvents.debug("FSEvents dedup: skipped \(appPath) (\(elapsed)s < 3s window)")
@@ -140,15 +153,23 @@ class FSEventsWatcher: ObservableObject {
         // 清理过期记录
         recentPaths = recentPaths.filter { now.timeIntervalSince($0.value) < deduplicationWindow }
         
-        // 检查 quarantine 属性
+        // §3.1 P1: quarantine 预过滤（排除无 quarantine 的 app）
         guard Self.hasQuarantine(at: appPath) else {
             GLLog.fsEvents.debug("Quarantine check: \(appPath), hasQuarantine=false, skipped")
             return
         }
         
+        // §3.2: spctl --assess 二次确认（最终判定）
+        let gkResult = assessor.assess(appPath: appPath)
+        guard gkResult == .rejected else {
+            let appName = URL(fileURLWithPath: appPath).lastPathComponent
+            GLLog.fsEvents.info("FSEvents detected + assess: \(appName), result=\(String(describing: gkResult)), not blocked")
+            return
+        }
+        
         let appURL = URL(fileURLWithPath: appPath)
         let bundleId = Bundle(url: appURL)?.bundleIdentifier
-        GLLog.fsEvents.info("FSEvents detected: \(appURL.lastPathComponent), bundleId=\(bundleId ?? "nil")")
+        GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent), result=rejected, bundleId=\(bundleId ?? "nil")")
         
         let event = DetectionEvent(
             source: .fsEvents,

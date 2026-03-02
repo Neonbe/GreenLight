@@ -102,22 +102,35 @@ struct GreenLightApp: App {
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
         GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
         
-        // onGKActivity → 置信度记录 + Level 0 兜底扫描（§5.2）
+        // onGKActivity → 置信度记录 + Level 0 兜底扫描（§3.5 目标化 + 120s 冷却）
         var fallbackScanTimer: DispatchWorkItem?
+        var lastFallbackScanTime: Date?
+        let fallbackCooldown: TimeInterval = 120  // §3.5: 120 秒冷却
         logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
             // 记录 GK 活动到置信度窗口
             enhanceManager.recordGKActivity()
             
-            // Level 0 兜底扫描（500ms 去抖，仅扫已有权限的目录）
+            // 120 秒冷却检查
+            if let lastScan = lastFallbackScanTime {
+                let elapsed = Date().timeIntervalSince(lastScan)
+                if elapsed < fallbackCooldown {
+                    let remaining = Int(fallbackCooldown - elapsed)
+                    GLLog.pipeline.debug("Fallback scan skipped: cooldown (\(remaining)s remaining)")
+                    return
+                }
+            }
+            
+            // Level 0 兜底扫描（500ms 去抖，目标化扫描 recentCandidates）
             fallbackScanTimer?.cancel()
             let work = DispatchWorkItem {
-                GLLog.pipeline.info("Fallback scan triggered by GK activity")
+                GLLog.pipeline.info("Fallback scan triggered by GK Prompt shown")
+                lastFallbackScanTime = Date()
                 let events = fsWatcher.scanApps()
                 for event in events {
                     deduplicator.receive(event)
                 }
                 if events.isEmpty {
-                    GLLog.pipeline.debug("Fallback scan: no quarantined apps found")
+                    GLLog.pipeline.debug("Fallback scan: no rejected apps found")
                 }
             }
             fallbackScanTimer = work
@@ -131,14 +144,10 @@ struct GreenLightApp: App {
             }
         }
         
-        enhanceManager.onUpgradeToLevel1 = { [fsWatcher, deduplicator] grantedDirs in
+        enhanceManager.onUpgradeToLevel1 = { [fsWatcher] grantedDirs in
             fsWatcher.addDirectories(grantedDirs)
-            // 补充扫描已授权目录
-            let events = fsWatcher.scanApps(in: grantedDirs)
-            for event in events {
-                deduplicator.receive(event)
-            }
-            GLLog.pipeline.notice("Level 1 upgraded: scanned \(events.count) apps in \(grantedDirs.map(\.path))")
+            // 目标化扫描模式下，新增目录暂无 recentCandidates，由 FSEvents 实时检测后续事件
+            GLLog.pipeline.notice("Level 1 upgraded: now monitoring \(grantedDirs.map(\.path))")
         }
     }
 }

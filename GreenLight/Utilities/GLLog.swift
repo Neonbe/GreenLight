@@ -15,4 +15,5 @@ enum GLLog {
     static let state        = Logger(subsystem: subsystem, category: "state")
     static let onboarding   = Logger(subsystem: subsystem, category: "onboarding")
     static let enhance      = Logger(subsystem: subsystem, category: "enhance")
+    static let gkAssess     = Logger(subsystem: subsystem, category: "gkAssess")
 }

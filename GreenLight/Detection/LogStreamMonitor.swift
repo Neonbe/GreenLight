@@ -175,11 +175,11 @@ class LogStreamMonitor: ObservableObject {
         } else if line.contains("scan complete") {
             GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)))")
         } else if line.contains("evaluateScanResult") {
-            GLLog.logStream.debug("GK evaluate: \(String(line.prefix(120)))")
-            onGKActivity?()
+            GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)))")
+            // §3.4: evaluateScanResult 是后台常规操作，不触发 scan（避免反馈循环）
         } else if line.contains("<private>") {
-            GLLog.logStream.debug("GK line contains <private>, cannot extract path: \(String(line.prefix(80)))")
-            onGKActivity?()
+            GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)))")
+            // §3.4: <private> catch-all 噪声最大，已删除触发
         } else {
             GLLog.logStream.debug("GK line unrecognized: \(String(line.prefix(120)))")
         }

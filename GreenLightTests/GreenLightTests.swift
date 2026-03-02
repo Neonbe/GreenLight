@@ -352,3 +352,174 @@ struct EnhancePromptManagerTests {
         Persistence.lastEnhancePromptDate = nil
     }
 }
+
+// MARK: - GatekeeperAssessor 判定测试（§3.2）
+
+@Suite("GatekeeperAssessor 判定逻辑")
+struct GatekeeperAssessorTests {
+    
+    @Test("系统 app → accepted")
+    func systemAppAccepted() {
+        let assessor = GatekeeperAssessor()
+        let result = assessor.assess(appPath: "/System/Applications/Calculator.app")
+        #expect(result == .accepted)
+    }
+    
+    @Test("FakeAssessor: rejected")
+    func fakeRejected() {
+        let fake = FakeGatekeeperAssessor(result: .rejected)
+        #expect(fake.assess(appPath: "/any") == .rejected)
+    }
+    
+    @Test("FakeAssessor: unknown（不入 blocked）")
+    func fakeUnknown() {
+        let fake = FakeGatekeeperAssessor(result: .unknown)
+        #expect(fake.assess(appPath: "/any") == .unknown)
+    }
+    
+    @Test("FakeAssessor: accepted")
+    func fakeAccepted() {
+        let fake = FakeGatekeeperAssessor(result: .accepted)
+        #expect(fake.assess(appPath: "/any") == .accepted)
+    }
+}
+
+// MARK: - AppState dismissed 稳定性测试（§3.6）
+
+@Suite("AppState dismissed 稳定性")
+struct AppStateDismissedTests {
+    
+    @Test("scan 来源不重置 dismissed 状态")
+    @MainActor func scanDoesNotReblockDismissed() async {
+        let appState = AppState.shared
+        let testPath = "/Applications/_TestScanDismissed_\(UUID().uuidString).app"
+        
+        // Setup: 添加一个 blocked record 并 dismiss
+        let event1 = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestScanDismissed", bundleId: nil,
+            sources: [.fsEvents],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: event1)
+        if let record = appState.blockedApps.first(where: { $0.path == testPath }) {
+            appState.dismissApp(record)
+        }
+        
+        // Verify: dismissed
+        let beforeRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(beforeRecord?.status == .dismissed)
+        
+        // Act: 模拟 scan 来源事件
+        let scanEvent = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestScanDismissed", bundleId: nil,
+            sources: [.scan],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: scanEvent)
+        
+        // Verify: 仍为 dismissed
+        let afterRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(afterRecord?.status == .dismissed)
+        
+        // 清理
+        if let idx = appState.blockedApps.firstIndex(where: { $0.path == testPath }) {
+            appState.blockedApps.remove(at: idx)
+        }
+    }
+    
+    @Test("实时检测可重置 dismissed 为 blocked")
+    @MainActor func realtimeCanReblockDismissed() async {
+        let appState = AppState.shared
+        let testPath = "/Applications/_TestRealtimeReblock_\(UUID().uuidString).app"
+        
+        // Setup: 添加一个 blocked record 并 dismiss
+        let event1 = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestRealtimeReblock", bundleId: nil,
+            sources: [.fsEvents],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: event1)
+        if let record = appState.blockedApps.first(where: { $0.path == testPath }) {
+            appState.dismissApp(record)
+        }
+        
+        // Verify: dismissed
+        let beforeRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(beforeRecord?.status == .dismissed)
+        
+        // Act: 模拟实时检测事件（含 logStream）
+        let realtimeEvent = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestRealtimeReblock", bundleId: nil,
+            sources: [.logStream],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: realtimeEvent)
+        
+        // Verify: 重置为 blocked
+        let afterRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(afterRecord?.status == .blocked)
+        
+        // 清理
+        if let idx = appState.blockedApps.firstIndex(where: { $0.path == testPath }) {
+            appState.blockedApps.remove(at: idx)
+        }
+    }
+}
+
+// MARK: - Source.scan 序列化兼容测试（§3.3）
+
+@Suite("DetectionEvent Source 兼容性")
+struct DetectionEventSourceTests {
+    
+    @Test("新增 .scan 不破坏去重合并")
+    func scanSourceDeduplication() async {
+        let dedup = EventDeduplicator(windowDuration: 0.1)
+        
+        var receivedEvents: [GreenLightEvent] = []
+        dedup.onEvent = { event in
+            receivedEvents.append(event)
+        }
+        
+        let path = URL(fileURLWithPath: "/Applications/TestScanDedup.app")
+        let event1 = DetectionEvent(source: .scan, appPath: path, bundleId: nil, timestamp: Date())
+        let event2 = DetectionEvent(source: .fsEvents, appPath: path, bundleId: "com.test", timestamp: Date())
+        
+        dedup.receive(event1)
+        dedup.receive(event2)
+        
+        try? await Task.sleep(for: .milliseconds(200))
+        
+        #expect(receivedEvents.count == 1)
+        #expect(receivedEvents.first?.sources.contains(.scan) == true)
+        #expect(receivedEvents.first?.sources.contains(.fsEvents) == true)
+    }
+    
+    @Test("仅 scan 来源事件正确标识")
+    func scanOnlyEvent() async {
+        let dedup = EventDeduplicator(windowDuration: 0.1)
+        
+        var receivedEvents: [GreenLightEvent] = []
+        dedup.onEvent = { event in
+            receivedEvents.append(event)
+        }
+        
+        let path = URL(fileURLWithPath: "/Applications/TestScanOnly.app")
+        let event = DetectionEvent(source: .scan, appPath: path, bundleId: nil, timestamp: Date())
+        
+        dedup.receive(event)
+        
+        try? await Task.sleep(for: .milliseconds(200))
+        
+        #expect(receivedEvents.count == 1)
+        #expect(receivedEvents.first?.sources == [.scan])
+        // 仅 scan → 不含实时信号
+        let hasRealtime = receivedEvents.first?.sources.contains(.logStream) == true
+            || receivedEvents.first?.sources.contains(.fsEvents) == true
+        #expect(hasRealtime == false)
+    }
+}
+
