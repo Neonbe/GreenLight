@@ -20,9 +20,10 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         
         let gkResult: GKAssessResult
         switch result.exitCode {
-        case 0:  gkResult = .accepted
-        case 3:  gkResult = .rejected
-        default: gkResult = .unknown
+        case 0:  gkResult = .accepted   // GK 通过
+        case 1:  gkResult = .rejected   // 签名损坏/资源缺失 → macOS 会阻止
+        case 3:  gkResult = .rejected   // policy denied → GK 拦截
+        default: gkResult = .unknown    // exitCode=2(参数错误)/-1(启动失败)/其他
         }
         
         let appName = URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
