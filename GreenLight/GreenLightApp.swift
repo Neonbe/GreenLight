@@ -89,14 +89,12 @@ struct GreenLightApp: App {
         // Channel B (Level 0): 仅监控 /Applications（无 TCC）
         fsWatcher.startWatching(directories: FSEventsWatcher.level0Directories)
         
-        // === Level 1: 启动时实时探测已授权目录 ===
+        // === Level 1: 用户曾授权则恢复监控（不触发 TCC 弹窗） ===
         
-        let grantedLevel1Dirs = FSEventsWatcher.level1Directories.filter {
-            FSEventsWatcher.canAccessDirectory($0)
-        }
-        if !grantedLevel1Dirs.isEmpty {
-            fsWatcher.addDirectories(grantedLevel1Dirs)
-            GLLog.pipeline.notice("Level 1 auto-upgraded at launch: \(grantedLevel1Dirs.map(\.path))")
+        if Persistence.level1Granted {
+            // 用户曾通过引导面板授权，安全地恢复 Level 1 监控
+            fsWatcher.addDirectories(FSEventsWatcher.level1Directories)
+            GLLog.pipeline.notice("Level 1 restored at launch (previously granted)")
         }
         
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")

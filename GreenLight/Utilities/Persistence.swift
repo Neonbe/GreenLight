@@ -6,6 +6,7 @@ enum Persistence {
     private static let totalGreenLightsKey = "greenlight.totalGreenLights"
     private static let hasCompletedOnboardingKey = "greenlight.hasCompletedOnboarding"
     private static let lastEnhancePromptDateKey = "greenlight.lastEnhancePromptDate"
+    private static let level1GrantedKey = "greenlight.level1Granted"
     
     // MARK: - AppRecords
     
@@ -61,5 +62,13 @@ enum Persistence {
         set {
             UserDefaults.standard.set(newValue, forKey: lastEnhancePromptDateKey)
         }
+    }
+    
+    // MARK: - Level 1 授权标记
+    
+    /// 用户是否曾通过引导面板授权 Level 1 目录
+    static var level1Granted: Bool {
+        get { UserDefaults.standard.bool(forKey: level1GrantedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: level1GrantedKey) }
     }
 }

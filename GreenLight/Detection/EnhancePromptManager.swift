@@ -198,6 +198,7 @@ class EnhancePromptManager {
         }
         
         if !grantedDirs.isEmpty {
+            Persistence.level1Granted = true
             GLLog.enhance.notice("Upgrading to Level 1: \(grantedDirs.map(\.path))")
             onUpgradeToLevel1?(grantedDirs)
         }

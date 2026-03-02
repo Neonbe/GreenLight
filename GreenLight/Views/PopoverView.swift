@@ -386,16 +386,15 @@ struct PopoverView: View {
         Task.detached {
             let watcher = FSEventsWatcher()
             
-            // 实时探测 TCC 权限，确定可扫描目录
+            // 根据授权状态确定可扫描目录（不触发 TCC）
             var scanDirs = FSEventsWatcher.level0Directories
-            var hasUngrantedDirs = false
+            let hasUngrantedDirs: Bool
             
-            for dir in FSEventsWatcher.level1Directories {
-                if FSEventsWatcher.canAccessDirectory(dir) {
-                    scanDirs.append(dir)
-                } else {
-                    hasUngrantedDirs = true
-                }
+            if Persistence.level1Granted {
+                scanDirs += FSEventsWatcher.level1Directories
+                hasUngrantedDirs = false
+            } else {
+                hasUngrantedDirs = true
             }
             
             let events = watcher.scanApps(in: scanDirs)
