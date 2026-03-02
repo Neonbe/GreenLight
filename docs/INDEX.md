@@ -16,7 +16,7 @@
 
 | 工作区文件 | 状态 |
 |:---|:---|
-| [`V1.0.0-r01-MVP需求与技术文档-2026.03.02.md`](./V1.0.0-r01-MVP需求与技术文档-2026.03.02.md) | 🟡 待评审 |
+| [`V1.0.0-r02-MVP需求与技术文档-2026.03.02.md`](./V1.0.0-r02-MVP需求与技术文档-2026.03.02.md) | 🟡 评审修订后 |
 
 ### 2. `docs/spec/` —— 规范区（长期契约）
 
@@ -40,18 +40,21 @@
 |:---|:---|
 | [`experiment_results_and_tech_spec.md`](./spec/experiment_results_and_tech_spec.md) | 实验结果记录 + 修订版技术方案（架构、模块、数据流、MVP 范围） |
 | [`interaction_flow_spec.md`](./spec/interaction_flow_spec.md) | 交互流程定稿（红绿灯设计语言、A+C 融合模型、完整用户旅程） |
+| [`ui_design_spec.md`](./spec/ui_design_spec.md) | UI 视觉设计规范（具象红绿灯、色彩/字体/质感系统、组件规范、交互动画、无障碍） |
 
 ### 引用关系
 
 ```
 V1.0.0 PRD (MVP 需求与技术文档)
     ↑ 综合产出
-    ├─ interaction_flow_spec.md (交互设计)
-    │   ↑ 设计决策基于
-    │   └─ experiment_results_and_tech_spec.md (技术方案)
-    │          ↑ 实验验证 + 方案修订基于
-    │          ├─ research/feasibility_review (可行性评审 8 项发现)
-    │          └─ research/competitive_analysis (竞品分析 + 实验方案)
+    ├─ ui_design_spec.md (视觉设计规范)
+    │   ↑ 视觉落地基于
+    │   └─ interaction_flow_spec.md (交互设计)
+    │       ↑ 设计决策基于
+    │       └─ experiment_results_and_tech_spec.md (技术方案)
+    │              ↑ 实验验证 + 方案修订基于
+    │              ├─ research/feasibility_review (可行性评审 8 项发现)
+    │              └─ research/competitive_analysis (竞品分析 + 实验方案)
     └─ research/sentinel_deep_dive (Sentinel 拆解 + 复用清单)
 ```
 
@@ -88,6 +91,7 @@ V1.0.0 PRD (MVP 需求与技术文档)
 - [x] 核心技术实验（log stream / FSEvents / xattr 三组实验全部通过）
 - [x] 修订版技术方案（基于实验结果重新设计架构）
 - [x] 交互流程定稿（红绿灯设计语言 + A+C 融合模型）
+- [x] UI 视觉设计定稿（具象红绿灯 + 毛玻璃质感 + 组件规范）
 - [x] Sentinel 源码级深度拆解（AlinFoundation 复用 + 三级借鉴清单）
 - [x] V1.0 MVP PRD（需求 + 技术 + 任务分解，待评审）
 - [ ] 开发启动
