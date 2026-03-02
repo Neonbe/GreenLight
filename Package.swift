@@ -11,7 +11,8 @@ let package = Package(
         .executableTarget(
             name: "GreenLight",
             dependencies: ["AlinFoundation"],
-            path: "GreenLight"
+            path: "GreenLight",
+            exclude: ["Info.plist", "Resources"]
         ),
         .testTarget(
             name: "GreenLightTests",

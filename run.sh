@@ -28,9 +28,18 @@ cp "$BUILD_DIR/GreenLight" "$MACOS/GreenLight"
 # Step 4: 复制 Info.plist
 cp "$PROJECT_DIR/GreenLight/Info.plist" "$CONTENTS/Info.plist"
 
-# Step 5: 杀死旧进程（如果有）
+# Step 5: 复制 Resources（App 图标等）
+mkdir -p "$CONTENTS/Resources"
+if [ -f "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" ]; then
+    cp "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
+fi
+
+# Step 6: 杀死旧进程（如果有）
 pkill -f "GreenLight.app" 2>/dev/null || true
 sleep 0.5
+
+# Step 7: 清除 UserDefaults（重置 Onboarding 等状态）
+defaults delete com.greenlight.app 2>/dev/null || true
 
 echo "🚀 启动 GreenLight..."
 echo "   📍 请查看屏幕右上角菜单栏 — 你会看到一个绿色圆点 🟢"
