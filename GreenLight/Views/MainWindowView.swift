@@ -12,7 +12,6 @@ struct MainWindowView: View {
                         showOnboarding = false
                     }
                 })
-                .frame(width: 520, height: 440)
             } else {
                 PopoverView()
             }

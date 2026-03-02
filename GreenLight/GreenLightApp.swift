@@ -23,6 +23,7 @@ struct GreenLightApp: App {
                 .environmentObject(appState)
                 .preferredColorScheme(.dark)
         }
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {} // 单窗口 App，禁止 Cmd+N
