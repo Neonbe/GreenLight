@@ -23,10 +23,6 @@ struct OnboardingView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                Spacer().frame(height: 52)
-                
-                OBStepIndicator(current: currentStep)
-                
                 Spacer()
                 
                 ZStack {
@@ -60,8 +56,8 @@ struct OnboardingView: View {
         reduceMotion
             ? .opacity
             : .asymmetric(
-                insertion: .offset(x: 40).combined(with: .opacity),
-                removal: .offset(x: -40).combined(with: .opacity)
+                insertion: .offset(x: 30).combined(with: .opacity).combined(with: .scale(scale: 0.98)),
+                removal: .offset(x: -30).combined(with: .opacity).combined(with: .scale(scale: 0.98))
             )
     }
 }
@@ -78,7 +74,7 @@ private struct BrandStep: View {
             OBTrafficLight(reduceMotion: reduceMotion)
                 .stagger(0, appeared: appeared, reduceMotion: reduceMotion)
             
-            Spacer().frame(height: 40)
+            Spacer().frame(height: 36)
             
             Text("G r e e n L i g h t")
                 .font(.system(size: 20, weight: .light))
@@ -92,7 +88,7 @@ private struct BrandStep: View {
                 .foregroundColor(OB.textMuted)
                 .stagger(2, appeared: appeared, reduceMotion: reduceMotion)
             
-            Spacer().frame(height: 56)
+            Spacer().frame(height: 48)
             
             Button("Continue", action: onContinue)
                 .buttonStyle(OBButtonStyle(isPrimary: false))
@@ -192,7 +188,9 @@ private struct TrustStep: View {
 private struct OBTrafficLight: View {
     let reduceMotion: Bool
     @State private var redIntensity: Double = 0
+    @State private var amberIntensity: Double = 0.08
     @State private var greenIntensity: Double = 0
+    @State private var greenPulse: Double = 0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -225,8 +223,8 @@ private struct OBTrafficLight: View {
                 
                 VStack(spacing: 8) {
                     OBBulb(color: OB.red, intensity: redIntensity)
-                    OBBulb(color: OB.amber, intensity: 0.08)
-                    OBBulb(color: OB.green, intensity: greenIntensity)
+                    OBBulb(color: OB.amber, intensity: amberIntensity)
+                    OBBulb(color: OB.green, intensity: greenIntensity, brightness: greenPulse)
                 }
             }
             
@@ -259,13 +257,29 @@ private struct OBTrafficLight: View {
             greenIntensity = 1
             return
         }
-        withAnimation(.easeIn(duration: 0.4)) {
+        // Phase 1: 红灯亮起 (spring 物理，自然感)
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             redIntensity = 1
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeInOut(duration: 0.5)) {
-                redIntensity = 0.1
+        // Phase 2: amber 过渡 (红灯渐灭，黄灯微亮)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                redIntensity = 0.15
+                amberIntensity = 0.5
+            }
+        }
+        // Phase 3: 绿灯亮起 (黄灭绿亮)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                amberIntensity = 0.08
                 greenIntensity = 1
+            }
+            // 绿灯脉冲：微闪后恢复
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeInOut(duration: 0.25)) { greenPulse = 0.1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    withAnimation(.easeInOut(duration: 0.3)) { greenPulse = 0 }
+                }
             }
         }
     }
@@ -276,6 +290,7 @@ private struct OBTrafficLight: View {
 private struct OBBulb: View {
     let color: Color
     let intensity: Double
+    var brightness: Double = 0
     
     var body: some View {
         ZStack {
@@ -307,32 +322,11 @@ private struct OBBulb: View {
                 .blur(radius: 2)
         }
         .frame(width: 30, height: 30)
+        .brightness(brightness)
     }
 }
 
-// MARK: - 步骤指示器
 
-private struct OBStepIndicator: View {
-    let current: Int
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            ForEach(0..<2, id: \.self) { index in
-                Circle()
-                    .fill(index == current ? OB.green : Color.white.opacity(0.12))
-                    .frame(
-                        width: index == current ? 7 : 5,
-                        height: index == current ? 7 : 5
-                    )
-                    .shadow(
-                        color: index == current ? OB.green.opacity(0.4) : .clear,
-                        radius: 5
-                    )
-                    .animation(.easeInOut(duration: 0.3), value: current)
-            }
-        }
-    }
-}
 
 // MARK: - Toggle 卡片
 
@@ -420,7 +414,7 @@ private struct StaggerModifier: ViewModifier {
             .animation(
                 reduceMotion
                     ? nil
-                    : .spring(response: 0.45, dampingFraction: 0.78).delay(Double(index) * 0.07),
+                    : .spring(response: 0.35, dampingFraction: 0.85).delay(Double(index) * 0.05),
                 value: appeared
             )
     }
