@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 主窗口视图 — 首次启动显示 Onboarding，之后显示主面板
+/// 主窗口视图 — 首次启动显示 Onboarding，之后显示主仪表盘
 struct MainWindowView: View {
     @State private var showOnboarding = !Persistence.hasCompletedOnboarding
     
@@ -13,8 +13,9 @@ struct MainWindowView: View {
                     }
                 })
             } else {
-                PopoverView(enhanceManager: EnhancePromptManager())
+                MainDashboardView(enhanceManager: EnhancePromptManager())
             }
         }
     }
 }
+

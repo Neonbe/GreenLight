@@ -13,6 +13,12 @@ class AppState: ObservableObject {
     @Published var isScanning: Bool = false
     @Published var pendingPanelEvent: GreenLightEvent?
     
+    /// 🔴 被拒绝的应用（Gatekeeper 拦截，status == .blocked）
+    var rejectedApps: [AppRecord] { blockedApps.filter { $0.status == .blocked } }
+    
+    /// 🟡 未决策的应用（用户未处理，status == .pending 或 .dismissed）
+    var unresolvedApps: [AppRecord] { blockedApps.filter { $0.status == .pending || $0.status == .dismissed } }
+    
     private init() {
         load()
     }
