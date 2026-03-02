@@ -29,10 +29,17 @@ class AppState: ObservableObject {
             record.firstDetected = event.timestamp
             blockedApps.append(record)
             GLLog.state.notice("Re-blocked (update): \(record.appName)")
-        } else if blockedApps.contains(where: { $0.path == event.appPath.path }) {
-            // 已经在被拦截列表中，忽略
-            GLLog.state.debug("Already blocked, skip: \(event.appPath.path)")
-            return
+        } else if let existingIndex = blockedApps.firstIndex(where: { $0.path == event.appPath.path }) {
+            if blockedApps[existingIndex].status == .dismissed {
+                // dismissed 的 app 被重新检测到 → 重置为 blocked（新一轮检测）
+                blockedApps[existingIndex].status = .blocked
+                blockedApps[existingIndex].firstDetected = event.timestamp
+                GLLog.state.notice("Re-blocked (dismissed → blocked): \(event.appName)")
+            } else {
+                // 已经是 .blocked，跳过
+                GLLog.state.debug("Already blocked, skip: \(event.appPath.path)")
+                return
+            }
         } else {
             // 新 app
             var record = AppRecord(

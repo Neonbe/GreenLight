@@ -67,14 +67,7 @@ struct GreenLightApp: App {
                 let appState = AppState.shared
                 appState.addBlockedApp(from: event)
                 
-                // 检查是否已被忽略（dismissed），如果是则不弹出面板
-                if let record = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
-                   record.status == .dismissed {
-                    GLLog.pipeline.info("Skipped dismissed app: \(event.appName)")
-                    return
-                }
-                
-                // 弹出检测浮动面板（替代系统通知）
+                // 弹出检测浮动面板
                 GLLog.pipeline.info("Showing panel for: \(event.appName)")
                 DetectionPanelController.shared.show(event: event)
                 
