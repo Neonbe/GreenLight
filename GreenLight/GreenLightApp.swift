@@ -1,11 +1,12 @@
 import SwiftUI
+import AppKit
 
 @main
 struct GreenLightApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var appState = AppState.shared
-    @State private var showOnboarding = !Persistence.hasCompletedOnboarding
     
-    private let notificationManager = NotificationManager()
+    
     private let logMonitor = LogStreamMonitor()
     private let fsWatcher = FSEventsWatcher()
     private let deduplicator = EventDeduplicator()
@@ -16,19 +17,28 @@ struct GreenLightApp: App {
     }
     
     var body: some Scene {
+        // 1. 主窗口（Dock App 的核心入口）
+        WindowGroup {
+            MainWindowView()
+                .environmentObject(appState)
+                .preferredColorScheme(.dark)
+        }
+        .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(replacing: .newItem) {} // 单窗口 App，禁止 Cmd+N
+        }
+        
+        // 2. Menu Bar 常驻（轻量入口 + 状态指示器）
         MenuBarExtra {
             PopoverView()
                 .environmentObject(appState)
-                .sheet(isPresented: $showOnboarding) {
-                    OnboardingView(isPresented: $showOnboarding)
-                        .environmentObject(appState)
-                }
         } label: {
             MenuBarLabel()
                 .environmentObject(appState)
         }
         .menuBarExtraStyle(.window)
         
+        // 3. 设置独立窗口
         Settings {
             SettingsView()
                 .environmentObject(appState)
@@ -38,9 +48,6 @@ struct GreenLightApp: App {
     // MARK: - 检测管线搭建
     
     private func setupPipeline() {
-        // 通知 Category 注册
-        notificationManager.registerCategories()
-        
         // Channel A → EventDeduplicator
         logMonitor.onDetection = { [deduplicator] event in
             deduplicator.receive(event)
@@ -51,19 +58,29 @@ struct GreenLightApp: App {
             deduplicator.receive(event)
         }
         
-        // EventDeduplicator → 通知 + 状态更新
-        deduplicator.onEvent = { [notificationManager] event in
+        // EventDeduplicator → 浮动面板 + 状态更新
+        deduplicator.onEvent = { event in
             Task { @MainActor in
+                let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
+                GLLog.pipeline.info("Pipeline received: \(event.appName), sources=\(event.sources.map { String(describing: $0) }), latency=\(latencyMs)ms")
+                
                 let appState = AppState.shared
                 appState.addBlockedApp(from: event)
                 
-                // 检查是否已被忽略（dismissed），如果是则不推送通知
+                // 检查是否已被忽略（dismissed），如果是则不弹出面板
                 if let record = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
                    record.status == .dismissed {
+                    GLLog.pipeline.info("Skipped dismissed app: \(event.appName)")
                     return
                 }
                 
-                notificationManager.sendDetectionNotification(for: event)
+                // 弹出检测浮动面板（替代系统通知）
+                GLLog.pipeline.info("Showing panel for: \(event.appName)")
+                DetectionPanelController.shared.show(event: event)
+                
+                // 可选：如有系统通知权限，同时发送系统通知
+                GLLog.pipeline.info("Sending system notification for: \(event.appName)")
+                NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: event)
             }
         }
         
@@ -72,6 +89,24 @@ struct GreenLightApp: App {
         
         let dirs = Persistence.loadMonitoredDirectories() ?? FSEventsWatcher.defaultDirectories
         fsWatcher.startWatching(directories: dirs)
+        
+        GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
+        GLLog.pipeline.info("Monitoring directories: \(dirs.map(\.path))")
+    }
+}
+
+// MARK: - AppDelegate（处理 Dock 图标点击重开窗口）
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            // 点击 Dock 图标 → 重新显示主窗口
+            for window in NSApp.windows where window.canBecomeMain {
+                window.makeKeyAndOrderFront(nil)
+                return false
+            }
+        }
+        return true
     }
 }
 

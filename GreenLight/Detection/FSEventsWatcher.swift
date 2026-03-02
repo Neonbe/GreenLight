@@ -39,7 +39,7 @@ class FSEventsWatcher: ObservableObject {
             1.0, // latency: 1秒
             UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes)
         ) else {
-            print("[FSEventsWatcher] Failed to create FSEventStream")
+            GLLog.fsEvents.fault("Failed to create FSEventStream for paths=\(dirs.map(\.path))")
             return
         }
         
@@ -47,6 +47,7 @@ class FSEventsWatcher: ObservableObject {
         FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
         FSEventStreamStart(stream)
         isRunning = true
+        GLLog.fsEvents.notice("FSEvents started, directories=\(dirs.count), paths=\(dirs.map(\.path))")
     }
     
     func stopWatching() {
@@ -56,6 +57,7 @@ class FSEventsWatcher: ObservableObject {
         FSEventStreamRelease(stream)
         self.stream = nil
         isRunning = false
+        GLLog.fsEvents.info("FSEvents stopped")
     }
     
     // MARK: - xattr 检查（C API，零 shell 依赖）
@@ -71,6 +73,8 @@ class FSEventsWatcher: ObservableObject {
         var results: [DetectionEvent] = []
         let fm = FileManager.default
         
+        GLLog.fsEvents.info("Scan started, directories=\(dirs.count)")
+        
         for dir in dirs {
             guard let enumerator = fm.enumerator(
                 at: dir,
@@ -84,6 +88,7 @@ class FSEventsWatcher: ObservableObject {
                 enumerator.skipDescendants()
                 
                 if Self.hasQuarantine(at: fileURL.path) {
+                    GLLog.fsEvents.info("Scan found: \(fileURL.lastPathComponent)")
                     results.append(DetectionEvent(
                         source: .fsEvents,
                         appPath: fileURL,
@@ -93,6 +98,8 @@ class FSEventsWatcher: ObservableObject {
                 }
             }
         }
+        
+        GLLog.fsEvents.notice("Scan completed: \(results.count) quarantined apps found")
         return results
     }
     
@@ -102,12 +109,19 @@ class FSEventsWatcher: ObservableObject {
         // 只关注 .app
         guard path.contains(".app") else { return }
         
+        GLLog.fsEvents.debug("FS event: \(path), flags=\(flags)")
+        
         // 提取 .app 路径
-        guard let appPath = extractAppPath(from: path) else { return }
+        guard let appPath = extractAppPath(from: path) else {
+            GLLog.fsEvents.debug("FS event: failed to extract .app path from: \(path)")
+            return
+        }
         
         // 内部去重（3 秒窗口）
         let now = Date()
         if let lastSeen = recentPaths[appPath], now.timeIntervalSince(lastSeen) < deduplicationWindow {
+            let elapsed = String(format: "%.1f", now.timeIntervalSince(lastSeen))
+            GLLog.fsEvents.debug("FSEvents dedup: skipped \(appPath) (\(elapsed)s < 3s window)")
             return
         }
         recentPaths[appPath] = now
@@ -116,13 +130,19 @@ class FSEventsWatcher: ObservableObject {
         recentPaths = recentPaths.filter { now.timeIntervalSince($0.value) < deduplicationWindow }
         
         // 检查 quarantine 属性
-        guard Self.hasQuarantine(at: appPath) else { return }
+        guard Self.hasQuarantine(at: appPath) else {
+            GLLog.fsEvents.debug("Quarantine check: \(appPath), hasQuarantine=false, skipped")
+            return
+        }
         
         let appURL = URL(fileURLWithPath: appPath)
+        let bundleId = Bundle(url: appURL)?.bundleIdentifier
+        GLLog.fsEvents.info("FSEvents detected: \(appURL.lastPathComponent), bundleId=\(bundleId ?? "nil")")
+        
         let event = DetectionEvent(
             source: .fsEvents,
             appPath: appURL,
-            bundleId: Bundle(url: appURL)?.bundleIdentifier,
+            bundleId: bundleId,
             timestamp: now
         )
         onDetection?(event)
@@ -130,7 +150,7 @@ class FSEventsWatcher: ObservableObject {
     
     private func extractAppPath(from path: String) -> String? {
         guard let range = path.range(of: ".app") else { return nil }
-        return String(path[...range.upperBound.predecessor()])
+        return String(path[path.startIndex..<range.upperBound])
     }
 }
 
@@ -150,12 +170,5 @@ private func fsEventsCallback(
     let paths = unsafeBitCast(eventPaths, to: NSArray.self) as! [String]
     for i in 0..<numEvents {
         watcher.handleFSEvent(path: paths[i], flags: eventFlags[i])
-    }
-}
-
-private extension String.Index {
-    func predecessor() -> String.Index {
-        // This is a helper, but we use it differently
-        return self
     }
 }

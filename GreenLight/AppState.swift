@@ -11,6 +11,7 @@ class AppState: ObservableObject {
     @Published var clearedApps: [AppRecord] = []
     @Published var totalGreenLights: Int = 0
     @Published var isScanning: Bool = false
+    @Published var pendingPanelEvent: GreenLightEvent?
     
     private init() {
         load()
@@ -27,8 +28,10 @@ class AppState: ObservableObject {
             record.status = .blocked
             record.firstDetected = event.timestamp
             blockedApps.append(record)
+            GLLog.state.notice("Re-blocked (update): \(record.appName)")
         } else if blockedApps.contains(where: { $0.path == event.appPath.path }) {
             // 已经在被拦截列表中，忽略
+            GLLog.state.debug("Already blocked, skip: \(event.appPath.path)")
             return
         } else {
             // 新 app
@@ -40,6 +43,7 @@ class AppState: ObservableObject {
             )
             record.appIcon = loadAppIcon(at: event.appPath)
             blockedApps.append(record)
+            GLLog.state.notice("Blocked: \(event.appName), total=\(self.blockedApps.count)")
         }
         save()
     }
@@ -53,6 +57,7 @@ class AppState: ObservableObject {
             updated.lastFixed = Date()
             totalGreenLights += 1
             clearedApps.insert(updated, at: 0)
+            GLLog.state.notice("Cleared: \(record.appName), greenLights=\(updated.greenLightCount), total=\(self.totalGreenLights)")
             save()
         }
     }
@@ -61,6 +66,7 @@ class AppState: ObservableObject {
     func dismissApp(_ record: AppRecord) {
         if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
             blockedApps[index].status = .dismissed
+            GLLog.state.info("Dismissed: \(record.appName)")
             save()
         }
     }

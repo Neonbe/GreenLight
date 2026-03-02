@@ -1,8 +1,11 @@
 import Foundation
 import UserNotifications
 
-/// 管理 UserNotifications 的注册、发送和用户响应
+/// 系统通知管理器（可选增强）
+/// 降级为单例，仅在有系统通知权限时发送通知
+/// 主通知通道已改为 DetectionPanelController
 class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationManager()
     
     static let categoryIdentifier = "GREENLIGHT_DETECTION"
     
@@ -13,10 +16,40 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
     
     private let remover = QuarantineRemover()
+    private var isAuthorized = false
     
     override init() {
         super.init()
         UNUserNotificationCenter.current().delegate = self
+        checkAuthorizationStatus()
+    }
+    
+    // MARK: - 权限检查
+    
+    /// 异步检查当前通知权限状态
+    private func checkAuthorizationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            self?.isAuthorized = settings.authorizationStatus == .authorized
+        }
+    }
+    
+    /// 请求通知权限
+    func requestAuthorization() async -> Bool {
+        do {
+            let granted = try await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound, .badge])
+            isAuthorized = granted
+            if granted {
+                GLLog.notification.notice("Notification permission: authorized (granted=true)")
+                registerCategories()
+            } else {
+                GLLog.notification.error("Notification permission denied by user")
+            }
+            return granted
+        } catch {
+            GLLog.notification.error("Notification permission: failed (\(error))")
+            return false
+        }
     }
     
     // MARK: - 注册
@@ -43,18 +76,16 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
     
-    /// 请求通知权限
-    func requestAuthorization() async -> Bool {
-        do {
-            return try await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])
-        } catch {
-            print("[NotificationManager] 权限请求失败: \(error)")
-            return false
-        }
-    }
+    // MARK: - 发送通知（带权限检查）
     
-    // MARK: - 发送通知
+    /// 仅在有权限时发送检测通知，无权限则静默跳过
+    func sendDetectionNotificationIfAuthorized(for event: GreenLightEvent) {
+        guard isAuthorized else {
+            GLLog.notification.debug("System notification skipped (not authorized)")
+            return
+        }
+        sendDetectionNotification(for: event)
+    }
     
     func sendDetectionNotification(for event: GreenLightEvent) {
         let content = UNMutableNotificationContent()
@@ -63,7 +94,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.categoryIdentifier = Self.categoryIdentifier
         content.sound = .default
         
-        // 存储 app 路径到 userInfo，供 Action 处理时使用
         content.userInfo = [
             "appPath": event.appPath.path,
             "appName": event.appName,
@@ -73,16 +103,25 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let request = UNNotificationRequest(
             identifier: "detection-\(event.appPath.path.hashValue)",
             content: content,
-            trigger: nil // 立即发送
+            trigger: nil
         )
         
         UNUserNotificationCenter.current().add(request) { error in
-            if let error { print("[NotificationManager] 发送失败: \(error)") }
+            if let error {
+                GLLog.notification.error("System notification failed: \(error)")
+            } else {
+                GLLog.notification.info("System notification sent for: \(event.appName)")
+            }
         }
     }
     
     /// 发送修复成功通知
     func sendSuccessNotification(appName: String) {
+        guard isAuthorized else {
+            GLLog.notification.debug("System notification skipped (not authorized)")
+            return
+        }
+        
         let content = UNMutableNotificationContent()
         content.title = "✅ 已为 \(appName) 亮绿灯"
         content.body = "\(appName) 已放行，可以正常使用了"
@@ -93,7 +132,13 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             content: content,
             trigger: nil
         )
-        UNUserNotificationCenter.current().add(request)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                GLLog.notification.error("System notification failed: \(error)")
+            } else {
+                GLLog.notification.info("System notification sent: greenlight for \(appName)")
+            }
+        }
     }
     
     // MARK: - UNUserNotificationCenterDelegate
@@ -117,21 +162,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             
             switch response.actionIdentifier {
             case Action.dismiss.rawValue, UNNotificationDismissActionIdentifier:
-                // 忽略：标记为 dismissed
                 if let record = appState.blockedApps.first(where: { $0.path == appPathStr }) {
                     appState.dismissApp(record)
                 }
                 
             case Action.fix.rawValue:
-                // 仅修复
                 handleFix(appPath: appPath, appName: appName, shouldOpen: false)
                 
             case Action.fixAndOpen.rawValue:
-                // 修复并打开
                 handleFix(appPath: appPath, appName: appName, shouldOpen: true)
                 
             case UNNotificationDefaultActionIdentifier:
-                // 点击通知本体 — 无特殊操作（会打开 popover）
                 break
                 
             default:
@@ -142,7 +183,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
     
-    // 允许前台展示通知
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -169,7 +209,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
             
         case .failure(let error):
-            // 发送失败通知（含终端命令提示）
             if case .needsAdmin(let message, _) = error {
                 let content = UNMutableNotificationContent()
                 content.title = "⚠️ 修复失败"

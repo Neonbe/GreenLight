@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// Onboarding 首次引导流程
+/// 简化为 2 步：欢迎页 → 扫描页（移除通知权限页）
 struct OnboardingView: View {
-    @Binding var isPresented: Bool
+    var onComplete: () -> Void = {}
     @EnvironmentObject var appState: AppState
     @State private var currentPage = 0
     @State private var isScanning = false
@@ -10,11 +11,9 @@ struct OnboardingView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 页面内容
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
-                permissionPage.tag(1)
-                scanPage.tag(2)
+                scanPage.tag(1)
             }
             .tabViewStyle(.automatic)
             .frame(width: 480, height: 400)
@@ -44,42 +43,8 @@ struct OnboardingView: View {
             
             Button("开始设置") {
                 withAnimation { currentPage = 1 }
-            }
-            .buttonStyle(OnboardingButtonStyle())
-            .padding(.bottom, 40)
-        }
-    }
-    
-    // MARK: - 权限页
-    
-    private var permissionPage: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            
-            Image(systemName: "bell.badge")
-                .font(.system(size: 48))
-                .foregroundColor(.green)
-            
-            Text("开启通知权限")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.white)
-            
-            Text("GreenLight 需要通知权限来提醒你\n当有应用被 macOS 拦截时，会立即通知你")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-            
-            Button("授权通知") {
-                Task {
-                    let manager = NotificationManager()
-                    _ = await manager.requestAuthorization()
-                    await MainActor.run {
-                        withAnimation { currentPage = 2 }
-                        startScan()
-                    }
-                }
+                GLLog.onboarding.info("Onboarding page: 1")
+                startScan()
             }
             .buttonStyle(OnboardingButtonStyle())
             .padding(.bottom, 40)
@@ -123,7 +88,6 @@ struct OnboardingView: View {
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
                     
-                    // 列出被发现的 app
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(scanResults.prefix(5), id: \.appPath) { event in
                             HStack {
@@ -173,12 +137,12 @@ struct OnboardingView: View {
     
     private func startScan() {
         isScanning = true
+        GLLog.onboarding.info("Onboarding scan started")
         Task.detached {
             let watcher = FSEventsWatcher()
             let results = watcher.scanApps()
             await MainActor.run {
                 scanResults = results
-                // 将扫描结果加入 AppState
                 for event in results {
                     let glEvent = GreenLightEvent(
                         appPath: event.appPath,
@@ -190,12 +154,14 @@ struct OnboardingView: View {
                     appState.addBlockedApp(from: glEvent)
                 }
                 isScanning = false
+                GLLog.onboarding.notice("Onboarding scan done: \(results.count) found")
             }
         }
     }
     
     private func fixAll() {
         let remover = QuarantineRemover()
+        GLLog.onboarding.notice("Onboarding fix all: \(appState.blockedApps.count) apps")
         for app in appState.blockedApps {
             let result = remover.removeQuarantine(at: URL(fileURLWithPath: app.path))
             if case .success = result {
@@ -205,8 +171,9 @@ struct OnboardingView: View {
     }
     
     private func finishOnboarding() {
+        GLLog.onboarding.notice("Onboarding completed")
         Persistence.hasCompletedOnboarding = true
-        isPresented = false
+        onComplete()
     }
 }
 

@@ -10,16 +10,29 @@ enum Persistence {
     // MARK: - AppRecords
     
     static func saveRecords(_ records: [AppRecord]) {
-        guard let data = try? JSONEncoder().encode(records) else { return }
-        UserDefaults.standard.set(data, forKey: appRecordsKey)
+        do {
+            let data = try JSONEncoder().encode(records)
+            UserDefaults.standard.set(data, forKey: appRecordsKey)
+            GLLog.state.debug("Saved \(records.count) records, totalGreenLights=\(loadTotalGreenLights())")
+        } catch {
+            GLLog.state.error("Failed to save records: \(error)")
+        }
     }
     
     static func loadRecords() -> [AppRecord] {
-        guard let data = UserDefaults.standard.data(forKey: appRecordsKey),
-              let records = try? JSONDecoder().decode([AppRecord].self, from: data) else {
+        guard let data = UserDefaults.standard.data(forKey: appRecordsKey) else {
             return []
         }
-        return records
+        do {
+            let records = try JSONDecoder().decode([AppRecord].self, from: data)
+            let blocked = records.filter { $0.status == .blocked || $0.status == .dismissed }.count
+            let cleared = records.count - blocked
+            GLLog.state.debug("Loaded \(records.count) records (blocked=\(blocked), cleared=\(cleared))")
+            return records
+        } catch {
+            GLLog.state.error("Failed to save records: \(error)")
+            return []
+        }
     }
     
     // MARK: - Total Green Lights

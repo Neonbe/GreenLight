@@ -74,7 +74,7 @@ struct SettingsView: View {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            print("[Settings] Login Items 设置失败: \(error)")
+            GLLog.state.error("Login Items 设置失败: \(error)")
         }
     }
 }

@@ -36,6 +36,7 @@ class EventDeduplicator {
                 )
             }
             pending[key] = existing
+            GLLog.dedup.info("Dedup merge: \(key), added source=\(String(describing: event.source)), total=\(existing.sources.count)")
         } else {
             // 新路径，开始窗口
             let timer = DispatchWorkItem { [weak self] in
@@ -48,6 +49,7 @@ class EventDeduplicator {
                 timer: timer
             )
             DispatchQueue.main.asyncAfter(deadline: .now() + windowDuration, execute: timer)
+            GLLog.dedup.info("Dedup new: \(key), source=\(String(describing: event.source)), window=\(self.windowDuration)s")
         }
     }
     
@@ -64,6 +66,7 @@ class EventDeduplicator {
             sources: entry.sources,
             timestamp: entry.timestamp
         )
+        GLLog.dedup.info("Dedup flush: \(appName), sources=\(entry.sources.map { String(describing: $0) }), bundleId=\(entry.event.bundleId ?? "nil")")
         onEvent?(greenLightEvent)
     }
     
