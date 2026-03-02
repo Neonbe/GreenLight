@@ -51,5 +51,11 @@ open "$APP_BUNDLE"
 
 echo "✅ GreenLight 已启动！"
 echo "   点击菜单栏的 🟢 图标即可看到主面板"
-echo "   按 Ctrl+C 不会关闭 App（它在后台运行）"
-echo "   要关闭: pkill -f 'GreenLight.app'"
+echo "   按 Ctrl+C 退出日志监听（App 仍在后台运行）"
+echo "   要关闭 App: pkill -f 'GreenLight.app'"
+echo ""
+echo "📋 开始监听日志..."
+echo ""
+
+# Step 8: 自动监听应用日志
+log stream --predicate 'subsystem == "com.greenlight.app"' --style compact --level debug

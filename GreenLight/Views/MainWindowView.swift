@@ -13,7 +13,7 @@ struct MainWindowView: View {
                     }
                 })
             } else {
-                PopoverView()
+                PopoverView(enhanceManager: EnhancePromptManager())
             }
         }
     }

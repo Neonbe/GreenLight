@@ -13,18 +13,28 @@ class FSEventsWatcher: ObservableObject {
     private var recentPaths: [String: Date] = [:]
     private let deduplicationWindow: TimeInterval = 3.0
     
-    /// 默认监控目录
-    static let defaultDirectories: [URL] = [
-        URL.homeDirectory.appending(path: "Downloads"),
-        URL.homeDirectory.appending(path: "Desktop"),
+    /// 当前监控中的目录列表
+    private(set) var currentMonitoredDirectories: [URL] = []
+    
+    // MARK: - 目录分级（§六）
+    
+    /// Level 0: 零 TCC 依赖，App 启动即生效
+    static let level0Directories: [URL] = [
         URL(fileURLWithPath: "/Applications")
+    ]
+    
+    /// Level 1: 需 TCC 授权，场景驱动拉起
+    static let level1Directories: [URL] = [
+        URL.homeDirectory.appending(path: "Downloads"),
+        URL.homeDirectory.appending(path: "Desktop")
     ]
     
     // MARK: - 启停
     
     func startWatching(directories: [URL]? = nil) {
         guard !isRunning else { return }
-        let dirs = directories ?? Self.defaultDirectories
+        let dirs = directories ?? Self.level0Directories
+        currentMonitoredDirectories = dirs
         let paths = dirs.map(\.path) as CFArray
         
         var context = FSEventStreamContext()
@@ -57,6 +67,7 @@ class FSEventsWatcher: ObservableObject {
         FSEventStreamRelease(stream)
         self.stream = nil
         isRunning = false
+        currentMonitoredDirectories = []
         GLLog.fsEvents.info("FSEvents stopped")
     }
     
@@ -69,7 +80,7 @@ class FSEventsWatcher: ObservableObject {
     // MARK: - 快速扫描
     
     func scanApps(in directories: [URL]? = nil) -> [DetectionEvent] {
-        let dirs = directories ?? Self.defaultDirectories
+        let dirs = directories ?? currentMonitoredDirectories
         var results: [DetectionEvent] = []
         let fm = FileManager.default
         
@@ -151,6 +162,37 @@ class FSEventsWatcher: ObservableObject {
     private func extractAppPath(from path: String) -> String? {
         guard let range = path.range(of: ".app") else { return nil }
         return String(path[path.startIndex..<range.upperBound])
+    }
+    
+    // MARK: - Level 1 动态追加（§6.2）
+    
+    /// 动态追加监控目录（Level 1 升级时调用）
+    func addDirectories(_ newDirs: [URL]) {
+        let currentDirs = currentMonitoredDirectories
+        let dirsToAdd = newDirs.filter { newDir in
+            !currentDirs.contains(where: { $0.path == newDir.path })
+        }
+        guard !dirsToAdd.isEmpty else {
+            GLLog.fsEvents.debug("addDirectories: all directories already monitored")
+            return
+        }
+        
+        stopWatching()
+        let allDirs = currentDirs + dirsToAdd
+        startWatching(directories: allDirs)
+        GLLog.fsEvents.notice("Directories upgraded: \(allDirs.map(\.path))")
+    }
+    
+    /// TCC 权限探测：尝试枚举目录内容判断是否有读取权限
+    static func canAccessDirectory(_ url: URL) -> Bool {
+        do {
+            _ = try FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: nil
+            )
+            return true
+        } catch {
+            return false
+        }
     }
 }
 

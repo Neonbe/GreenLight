@@ -14,4 +14,5 @@ enum GLLog {
     static let notification = Logger(subsystem: subsystem, category: "notification")
     static let state        = Logger(subsystem: subsystem, category: "state")
     static let onboarding   = Logger(subsystem: subsystem, category: "onboarding")
+    static let enhance      = Logger(subsystem: subsystem, category: "enhance")
 }

@@ -5,7 +5,7 @@ enum Persistence {
     private static let appRecordsKey = "greenlight.appRecords"
     private static let totalGreenLightsKey = "greenlight.totalGreenLights"
     private static let hasCompletedOnboardingKey = "greenlight.hasCompletedOnboarding"
-    private static let monitoredDirectoriesKey = "greenlight.monitoredDirectories"
+    private static let lastEnhancePromptDateKey = "greenlight.lastEnhancePromptDate"
     
     // MARK: - AppRecords
     
@@ -52,17 +52,14 @@ enum Persistence {
         set { UserDefaults.standard.set(newValue, forKey: hasCompletedOnboardingKey) }
     }
     
-    // MARK: - Monitored Directories
+    // MARK: - Enhance Prompt 冷却（§4.4）
     
-    static func saveMonitoredDirectories(_ dirs: [URL]) {
-        let paths = dirs.map(\.path)
-        UserDefaults.standard.set(paths, forKey: monitoredDirectoriesKey)
-    }
-    
-    static func loadMonitoredDirectories() -> [URL]? {
-        guard let paths = UserDefaults.standard.stringArray(forKey: monitoredDirectoriesKey) else {
-            return nil
+    static var lastEnhancePromptDate: Date? {
+        get {
+            UserDefaults.standard.object(forKey: lastEnhancePromptDateKey) as? Date
         }
-        return paths.map { URL(fileURLWithPath: $0) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: lastEnhancePromptDateKey)
+        }
     }
 }

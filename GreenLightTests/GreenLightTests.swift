@@ -194,3 +194,161 @@ struct QuarantineRemoverTests {
         }
     }
 }
+
+// MARK: - FSEventsWatcher 目录分级测试
+
+@Suite("FSEventsWatcher 目录分级")
+struct FSEventsWatcherDirectoryTests {
+    
+    @Test("level0Directories 仅包含 /Applications")
+    func level0OnlyApplications() {
+        let level0 = FSEventsWatcher.level0Directories
+        #expect(level0.count == 1)
+        #expect(level0[0].path == "/Applications")
+    }
+    
+    @Test("level1Directories 包含 ~/Downloads 和 ~/Desktop")
+    func level1DownloadsAndDesktop() {
+        let level1 = FSEventsWatcher.level1Directories
+        #expect(level1.count == 2)
+        let paths = level1.map(\.lastPathComponent)
+        #expect(paths.contains("Downloads"))
+        #expect(paths.contains("Desktop"))
+    }
+    
+    @Test("canAccessDirectory 对 /Applications 返回 true")
+    func canAccessApplications() {
+        let result = FSEventsWatcher.canAccessDirectory(
+            URL(fileURLWithPath: "/Applications")
+        )
+        #expect(result == true)
+    }
+    
+    @Test("canAccessDirectory 对不存在目录返回 false")
+    func cannotAccessNonexistent() {
+        let result = FSEventsWatcher.canAccessDirectory(
+            URL(fileURLWithPath: "/nonexistent_dir_test_12345")
+        )
+        #expect(result == false)
+    }
+}
+
+// MARK: - EnhancePromptManager 测试
+
+@Suite("EnhancePromptManager 分级触发")
+struct EnhancePromptManagerTests {
+    
+    @Test("T1 未达标不触发 — 窗口内仅 1 次 GK 活动")
+    func t1BelowThreshold() async {
+        let manager = EnhancePromptManager(windowDuration: 0.1, minGKCount: 2)
+        manager.checkDirectoryAccess = { _ in false }  // 模拟无 TCC 权限
+        var panelShown = false
+        manager.onShowEnhancePanel = { panelShown = true }
+        
+        // 同步触发窗口到期
+        manager.scheduleWindowExpiry = { block, _ in block() }
+        
+        manager.recordGKActivity()
+        
+        // 等待窗口到期
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(panelShown == false)
+    }
+    
+    @Test("T1 达标触发 — 窗口内 ≥2 次 GK + 0 次检测")
+    func t1MeetsThreshold() async {
+        let manager = EnhancePromptManager(windowDuration: 0.5, minGKCount: 2)
+        manager.checkDirectoryAccess = { _ in false }  // 模拟无 TCC 权限
+        var panelShown = false
+        manager.onShowEnhancePanel = { panelShown = true }
+        // 清理之前可能的全局冷却
+        Persistence.lastEnhancePromptDate = nil
+        
+        // 使用同步调度测试
+        var expiryBlock: (() -> Void)?
+        manager.scheduleWindowExpiry = { block, _ in expiryBlock = block }
+        
+        manager.recordGKActivity()  // 第 1 次（开新窗口）
+        manager.recordGKActivity()  // 第 2 次（累加）
+        
+        // 手动触发窗口到期
+        expiryBlock?()
+        
+        #expect(panelShown == true)
+        
+        // 清理
+        Persistence.lastEnhancePromptDate = nil
+    }
+    
+    @Test("T1 有成功检测不触发")
+    func t1WithDetectionSuppressed() async {
+        let manager = EnhancePromptManager(windowDuration: 0.5, minGKCount: 2)
+        manager.checkDirectoryAccess = { _ in false }
+        var panelShown = false
+        manager.onShowEnhancePanel = { panelShown = true }
+        
+        var expiryBlock: (() -> Void)?
+        manager.scheduleWindowExpiry = { block, _ in expiryBlock = block }
+        
+        manager.recordGKActivity()
+        manager.markDetection()      // Channel A 成功提取路径
+        manager.recordGKActivity()
+        
+        expiryBlock?()
+        
+        #expect(panelShown == false)
+    }
+    
+    @Test("T1 会话级冷却 — Not Now 后不再弹")
+    func t1SessionCooldown() {
+        let manager = EnhancePromptManager(windowDuration: 0.1, minGKCount: 1)
+        manager.checkDirectoryAccess = { _ in false }
+        Persistence.lastEnhancePromptDate = nil
+        
+        // 模拟已 dismissed
+        manager.dismissedByUser()
+        
+        // T1 应被会话级冷却拦截
+        let canShow = manager.canShowPrompt(forTrigger: .t1)
+        #expect(canShow == false)
+    }
+    
+    @Test("T1 全局冷却 — 24h 内不再弹")
+    func t1GlobalCooldown() async {
+        // 设置上次弹出时间为刚刚
+        Persistence.lastEnhancePromptDate = Date()
+        
+        let manager = EnhancePromptManager(windowDuration: 0.1, minGKCount: 1, globalCooldown: 86400)
+        manager.checkDirectoryAccess = { _ in false }
+        var panelShown = false
+        manager.onShowEnhancePanel = { panelShown = true }
+        manager.scheduleWindowExpiry = { block, _ in block() }
+        
+        manager.recordGKActivity()
+        #expect(panelShown == false)
+        
+        // 清理
+        Persistence.lastEnhancePromptDate = nil
+    }
+    
+    @Test("T2 不受冷却限制")
+    func t2BypassesCooldown() {
+        let manager = EnhancePromptManager(windowDuration: 10, minGKCount: 2)
+        manager.checkDirectoryAccess = { _ in false }  // 模拟无 TCC 权限
+        
+        // 模拟已 dismissed + 全局冷却
+        manager.dismissedByUser()
+        Persistence.lastEnhancePromptDate = Date()
+        
+        // T2（主动）应该仍然可以显示
+        let canShow = manager.canShowPrompt(forTrigger: .t2)
+        #expect(canShow == true)
+        
+        // T1（被动）不可以
+        let canShowT1 = manager.canShowPrompt(forTrigger: .t1)
+        #expect(canShowT1 == false)
+        
+        // 清理
+        Persistence.lastEnhancePromptDate = nil
+    }
+}

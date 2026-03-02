@@ -11,6 +11,7 @@ struct GreenLightApp: App {
     private let fsWatcher = FSEventsWatcher()
     private let deduplicator = EventDeduplicator()
     private let remover = QuarantineRemover()
+    private let enhanceManager = EnhancePromptManager()
     
     init() {
         setupPipeline()
@@ -31,7 +32,7 @@ struct GreenLightApp: App {
         
         // 2. Menu Bar 常驻（轻量入口 + 状态指示器）
         MenuBarExtra {
-            PopoverView()
+            PopoverView(enhanceManager: enhanceManager)
                 .environmentObject(appState)
         } label: {
             MenuBarLabel()
@@ -46,11 +47,13 @@ struct GreenLightApp: App {
         }
     }
     
-    // MARK: - 检测管线搭建
+    // MARK: - 检测管线搭建（§五）
     
     private func setupPipeline() {
         // Channel A → EventDeduplicator
-        logMonitor.onDetection = { [deduplicator] event in
+        logMonitor.onDetection = { [deduplicator, enhanceManager] event in
+            // 标记窗口内有成功检测（§5.2）
+            enhanceManager.markDetection()
             deduplicator.receive(event)
         }
         
@@ -78,9 +81,34 @@ struct GreenLightApp: App {
             }
         }
         
-        // Channel A 无法提取路径时 → 兜底扫描（500ms 去抖）
+        // === Level 0: 零权限通道，无条件启动 ===
+        
+        // Channel A: LogStream（不需要任何文件权限）
+        logMonitor.startMonitoring()
+        
+        // Channel B (Level 0): 仅监控 /Applications（无 TCC）
+        fsWatcher.startWatching(directories: FSEventsWatcher.level0Directories)
+        
+        // === Level 1: 启动时实时探测已授权目录 ===
+        
+        let grantedLevel1Dirs = FSEventsWatcher.level1Directories.filter {
+            FSEventsWatcher.canAccessDirectory($0)
+        }
+        if !grantedLevel1Dirs.isEmpty {
+            fsWatcher.addDirectories(grantedLevel1Dirs)
+            GLLog.pipeline.notice("Level 1 auto-upgraded at launch: \(grantedLevel1Dirs.map(\.path))")
+        }
+        
+        GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
+        GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
+        
+        // onGKActivity → 置信度记录 + Level 0 兜底扫描（§5.2）
         var fallbackScanTimer: DispatchWorkItem?
-        logMonitor.onGKActivity = { [fsWatcher, deduplicator] in
+        logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
+            // 记录 GK 活动到置信度窗口
+            enhanceManager.recordGKActivity()
+            
+            // Level 0 兜底扫描（500ms 去抖，仅扫已有权限的目录）
             fallbackScanTimer?.cancel()
             let work = DispatchWorkItem {
                 GLLog.pipeline.info("Fallback scan triggered by GK activity")
@@ -96,14 +124,22 @@ struct GreenLightApp: App {
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.5, execute: work)
         }
         
-        // 启动双通道检测
-        logMonitor.startMonitoring()
+        // EnhancePromptManager 回调连接
+        enhanceManager.onShowEnhancePanel = {
+            Task { @MainActor in
+                EnhancePanelController.shared.show(enhanceManager: enhanceManager)
+            }
+        }
         
-        let dirs = Persistence.loadMonitoredDirectories() ?? FSEventsWatcher.defaultDirectories
-        fsWatcher.startWatching(directories: dirs)
-        
-        GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
-        GLLog.pipeline.info("Monitoring directories: \(dirs.map(\.path))")
+        enhanceManager.onUpgradeToLevel1 = { [fsWatcher, deduplicator] grantedDirs in
+            fsWatcher.addDirectories(grantedDirs)
+            // 补充扫描已授权目录
+            let events = fsWatcher.scanApps(in: grantedDirs)
+            for event in events {
+                deduplicator.receive(event)
+            }
+            GLLog.pipeline.notice("Level 1 upgraded: scanned \(events.count) apps in \(grantedDirs.map(\.path))")
+        }
     }
 }
 

@@ -26,5 +26,9 @@
     <string>AppIcon</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>GreenLight monitors your Desktop for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>GreenLight monitors your Downloads for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
 </dict>
 </plist>

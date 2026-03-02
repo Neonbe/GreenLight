@@ -6,6 +6,9 @@ class EventDeduplicator {
     private var pending: [String: PendingEvent] = [:]
     private let windowDuration: TimeInterval
     
+    /// 串行队列：保护 pending 字典的所有读写（修复多线程并发崩溃）
+    private let queue = DispatchQueue(label: "com.greenlight.deduplicator")
+    
     /// 窗口到期后触发
     var onEvent: ((GreenLightEvent) -> Void)?
     
@@ -21,6 +24,13 @@ class EventDeduplicator {
     }
     
     func receive(_ event: DetectionEvent) {
+        queue.async { [weak self] in
+            self?.performReceive(event)
+        }
+    }
+    
+    /// 实际的 receive 逻辑，始终在 queue 上执行
+    private func performReceive(_ event: DetectionEvent) {
         let key = normalizePath(event.appPath.path)
         
         if var existing = pending[key] {
@@ -48,11 +58,13 @@ class EventDeduplicator {
                 timestamp: event.timestamp,
                 timer: timer
             )
-            DispatchQueue.main.asyncAfter(deadline: .now() + windowDuration, execute: timer)
+            // timer 也在同一串行队列上触发，保证线程安全
+            queue.asyncAfter(deadline: .now() + windowDuration, execute: timer)
             GLLog.dedup.info("Dedup new: \(key), source=\(String(describing: event.source)), window=\(self.windowDuration)s")
         }
     }
     
+    /// flush 已在 queue 上被 timer 触发，无需额外同步
     private func flush(key: String) {
         guard let entry = pending.removeValue(forKey: key) else { return }
         
@@ -94,7 +106,9 @@ class EventDeduplicator {
     
     /// 用于测试：清空所有 pending 事件
     func reset() {
-        pending.values.forEach { $0.timer?.cancel() }
-        pending.removeAll()
+        queue.sync {
+            pending.values.forEach { $0.timer?.cancel() }
+            pending.removeAll()
+        }
     }
 }

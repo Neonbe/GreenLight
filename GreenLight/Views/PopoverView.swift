@@ -5,6 +5,9 @@ struct PopoverView: View {
     @EnvironmentObject var appState: AppState
     @State private var showSettings = false
     @State private var selectedApp: AppRecord?
+    @State private var showExpandCoverage = false
+    
+    let enhanceManager: EnhancePromptManager
     
     var body: some View {
         VStack(spacing: 0) {
@@ -14,10 +17,15 @@ struct PopoverView: View {
             // 主体：红绿灯 + Lane
             mainContent
             
+            // Expand Coverage 提示卡片（§八）
+            if showExpandCoverage {
+                expandCoverageCard
+            }
+            
             // 底部状态栏
             statusBar
         }
-        .frame(width: 420, height: 380)
+        .frame(width: 420, height: showExpandCoverage ? 440 : 380)
         .background(Color(nsColor: NSColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 1)))
     }
     
@@ -104,6 +112,47 @@ struct PopoverView: View {
             .padding(.leading, -8)
         }
         .padding(.horizontal, 24)
+    }
+    
+    // MARK: - Expand Coverage Card（§八）
+    
+    private var expandCoverageCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(.blue.opacity(0.7))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Only /Applications was scanned.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                
+                Text("Grant access to Downloads and Desktop for a complete scan.")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            
+            Spacer()
+            
+            Button("Expand Coverage") {
+                showExpandCoverage = false
+                enhanceManager.requestEnhance()
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(.blue)
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.blue.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color.blue.opacity(0.15))
+                )
+        )
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
     }
     
     // MARK: - Traffic Light
@@ -327,16 +376,30 @@ struct PopoverView: View {
         }
     }
     
-    // MARK: - 扫描
+    // MARK: - 扫描（§八）
     
     private func startScan() {
         guard !appState.isScanning else { return }
         appState.isScanning = true
+        showExpandCoverage = false
         
         Task.detached {
             let watcher = FSEventsWatcher()
-            let dirs = Persistence.loadMonitoredDirectories() ?? FSEventsWatcher.defaultDirectories
-            let events = watcher.scanApps(in: dirs)
+            
+            // 实时探测 TCC 权限，确定可扫描目录
+            var scanDirs = FSEventsWatcher.level0Directories
+            var hasUngrantedDirs = false
+            
+            for dir in FSEventsWatcher.level1Directories {
+                if FSEventsWatcher.canAccessDirectory(dir) {
+                    scanDirs.append(dir)
+                } else {
+                    hasUngrantedDirs = true
+                }
+            }
+            
+            let events = watcher.scanApps(in: scanDirs)
+            let shouldShowExpand = hasUngrantedDirs
             
             await MainActor.run {
                 let deduplicator = EventDeduplicator(windowDuration: 0) // 扫描模式不去重
@@ -347,6 +410,11 @@ struct PopoverView: View {
                     deduplicator.receive(event)
                 }
                 appState.isScanning = false
+                
+                // 有未授权目录时显示 Expand Coverage 提示
+                if shouldShowExpand {
+                    showExpandCoverage = true
+                }
             }
         }
     }
