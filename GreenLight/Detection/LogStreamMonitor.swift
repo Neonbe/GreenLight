@@ -9,6 +9,9 @@ class LogStreamMonitor: ObservableObject {
     /// 检测到事件时的回调
     var onDetection: ((DetectionEvent) -> Void)?
     
+    /// GK 活动但无法提取路径时的回调（用于触发兜底扫描）
+    var onGKActivity: (() -> Void)?
+    
     // MARK: - 正则（基于实验 A 真实日志）
     
     // 精确 Pattern: "GK Xprotect results:.*file://(.+\.app/)"
@@ -166,14 +169,17 @@ class LogStreamMonitor: ObservableObject {
                 bundleId = String(line[bundleRange])
             }
             GLLog.logStream.info("GK prompt shown, bundleId=\(bundleId ?? "unknown")")
+            onGKActivity?()
         } else if line.contains("performScan") {
             GLLog.logStream.debug("GK scan initiated: \(String(line.prefix(120)))")
         } else if line.contains("scan complete") {
             GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)))")
         } else if line.contains("evaluateScanResult") {
             GLLog.logStream.debug("GK evaluate: \(String(line.prefix(120)))")
+            onGKActivity?()
         } else if line.contains("<private>") {
             GLLog.logStream.debug("GK line contains <private>, cannot extract path: \(String(line.prefix(80)))")
+            onGKActivity?()
         } else {
             GLLog.logStream.debug("GK line unrecognized: \(String(line.prefix(120)))")
         }

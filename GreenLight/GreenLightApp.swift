@@ -77,6 +77,24 @@ struct GreenLightApp: App {
             }
         }
         
+        // Channel A 无法提取路径时 → 兜底扫描（500ms 去抖）
+        var fallbackScanTimer: DispatchWorkItem?
+        logMonitor.onGKActivity = { [fsWatcher, deduplicator] in
+            fallbackScanTimer?.cancel()
+            let work = DispatchWorkItem {
+                GLLog.pipeline.info("Fallback scan triggered by GK activity")
+                let events = fsWatcher.scanApps()
+                for event in events {
+                    deduplicator.receive(event)
+                }
+                if events.isEmpty {
+                    GLLog.pipeline.debug("Fallback scan: no quarantined apps found")
+                }
+            }
+            fallbackScanTimer = work
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.5, execute: work)
+        }
+        
         // 启动双通道检测
         logMonitor.startMonitoring()
         
