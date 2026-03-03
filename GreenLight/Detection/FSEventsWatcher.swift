@@ -3,7 +3,7 @@ import CoreServices
 import Security
 
 /// Channel B: 文件系统监控，检测新出现的带 quarantine 属性的 .app
-class FSEventsWatcher: ObservableObject {
+class FSEventsWatcher: ObservableObject, @unchecked Sendable {
     private var stream: FSEventStreamRef?
     @Published var isRunning = false
     
@@ -32,7 +32,7 @@ class FSEventsWatcher: ObservableObject {
         l2Queue.sync { _knownSafePaths.contains(key) }
     }
     private func insertSafePath(_ key: String) {
-        l2Queue.sync { _knownSafePaths.insert(key) }
+        l2Queue.sync { _ = _knownSafePaths.insert(key) }
     }
     private var safeCacheCount: Int {
         l2Queue.sync { _knownSafePaths.count }
@@ -150,6 +150,7 @@ class FSEventsWatcher: ObservableObject {
         guard !dirs.isEmpty else { return [] }
         
         var results: [DetectionEvent] = []
+        var candidates: [(item: URL, cacheKey: String)] = []
         let fm = FileManager.default
         var l1Count = 0
         
@@ -166,7 +167,7 @@ class FSEventsWatcher: ObservableObject {
                 guard Self.hasQuarantine(at: path) else { continue }
                 l1Count += 1
                 
-                // L3: 跳过 AppState 已知（blocked/dismissed/cleared）
+                // L3: 跳过 AppState 已知（blocked/rejected）
                 guard !knownPaths.contains(path) else { continue }
                 
                 // L2: knownSafePaths 缓存（Key=路径+modDate，线程安全）
@@ -175,33 +176,42 @@ class FSEventsWatcher: ObservableObject {
                 let cacheKey = "\(path)|\(modDate.timeIntervalSince1970)"
                 guard !containsSafePath(cacheKey) else { continue }
                 
-                // SecStaticCode 验签（仅此，不走 spctl）
-                let cfURL = URL(fileURLWithPath: path) as CFURL
-                var codeRef: SecStaticCode?
-                let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
-                guard createStatus == errSecSuccess, let code = codeRef else {
-                    // 无法创建代码对象 → 视为拦截
-                    GLLog.fsEvents.info("proactiveScan found (no code): \(item.lastPathComponent)")
-                    results.append(DetectionEvent(
-                        source: .proactiveScan, appPath: item,
-                        bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
-                    ))
-                    continue
-                }
-                
-                // SecStaticCode 验签（完整校验，含资源验证）
-                let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
-                if checkStatus != errSecSuccess {
-                    // 签名无效 → 拦截
-                    GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent), OSStatus=\(checkStatus)")
-                    results.append(DetectionEvent(
-                        source: .proactiveScan, appPath: item,
-                        bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
-                    ))
-                } else {
-                    // 签名有效 → 加入 L2 缓存，后续跳过
-                    insertSafePath(cacheKey)
-                }
+                // 通过 L1+L2+L3 → 待验签
+                candidates.append((item: item, cacheKey: cacheKey))
+            }
+        }
+        
+        // 并发验签（SecStaticCode 线程安全，L2 缓存写入串行队列保护）
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: candidates.count) { index in
+            let (item, cacheKey) = candidates[index]
+            let cfURL = item as CFURL
+            var codeRef: SecStaticCode?
+            let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
+            guard createStatus == errSecSuccess, let code = codeRef else {
+                GLLog.fsEvents.info("proactiveScan found (no code): \(item.lastPathComponent)")
+                let event = DetectionEvent(
+                    source: .proactiveScan, appPath: item,
+                    bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
+                )
+                lock.lock()
+                results.append(event)
+                lock.unlock()
+                return
+            }
+            
+            let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
+            if checkStatus != errSecSuccess {
+                GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent), OSStatus=\(checkStatus)")
+                let event = DetectionEvent(
+                    source: .proactiveScan, appPath: item,
+                    bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
+                )
+                lock.lock()
+                results.append(event)
+                lock.unlock()
+            } else {
+                insertSafePath(cacheKey)
             }
         }
         
