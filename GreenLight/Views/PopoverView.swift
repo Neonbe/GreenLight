@@ -4,11 +4,10 @@ import SwiftUI
 ///
 /// 设计理念（implementation_plan.md §2.1）：
 /// - 上半部：状态概览（三行 Lane 摘要 + 最近触发 App icon）
-/// - 下半部：macOS 标准快捷操作（Show / Settings / Updates / Quit）
+/// - 下半部：macOS 标准快捷操作（Show / Settings / Quit）
 /// - 底部：品牌特色统计
 struct PopoverView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var updaterManager: UpdaterManager
     
     // Design Tokens（与主窗口一致）
     private let bgColor     = Color(red: 15/255, green: 23/255, blue: 42/255)
@@ -74,28 +73,28 @@ struct PopoverView: View {
     
     private func statusRow(color: Color, label: String, count: Int, recentApp: AppRecord?) -> some View {
         HStack(spacing: 8) {
-            // 颜色指示条
+            // 颜色指示条（始终显示，不置灰）
             RoundedRectangle(cornerRadius: 1.5)
-                .fill(count > 0 ? color : color.opacity(0.2))
+                .fill(color)
                 .frame(width: 3, height: 22)
             
-            // 标签 + 计数
+            // 标签
             Text(label)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(textPrimary.opacity(count > 0 ? 0.8 : 0.3))
+                .foregroundColor(textPrimary.opacity(0.8))
             
             Spacer()
             
+            // 计数
             Text("\(count)")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(count > 0 ? color : textPrimary.opacity(0.2))
+                .foregroundColor(color)
                 .monospacedDigit()
             
             // 最近触发 App icon（点击 → 跳转主窗口 → 触发 ActionBubble）
             if let app = recentApp {
                 Button {
-                    appState.pendingSelectedApp = app
-                    activateMainWindow()
+                    navigateToApp(app)
                 } label: {
                     appIcon(for: app)
                 }
@@ -109,7 +108,7 @@ struct PopoverView: View {
         .padding(.horizontal, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(count > 0 ? Color.white.opacity(0.03) : .clear)
+                .fill(Color.white.opacity(0.03))
         )
     }
     
@@ -151,11 +150,7 @@ struct PopoverView: View {
             }
             
             actionButton(icon: "gearshape", label: "Settings...") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-            
-            actionButton(icon: "arrow.triangle.2.circlepath", label: "Check for Updates...") {
-                updaterManager.checkForUpdates()
+                openSettings()
             }
             
             Divider()
@@ -208,19 +203,48 @@ struct PopoverView: View {
     
     // MARK: - 辅助
     
-    /// 激活主窗口并关闭 Menu Bar 弹窗
-    private func activateMainWindow() {
-        // 关闭 Menu Bar Extra 弹窗
-        if let keyWindow = NSApp.keyWindow,
-           keyWindow.level == .statusBar || keyWindow.className.contains("MenuBarExtra") {
-            keyWindow.close()
+    /// 点击 App icon → 关闭弹窗 → 激活主窗口 → 触发 ActionBubble
+    private func navigateToApp(_ app: AppRecord) {
+        dismissPopover()
+        // 延迟设置 pendingSelectedApp，确保主窗口完全显示后再触发
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            appState.pendingSelectedApp = app
         }
-        
-        // 激活主窗口
+        activateMainWindow()
+    }
+    
+    /// 打开设置窗口
+    private func openSettings() {
+        dismissPopover()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // macOS 14+ 使用 showSettingsWindow:，macOS 13 使用 showPreferencesWindow:
+            if #available(macOS 14, *) {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            } else {
+                NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+            }
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+    
+    /// 激活主窗口
+    private func activateMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
         for window in NSApp.windows where window.canBecomeMain {
             window.makeKeyAndOrderFront(nil)
             break
+        }
+    }
+    
+    /// 关闭 Menu Bar Extra 弹窗
+    private func dismissPopover() {
+        // MenuBarExtra .window 样式的弹窗是 NSPanel/NSStatusBarWindow
+        for window in NSApp.windows {
+            let className = String(describing: type(of: window))
+            if className.contains("StatusBar") || className.contains("MenuBarExtra") {
+                window.close()
+                break
+            }
         }
     }
 }

@@ -45,6 +45,21 @@ struct MainDashboardView: View {
             }
         }
         .frame(width: 900, height: 620)
+        .onChange(of: appState.pendingSelectedApp?.id) { _ in
+            // Menu Bar Extra 点击 App icon → 自动弹出 ActionBubble
+            guard let app = appState.pendingSelectedApp else { return }
+            appState.pendingSelectedApp = nil
+            // 如果在 Settings 页面，先切回 Dashboard
+            if showSettings {
+                withAnimation(NDAnimation.panelTransition) {
+                    showSettings = false
+                }
+            }
+            // 延迟一帧确保 Dashboard 完成渲染
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                selectedApp = app
+            }
+        }
     }
     
     // MARK: - Dashboard Content
@@ -68,13 +83,6 @@ struct MainDashboardView: View {
                 .modifier(DashboardStagger(index: 6, appeared: appeared, reduceMotion: reduceMotion))
         }
         .onAppear { appeared = true }
-        .onChange(of: appState.pendingSelectedApp?.id) { _ in
-            // Menu Bar Extra 点击 App icon → 自动弹出 ActionBubble
-            if let app = appState.pendingSelectedApp {
-                selectedApp = app
-                appState.pendingSelectedApp = nil
-            }
-        }
     }
     
     // MARK: - Header

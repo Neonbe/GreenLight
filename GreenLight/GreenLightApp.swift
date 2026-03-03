@@ -50,7 +50,6 @@ struct GreenLightApp: App {
         MenuBarExtra {
             PopoverView()
                 .environmentObject(appState)
-                .environmentObject(updaterManager)
         } label: {
             MenuBarLabel()
                 .environmentObject(appState)
