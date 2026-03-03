@@ -162,9 +162,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             
             switch response.actionIdentifier {
             case Action.dismiss.rawValue, UNNotificationDismissActionIdentifier:
-                if let record = appState.blockedApps.first(where: { $0.path == appPathStr }) {
-                    appState.dismissApp(record)
-                }
+                // 通知忽略 → 不改变 app 状态（留在 detected 列表）
+                GLLog.notification.info("Notification dismissed for: \(appName)")
                 
             case Action.fix.rawValue:
                 handleFix(appPath: appPath, appName: appName, shouldOpen: false)

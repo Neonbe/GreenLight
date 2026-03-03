@@ -7,6 +7,7 @@ struct DetectionPanelView: View {
     let event: GreenLightEvent
     let onDismiss: () -> Void
     let onFix: (Bool) -> Void  // Bool = shouldOpen
+    let onReject: () -> Void   // §4: 丢弃（Move to Trash）
     
     @State private var phase: PanelPhase = .entering
     @State private var contentTransition: ContentTransition = .idle
@@ -173,29 +174,36 @@ struct DetectionPanelView: View {
                     }
                 }
             } else {
-                // 忽略
-                panelButton("忽略", style: .secondary) {
+                // 不做改变
+                panelButton("不做改变", style: .secondary) {
                     cancelTimer()
                     onDismiss()
                 }
-                .accessibilityHint("忽略此拦截事件")
+                .accessibilityHint("关闭面板，应用留在待处理列表")
                 
-                // 修复
-                panelButton("修复", style: .tertiary) {
+                // §4: 丢弃
+                panelButton("🗑 丢弃", style: .destructive) {
+                    cancelTimer()
+                    onReject()
+                }
+                .accessibilityHint("将此应用移到垃圾桶")
+                
+                // 放行
+                panelButton("🔓 放行", style: .tertiary) {
                     cancelTimer()
                     performFix(shouldOpen: false)
                 }
-                .accessibilityHint("修复此应用但不打开")
+                .accessibilityHint("移除隔离属性但不打开")
                 
-                // 修复并打开
+                // 放行并打开
                 panelButton(
-                    fixState == .success ? "✓" : "修复并打开",
+                    fixState == .success ? "✓" : "▶ 放行并打开",
                     style: .primary
                 ) {
                     cancelTimer()
                     performFix(shouldOpen: true)
                 }
-                .accessibilityHint("修复此应用并自动打开")
+                .accessibilityHint("移除隔离属性并自动打开")
                 .disabled(fixState == .fixing || fixState == .success)
             }
         }
@@ -216,7 +224,7 @@ struct DetectionPanelView: View {
     
     // MARK: - 按钮组件
     
-    enum ButtonStyleType { case primary, secondary, tertiary }
+    enum ButtonStyleType { case primary, secondary, tertiary, destructive }
     
     private func panelButton(_ title: String, style: ButtonStyleType, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -232,9 +240,6 @@ struct DetectionPanelView: View {
         }
         .buttonStyle(.plain)
         .focusable()
-        .onHover { hovering in
-            // hover brightness 通过 SwiftUI 的 .brightness modifier 实现
-        }
     }
     
     private func buttonTextColor(for style: ButtonStyleType) -> Color {
@@ -242,6 +247,7 @@ struct DetectionPanelView: View {
         case .primary: return .white
         case .secondary: return textSecondary
         case .tertiary: return textPrimary
+        case .destructive: return redColor
         }
     }
     
@@ -250,6 +256,7 @@ struct DetectionPanelView: View {
         case .primary: return fixState == .success ? greenColor.opacity(1.1) : greenColor
         case .secondary: return Color.white.opacity(0.06)
         case .tertiary: return Color.white.opacity(0.08)
+        case .destructive: return redColor.opacity(0.12)
         }
     }
     

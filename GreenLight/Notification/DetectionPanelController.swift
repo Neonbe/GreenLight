@@ -38,11 +38,49 @@ final class DetectionPanelController {
         resetAutoHideTimer()
     }
     
+    /// §r06: 显示确认态面板（Loading 状态，等待 FSEvents 确认具体 app）
+    var isConfirming: Bool { _isConfirming }
+    private var _isConfirming = false
+    
+    func showConfirming(foundCount: Int) {
+        guard panel?.isVisible != true else {
+            GLLog.panel.debug("showConfirming skipped: panel already visible")
+            return
+        }
+        _isConfirming = true
+        GLLog.panel.notice("Panel confirming: \(foundCount) found")
+        
+        let contentView = DetectionConfirmingView(foundCount: foundCount)
+        createAndShowPanelWith(AnyView(contentView))
+        
+        // 确认态 5s 超时（由 GreenLightApp 管线处理，此处不设 auto-hide）
+    }
+    
+    /// §r06: 确认态 → 最终态无缝替换
+    func confirmWith(event: GreenLightEvent) {
+        _isConfirming = false
+        currentEvent = event
+        AppState.shared.pendingPanelEvent = event
+        
+        GLLog.panel.notice("Panel confirmed: \(event.appName)")
+        
+        if panel?.isVisible == true {
+            // 面板已显示（确认态）→ 替换内容
+            updateContent(event: event)
+        } else {
+            // 面板不可见 → 直接创建
+            createAndShowPanel(event: event)
+        }
+        
+        resetAutoHideTimer()
+    }
+    
     /// 关闭面板
     func dismiss() {
         autoHideTimer?.invalidate()
         autoHideTimer = nil
         currentEvent = nil
+        _isConfirming = false
         AppState.shared.pendingPanelEvent = nil
         
         guard let panel = panel else { return }
@@ -64,6 +102,11 @@ final class DetectionPanelController {
     // MARK: - 面板创建
     
     private func createAndShowPanel(event: GreenLightEvent) {
+        let contentView = makeContentView(event: event)
+        createAndShowPanelWith(AnyView(contentView), escEvent: event)
+    }
+    
+    private func createAndShowPanelWith(_ content: AnyView, escEvent: GreenLightEvent? = nil) {
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 320, height: 1),
             styleMask: [.nonactivatingPanel, .borderless],
@@ -82,17 +125,29 @@ final class DetectionPanelController {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         
         // ESC 键支持
-        panel.addLocalMonitor(for: .keyDown) { [weak self] nsEvent in
-            if nsEvent.keyCode == 53 { // ESC
-                GLLog.panel.info("Panel dismissed via ESC")
-                self?.handleDismissAction(for: event)
-                return nil
+        if let event = escEvent {
+            panel.addLocalMonitor(for: .keyDown) { [weak self] nsEvent in
+                if nsEvent.keyCode == 53 { // ESC
+                    GLLog.panel.info("Panel dismissed via ESC")
+                    self?.handleDismissAction()
+                    return nil
+                }
+                return nsEvent
             }
-            return nsEvent
+        } else {
+            // 确认态面板：ESC 直接关闭
+            panel.addLocalMonitor(for: .keyDown) { [weak self] nsEvent in
+                if nsEvent.keyCode == 53 {
+                    GLLog.panel.info("Confirming panel dismissed via ESC")
+                    self?._isConfirming = false
+                    self?.dismiss()
+                    return nil
+                }
+                return nsEvent
+            }
         }
         
-        let contentView = makeContentView(event: event)
-        let hostingView = NSHostingView(rootView: AnyView(contentView))
+        let hostingView = NSHostingView(rootView: content)
         hostingView.frame = panel.contentView?.bounds ?? .zero
         hostingView.autoresizingMask = [.width, .height]
         
@@ -145,21 +200,31 @@ final class DetectionPanelController {
         DetectionPanelView(
             event: event,
             onDismiss: { [weak self] in
-                self?.handleDismissAction(for: event)
+                self?.handleDismissAction()
             },
             onFix: { [weak self] shouldOpen in
                 self?.handleFixAction(for: event, shouldOpen: shouldOpen)
+            },
+            onReject: { [weak self] in
+                self?.handleRejectAction(for: event)
             }
         )
     }
     
     // MARK: - 动作处理
     
-    private func handleDismissAction(for event: GreenLightEvent) {
-        GLLog.panel.info("User dismissed: \(event.appName)")
+    /// §6.3: “不做改变”——关闭面板，app 留在 🟡（不改变状态）
+    private func handleDismissAction() {
+        GLLog.panel.info("User dismissed panel (no state change)")
+        dismiss()
+    }
+    
+    /// §4: 丢弃——Move to Trash → 🔴
+    private func handleRejectAction(for event: GreenLightEvent) {
+        GLLog.panel.info("User reject: \(event.appName)")
         let appState = AppState.shared
         if let record = appState.blockedApps.first(where: { $0.path == event.appPath.path }) {
-            appState.dismissApp(record)
+            appState.rejectApp(record)
         }
         dismiss()
     }

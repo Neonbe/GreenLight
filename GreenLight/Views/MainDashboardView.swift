@@ -128,10 +128,10 @@ struct MainDashboardView: View {
                 
                 laneView(
                     color: amberColor,
-                    label: "UNRESOLVED",
-                    count: appState.unresolvedApps.count,
-                    apps: appState.unresolvedApps,
-                    emptyText: "All clear — nothing pending",
+                    label: "DETECTED",
+                    count: appState.detectedApps.count,
+                    apps: appState.detectedApps,
+                    emptyText: "No detected apps",
                     staggerIndex: 3
                 )
                 
@@ -155,7 +155,7 @@ struct MainDashboardView: View {
         VStack(spacing: 0) {
             VStack(spacing: 6) {
                 lightBulb(color: redColor, isActive: !appState.rejectedApps.isEmpty)
-                lightBulb(color: amberColor, isActive: !appState.unresolvedApps.isEmpty)
+                lightBulb(color: amberColor, isActive: !appState.detectedApps.isEmpty)
                 lightBulb(color: greenColor, isActive: !appState.clearedApps.isEmpty)
             }
             .padding(.vertical, 14)
@@ -473,7 +473,7 @@ struct MainDashboardView: View {
             await MainActor.run {
                 let deduplicator = EventDeduplicator(windowDuration: 0)
                 deduplicator.onEvent = { event in
-                    AppState.shared.addBlockedApp(from: event)
+                    AppState.shared.addDetectedApp(from: event)
                 }
                 for event in events {
                     deduplicator.receive(event)

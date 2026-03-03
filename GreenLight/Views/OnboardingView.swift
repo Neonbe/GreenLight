@@ -6,6 +6,7 @@ import ServiceManagement
 /// Onboarding 引导流程（2 步：Brand → Trust）
 struct OnboardingView: View {
     var onComplete: () -> Void = {}
+    var onWarmup: () -> Void = {}  // §r06: 预热回调
     @State private var currentStep = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
@@ -50,6 +51,7 @@ struct OnboardingView: View {
             }
         }
         .frame(width: 900, height: 620)
+        .onAppear { onWarmup() }  // §r06: Onboarding 开始时触发预热
     }
     
     private var pageTransition: AnyTransition {

@@ -3,7 +3,7 @@ import SwiftUI
 /// Menu Bar Popover 主面板
 struct PopoverView: View {
     @EnvironmentObject var appState: AppState
-    @State private var showSettings = false
+
     @State private var selectedApp: AppRecord?
     @State private var showExpandCoverage = false
     
@@ -25,7 +25,7 @@ struct PopoverView: View {
             // 底部状态栏
             statusBar
         }
-        .frame(width: 420, height: showExpandCoverage ? 440 : 380)
+        .frame(width: 420, height: showExpandCoverage ? 460 : 420)
         .background(Color(nsColor: NSColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 1)))
     }
     
@@ -40,22 +40,13 @@ struct PopoverView: View {
             
             Spacer()
             
-            HStack(spacing: 5) {
-                headerButton(systemImage: "arrow.triangle.2.circlepath") {
-                    startScan()
-                }
-                headerButton(systemImage: "gearshape") {
-                    showSettings = true
-                }
+            headerButton(systemImage: "arrow.triangle.2.circlepath") {
+                startScan()
             }
         }
         .padding(.horizontal, 24)
         .padding(.top, 22)
         .padding(.bottom, 16)
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .environmentObject(appState)
-        }
     }
     
     private func headerButton(systemImage: String, action: @escaping () -> Void) -> some View {
@@ -83,25 +74,23 @@ struct PopoverView: View {
             
             // Lanes
             VStack(spacing: 6) {
-                // 🔴 红灯 Lane
+                // 🔴 红灯 Lane — REJECTED
                 laneView(
                     color: .red,
-                    label: "BLOCKED",
-                    count: appState.blockedApps.count,
-                    apps: appState.blockedApps
+                    label: "REJECTED",
+                    count: appState.rejectedApps.count,
+                    apps: appState.rejectedApps
                 )
                 
-                // 🟡 黄灯 Lane（扫描中）
-                if appState.isScanning {
-                    laneView(
-                        color: .yellow,
-                        label: "SCANNING",
-                        count: 0,
-                        apps: []
-                    )
-                }
+                // 🟡 黄灯 Lane — DETECTED（待处理）
+                laneView(
+                    color: .yellow,
+                    label: "DETECTED",
+                    count: appState.detectedApps.count,
+                    apps: appState.detectedApps
+                )
                 
-                // 🟢 绿灯 Lane
+                // 🟢 绿灯 Lane — CLEARED
                 laneView(
                     color: .green,
                     label: "CLEARED",
@@ -161,9 +150,9 @@ struct PopoverView: View {
         VStack(spacing: 0) {
             // 灯体
             VStack(spacing: 5) {
-                lightBulb(color: .red, isActive: !appState.blockedApps.isEmpty)
-                lightBulb(color: .yellow, isActive: appState.isScanning)
-                lightBulb(color: .green, isActive: appState.blockedApps.isEmpty && !appState.isScanning)
+                lightBulb(color: .red, isActive: !appState.rejectedApps.isEmpty)
+                lightBulb(color: .yellow, isActive: !appState.detectedApps.isEmpty)
+                lightBulb(color: .green, isActive: !appState.clearedApps.isEmpty)
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 13)
@@ -403,7 +392,7 @@ struct PopoverView: View {
             await MainActor.run {
                 let deduplicator = EventDeduplicator(windowDuration: 0) // 扫描模式不去重
                 deduplicator.onEvent = { event in
-                    AppState.shared.addBlockedApp(from: event)
+                    AppState.shared.addDetectedApp(from: event)
                 }
                 for event in events {
                     deduplicator.receive(event)
@@ -460,7 +449,7 @@ struct ActionBubbleView: View {
                 .background(Color.white.opacity(0.08))
             
             // 操作按钮
-            if app.status == .blocked || app.status == .dismissed {
+            if app.status == .detected {
                 HStack(spacing: 8) {
                     Button("🔓 放行") {
                         fix(shouldOpen: false)
@@ -471,6 +460,12 @@ struct ActionBubbleView: View {
                         fix(shouldOpen: true)
                     }
                     .buttonStyle(ActionButtonStyle(isPrimary: true))
+                    
+                    Button("🗑 丢弃") {
+                        appState.rejectApp(app)
+                        dismiss()
+                    }
+                    .buttonStyle(ActionButtonStyle(isPrimary: false))
                 }
             } else if app.status == .cleared {
                 HStack(spacing: 8) {
@@ -487,6 +482,7 @@ struct ActionBubbleView: View {
                     }
                 }
             }
+            // .rejected 状态不显示操作按钮（占位符历史记录）
         }
         .padding(16)
         .frame(minWidth: 220)

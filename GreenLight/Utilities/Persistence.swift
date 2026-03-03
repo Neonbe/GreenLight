@@ -26,12 +26,26 @@ enum Persistence {
         }
         do {
             let records = try JSONDecoder().decode([AppRecord].self, from: data)
-            let blocked = records.filter { $0.status == .blocked || $0.status == .dismissed }.count
-            let cleared = records.count - blocked
-            GLLog.state.debug("Loaded \(records.count) records (blocked=\(blocked), cleared=\(cleared))")
+            let detected = records.filter { $0.status == .detected || $0.status == .rejected }.count
+            let cleared = records.count - detected
+            GLLog.state.debug("Loaded \(records.count) records (detected+rejected=\(detected), cleared=\(cleared))")
             return records
         } catch {
-            GLLog.state.error("Failed to save records: \(error)")
+            // §9: 旧数据可能含 pending/blocked/dismissed，尝试迁移
+            GLLog.state.warning("Decode failed, attempting migration: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                let migrated = jsonString
+                    .replacingOccurrences(of: "\"pending\"", with: "\"detected\"")
+                    .replacingOccurrences(of: "\"blocked\"", with: "\"detected\"")
+                    .replacingOccurrences(of: "\"dismissed\"", with: "\"detected\"")
+                if let migratedData = migrated.data(using: .utf8),
+                   let records = try? JSONDecoder().decode([AppRecord].self, from: migratedData) {
+                    GLLog.state.notice("Migration success: \(records.count) records recovered")
+                    saveRecords(records)
+                    return records
+                }
+            }
+            GLLog.state.error("Failed to load records: \(error)")
             return []
         }
     }
