@@ -210,50 +210,6 @@ class FSEventsWatcher: ObservableObject {
         return results
     }
     
-    // MARK: - §r06 启动预热（轻量 SecStaticCode，仅填充 L2 缓存）
-    
-    /// 启动时静默预热：用 kSecCSDoNotValidateResources 快速填充 L2 缓存
-    /// 不返回结果，不触发检测
-    func warmupScan() {
-        let scanStart = Date()
-        let dirs = currentMonitoredDirectories
-        guard !dirs.isEmpty else { return }
-        
-        let fm = FileManager.default
-        var l1Count = 0
-        
-        for dir in dirs {
-            guard let contents = try? fm.contentsOfDirectory(
-                at: dir, includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles, .skipsPackageDescendants]
-            ) else { continue }
-            
-            for item in contents where item.pathExtension == "app" {
-                let path = item.path
-                guard Self.hasQuarantine(at: path) else { continue }
-                l1Count += 1
-                
-                let modDate = (try? fm.attributesOfItem(atPath: path)[.modificationDate] as? Date)
-                    ?? Date.distantPast
-                let cacheKey = "\(path)|\(modDate.timeIntervalSince1970)"
-                guard !containsSafePath(cacheKey) else { continue }
-                
-                let cfURL = URL(fileURLWithPath: path) as CFURL
-                var codeRef: SecStaticCode?
-                let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
-                guard createStatus == errSecSuccess, let code = codeRef else { continue }
-                
-                // 完整验签（必须与 proactiveScan 标准一致，否则会错误缓存 unsigned app）
-                let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
-                if checkStatus == errSecSuccess {
-                    insertSafePath(cacheKey)
-                }
-            }
-        }
-        
-        let elapsed = String(format: "%.1f", Date().timeIntervalSince(scanStart) * 1000)
-        GLLog.fsEvents.notice("warmupScan: \(elapsed)ms, quarantined=\(l1Count), dirs=\(dirs.count), L2cache=\(self.safeCacheCount)")
-    }
     
     // MARK: - 事件处理
     

@@ -24,9 +24,7 @@ struct GreenLightApp: App {
         // 1. 主窗口（Dock App 的核心入口）
         WindowGroup {
             MainWindowView(onWarmup: { [fsWatcher] in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    fsWatcher.warmupScan()
-                }
+                initialDetectionScan(fsWatcher: fsWatcher)
             })
                 .environmentObject(appState)
                 .environmentObject(updaterManager)
@@ -163,14 +161,12 @@ struct GreenLightApp: App {
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
         GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
         
-        // §r06: 启动预热扫描（轻量 SecStaticCode，仅填充 L2 缓存）
+        // 初始扫描：发现所有 unsigned app → 加入 detectedApps + 填充 L2 缓存
         if Persistence.hasCompletedOnboarding {
-            // 非首次启动：立即预热
-            DispatchQueue.global(qos: .userInitiated).async { [fsWatcher] in
-                fsWatcher.warmupScan()
-            }
+            // 非首次启动：立即扫描
+            initialDetectionScan(fsWatcher: fsWatcher)
         }
-        // 首次启动：由 OnboardingView BrandStep.onAppear 触发预热（见 §2.1）
+        // 首次启动：由 OnboardingView onAppear 触发（见 onWarmup 回调）
         
         // onGKActivity → §r06 确认态流程 + 置信度记录 + fallback 兜底
         var lastProactiveScanTime: Date?
@@ -197,11 +193,8 @@ struct GreenLightApp: App {
                 Task { @MainActor in
                     let appState = AppState.shared
                     appState.isScanning = true
-                    // L3: 取已知路径快照（blockedApps + clearedApps）
-                    let knownPaths = Set(
-                        appState.blockedApps.map { $0.path }
-                        + appState.clearedApps.map { $0.path }
-                    )
+                    // L3: 仅过滤已检出/已丢弃的 app（不含 clearedApps，更新后应重新检出）
+                    let knownPaths = Set(appState.blockedApps.map { $0.path })
                     DispatchQueue.global(qos: .userInitiated).async {
                         let events = fsWatcher.proactiveScan(knownPaths: knownPaths)
                         guard !events.isEmpty else {
@@ -236,7 +229,6 @@ struct GreenLightApp: App {
                                 // 过滤已知 app（竞态兜底：Channel A/B 可能已在 5s 内添加）
                                 let newEvents = sortedEvents.filter { event in
                                     !appState.blockedApps.contains { $0.path == event.appPath.path }
-                                    && !appState.clearedApps.contains { $0.path == event.appPath.path }
                                 }
                                 
                                 guard let first = newEvents.first else {
@@ -315,6 +307,35 @@ struct GreenLightApp: App {
             fsWatcher.addDirectories(grantedDirs)
             // 目标化扫描模式下，新增目录暂无 recentCandidates，由 FSEvents 实时检测后续事件
             GLLog.pipeline.notice("Level 1 upgraded: now monitoring \(grantedDirs.map(\.path))")
+        }
+    }
+    
+    // MARK: - 初始扫描
+    
+    /// 启动/Onboarding 初始扫描：发现所有 unsigned app → 加入 detectedApps + 填充 L2 缓存
+    private func initialDetectionScan(fsWatcher: FSEventsWatcher) {
+        Task { @MainActor in
+            let appState = AppState.shared
+            // L3: 仅过滤已检出/已丢弃（不含 clearedApps，更新后应重新检出）
+            let knownPaths = Set(appState.blockedApps.map { $0.path })
+            DispatchQueue.global(qos: .userInitiated).async {
+                let events = fsWatcher.proactiveScan(knownPaths: knownPaths)
+                guard !events.isEmpty else { return }
+                Task { @MainActor in
+                    let appState = AppState.shared
+                    for event in events {
+                        let appName = event.appPath.deletingPathExtension().lastPathComponent
+                        appState.addDetectedApp(from: GreenLightEvent(
+                            appPath: event.appPath,
+                            appName: appName,
+                            bundleId: event.bundleId,
+                            sources: [.proactiveScan],
+                            timestamp: event.timestamp
+                        ))
+                    }
+                    GLLog.pipeline.notice("Initial scan: \(events.count) unsigned apps detected, total=\(appState.detectedApps.count)")
+                }
+            }
         }
     }
 }
