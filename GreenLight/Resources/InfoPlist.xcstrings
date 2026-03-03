@@ -1,0 +1,20 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSDesktopFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight monitors your Desktop for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 会监控你的桌面文件夹中被 macOS Gatekeeper 拦截的应用，以便即时检测并帮助你修复。" } }
+      }
+    },
+    "NSDownloadsFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight monitors your Downloads for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 会监控你的下载文件夹中被 macOS Gatekeeper 拦截的应用，以便即时检测并帮助你修复。" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

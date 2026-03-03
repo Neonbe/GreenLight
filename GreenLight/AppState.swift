@@ -13,6 +13,9 @@ class AppState: ObservableObject {
     @Published var isScanning: Bool = false
     @Published var pendingPanelEvent: GreenLightEvent?
     
+    /// Menu Bar Extra 点击 app icon → 主窗口自动弹出 ActionBubble
+    @Published var pendingSelectedApp: AppRecord?
+    
     /// 🟡 待处理的应用（扫描/检测发现，文件仍存在）
     var detectedApps: [AppRecord] {
         blockedApps.filter { $0.status == .detected && FileManager.default.fileExists(atPath: $0.path) }
@@ -70,22 +73,29 @@ class AppState: ObservableObject {
         }
     }
     
-    /// 丢弃应用 → 🔴 rejected（§4: Move to Trash + 留占位符）
-    func rejectApp(_ record: AppRecord) {
-        let url = URL(fileURLWithPath: record.path)
-        do {
-            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-            if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
+    /// 标记应用为 🔴 rejected（文件已从磁盘消失，被动观察到的用户丢弃行为）
+    func markAsRejected(_ record: AppRecord) {
+        if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
+            blockedApps[index].status = .rejected
+            blockedApps[index].rejectedDate = Date()
+            GLLog.state.notice("Rejected (file gone): \(record.appName)")
+            save()
+        }
+    }
+    
+    /// 被动检测：遍历 🟡 列表，文件不存在的记录 → 🔴 rejected
+    /// 触发时机：FSEvents 变更、扫描完成、App 启动
+    func reconcileDetectedApps() {
+        var changed = false
+        for (index, record) in blockedApps.enumerated() where record.status == .detected {
+            if !FileManager.default.fileExists(atPath: record.path) {
                 blockedApps[index].status = .rejected
                 blockedApps[index].rejectedDate = Date()
-                // 快照图标（文件已不存在，后续无法再读取）
-                GLLog.state.notice("Rejected (trashed): \(record.appName)")
-                save()
+                GLLog.state.notice("Reconcile → rejected (file gone): \(record.appName)")
+                changed = true
             }
-        } catch {
-            GLLog.state.error("Failed to trash: \(record.appName), \(error)")
-            // 失败则不改状态，留在 🟡
         }
+        if changed { save() }
     }
     
     /// 更新面板展示时间戳（§5.2: 面板重弹冷却）
@@ -124,8 +134,9 @@ class AppState: ObservableObject {
         blockedApps = records.filter { $0.status == .detected || $0.status == .rejected }
         clearedApps = records.filter { $0.status == .cleared }
         totalGreenLights = Persistence.loadTotalGreenLights()
-        // §7.1: 启动时清理过期 rejected
+        // 启动时：清理过期 rejected + 标记文件已消失的 detected
         cleanupExpiredRejections()
+        reconcileDetectedApps()
     }
     
     // MARK: - 辅助

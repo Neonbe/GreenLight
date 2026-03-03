@@ -57,15 +57,15 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func registerCategories() {
         let dismissAction = UNNotificationAction(
             identifier: Action.dismiss.rawValue,
-            title: "❌ 忽略"
+            title: String(localized: "notification.action.dismiss")
         )
         let fixAction = UNNotificationAction(
             identifier: Action.fix.rawValue,
-            title: "🔓 修复"
+            title: String(localized: "notification.action.fix")
         )
         let fixAndOpenAction = UNNotificationAction(
             identifier: Action.fixAndOpen.rawValue,
-            title: "🛠 修复并打开"
+            title: String(localized: "notification.action.fixAndOpen")
         )
         
         let category = UNNotificationCategory(
@@ -89,8 +89,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     
     func sendDetectionNotification(for event: GreenLightEvent) {
         let content = UNMutableNotificationContent()
-        content.title = "🚦 GreenLight"
-        content.body = "macOS 拦截了 \(event.appName)"
+        content.title = String(localized: "notification.detection.title")
+        content.body = String(localized: "notification.detection.body \(event.appName)")
         content.categoryIdentifier = Self.categoryIdentifier
         content.sound = .default
         
@@ -123,8 +123,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
         
         let content = UNMutableNotificationContent()
-        content.title = "✅ 已为 \(appName) 亮绿灯"
-        content.body = "\(appName) 已放行，可以正常使用了"
+        content.title = String(localized: "notification.success.title \(appName)")
+        content.body = String(localized: "notification.success.body \(appName)")
         content.sound = .default
         
         let request = UNNotificationRequest(
@@ -210,7 +210,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         case .failure(let error):
             if case .needsAdmin(let message, _) = error {
                 let content = UNMutableNotificationContent()
-                content.title = "⚠️ 修复失败"
+                content.title = String(localized: "notification.failure.title")
                 content.body = message
                 content.sound = .default
                 let request = UNNotificationRequest(

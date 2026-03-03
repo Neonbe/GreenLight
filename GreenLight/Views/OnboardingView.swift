@@ -78,21 +78,21 @@ private struct BrandStep: View {
             
             Spacer().frame(height: 36)
             
-            Text("G r e e n L i g h t")
+            Text("onboarding.brand.title")
                 .font(.system(size: 20, weight: .light))
                 .foregroundColor(OB.textPrimary)
                 .stagger(1, appeared: appeared, reduceMotion: reduceMotion)
             
             Spacer().frame(height: 16)
             
-            Text("Detects and unblocks your apps — instantly.")
+            Text("onboarding.brand.subtitle")
                 .font(.system(size: 15, weight: .light))
                 .foregroundColor(OB.textMuted)
                 .stagger(2, appeared: appeared, reduceMotion: reduceMotion)
             
             Spacer().frame(height: 48)
             
-            Button("Continue", action: onContinue)
+            Button("onboarding.continue", action: onContinue)
                 .buttonStyle(OBButtonStyle(isPrimary: false))
                 .stagger(3, appeared: appeared, reduceMotion: reduceMotion)
         }
@@ -130,14 +130,14 @@ private struct TrustStep: View {
             
             Spacer().frame(height: 32)
             
-            Text("Your privacy, first.")
+            Text("onboarding.trust.title")
                 .font(.system(size: 22, weight: .light))
                 .foregroundColor(OB.textPrimary)
                 .stagger(1, appeared: appeared, reduceMotion: reduceMotion)
             
             Spacer().frame(height: 12)
             
-            Text("Runs offline · No data collected · Open source")
+            Text("onboarding.trust.subtitle")
                 .font(.system(size: 13, weight: .light))
                 .foregroundColor(OB.textMuted)
                 .stagger(2, appeared: appeared, reduceMotion: reduceMotion)
@@ -151,7 +151,7 @@ private struct TrustStep: View {
             
             Spacer().frame(height: 48)
             
-            Button("Get Started") {
+            Button("onboarding.getStarted") {
                 setLoginItem(enabled: launchAtLogin)
                 onGetStarted()
             }
@@ -338,10 +338,10 @@ private struct OBToggleCard: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Launch at login")
+                Text("onboarding.launchAtLogin")
                     .font(.system(size: 13, weight: .regular))
                     .foregroundColor(OB.textPrimary)
-                Text("Stay protected around the clock.")
+                Text("onboarding.launchAtLogin.description")
                     .font(.system(size: 11, weight: .light))
                     .foregroundColor(OB.textMuted)
             }

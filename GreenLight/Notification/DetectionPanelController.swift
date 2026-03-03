@@ -173,25 +173,46 @@ final class DetectionPanelController {
     // MARK: - 内容更新（多事件切换）
     
     private func updateContent(event: GreenLightEvent) {
-        guard let panel = panel else { return }
+        guard panel != nil else { return }
         
-        let contentView = makeContentView(event: event)
-        let hostingView = NSHostingView(rootView: AnyView(contentView))
-        hostingView.frame = panel.contentView?.bounds ?? .zero
-        hostingView.autoresizingMask = [.width, .height]
+        let oldHostingView = self.hostingView
         
-        panel.contentView = hostingView
-        self.hostingView = hostingView
-        
-        // 重新调整尺寸
-        hostingView.layout()
-        let fittingSize = hostingView.fittingSize
-        var frame = panel.frame
-        frame.size = fittingSize
-        panel.setFrame(frame, display: true)
-        positionPanel(panel)
-        
-        resetAutoHideTimer()
+        // Phase 1: 旧内容淡出
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            oldHostingView?.animator().alphaValue = 0
+        } completionHandler: {
+            Task { @MainActor [weak self] in
+                guard let self = self, let panel = self.panel else { return }
+                
+                // Phase 2: 替换内容
+                let contentView = self.makeContentView(event: event)
+                let newHostingView = NSHostingView(rootView: AnyView(contentView))
+                newHostingView.frame = panel.contentView?.bounds ?? .zero
+                newHostingView.autoresizingMask = [.width, .height]
+                
+                panel.contentView = newHostingView
+                self.hostingView = newHostingView
+                
+                // Phase 3: 动画调整面板尺寸（顶边锚定）
+                newHostingView.layout()
+                let fittingSize = newHostingView.fittingSize
+                var frame = panel.frame
+                let topY = frame.maxY  // 保持顶边位置不变
+                frame.size = fittingSize
+                frame.origin.y = topY - fittingSize.height
+                
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.25
+                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    panel.animator().setFrame(frame, display: true)
+                }
+                
+                // 新内容由 SwiftUI 入场动画自动淡入
+                self.resetAutoHideTimer()
+            }
+        }
     }
     
     // MARK: - 视图构建
@@ -300,7 +321,7 @@ final class DetectionPanelController {
     
     private func resetAutoHideTimer() {
         autoHideTimer?.invalidate()
-        autoHideTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
+        autoHideTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 GLLog.panel.info("Panel auto-dismissed (timeout)")
                 self?.dismiss()
@@ -348,48 +369,47 @@ struct DetectionPanelErrorView: View {
     private let redColor = Color(red: 239/255, green: 68/255, blue: 68/255)
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 状态指示灯
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(redColor)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: redColor.opacity(0.6), radius: 4)
-                
-                Text("修复失败")
-                    .font(.system(size: 11, weight: .semibold))
+        VStack(alignment: .leading, spacing: 20) {
+            // 状态指示
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundColor(redColor)
+                
+                Text("detection.fixFailed")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundColor(redColor.opacity(0.9))
             }
             
             // App 信息区
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 let nsImage = NSWorkspace.shared.icon(forFile: event.appPath.path)
                 Image(nsImage: nsImage)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: 40, height: 40)
-                    .cornerRadius(10)
+                    .frame(width: 48, height: 48)
+                    .cornerRadius(12)
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(event.appName)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundColor(textPrimary)
                         .lineLimit(1)
                     
                     Text(errorMessage)
-                        .font(.system(size: 11))
-                        .foregroundColor(redColor.opacity(0.8))
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundColor(redColor.opacity(0.7))
                         .lineLimit(2)
                 }
             }
             
             // 关闭按钮
             Button(action: onDismiss) {
-                Text("关闭")
-                    .font(.system(size: 13, weight: .medium))
+                Text("detection.close")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundColor(textSecondary)
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 9)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.white.opacity(0.06))
@@ -397,7 +417,7 @@ struct DetectionPanelErrorView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(20)
+        .padding(24)
         .frame(width: 320)
         .background(
             RoundedRectangle(cornerRadius: 16)

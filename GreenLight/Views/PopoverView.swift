@@ -1,523 +1,250 @@
 import SwiftUI
 
-/// Menu Bar Popover 主面板
+/// Menu Bar Extra 弹窗 — 轻量快捷入口
+///
+/// 设计理念（implementation_plan.md §2.1）：
+/// - 上半部：状态概览（三行 Lane 摘要 + 最近触发 App icon）
+/// - 下半部：macOS 标准快捷操作（Show / Settings / Quit）
+/// - 底部：品牌特色统计
 struct PopoverView: View {
     @EnvironmentObject var appState: AppState
-
-    @State private var selectedApp: AppRecord?
-    @State private var showExpandCoverage = false
     
-    let enhanceManager: EnhancePromptManager
+    // Design Tokens（与主窗口一致）
+    private let bgColor     = Color(red: 15/255, green: 23/255, blue: 42/255)
+    private let textPrimary = Color(red: 248/255, green: 250/255, blue: 252/255)
+    private let greenColor  = Color(red: 34/255, green: 197/255, blue: 94/255)
+    private let redColor    = Color(red: 239/255, green: 68/255, blue: 68/255)
+    private let amberColor  = Color(red: 245/255, green: 158/255, blue: 11/255)
     
     var body: some View {
         VStack(spacing: 0) {
-            // 头部
             header
-            
-            // 主体：红绿灯 + Lane
-            mainContent
-            
-            // Expand Coverage 提示卡片（§八）
-            if showExpandCoverage {
-                expandCoverageCard
-            }
-            
-            // 底部状态栏
+            statusOverview
+            Divider().background(Color.white.opacity(0.06))
+            quickActions
+            Divider().background(Color.white.opacity(0.06))
             statusBar
         }
-        .frame(width: 420, height: showExpandCoverage ? 460 : 420)
-        .background(Color(nsColor: NSColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 1)))
+        .frame(width: 280)
+        .background(bgColor)
     }
     
     // MARK: - Header
     
     private var header: some View {
         HStack {
-            Text("GREENLIGHT")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white.opacity(0.25))
-                .kerning(4.5)
+            Text("popover.header")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(textPrimary.opacity(0.2))
+                .kerning(3)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 8)
+    }
+    
+    // MARK: - Status Overview（三行 Lane 摘要）
+    
+    private var statusOverview: some View {
+        VStack(spacing: 2) {
+            statusRow(
+                color: redColor,
+                label: String(localized: "popover.rejected"),
+                count: appState.rejectedApps.count,
+                recentApp: appState.rejectedApps.last
+            )
+            statusRow(
+                color: amberColor,
+                label: String(localized: "popover.detected"),
+                count: appState.detectedApps.count,
+                recentApp: appState.detectedApps.last
+            )
+            statusRow(
+                color: greenColor,
+                label: String(localized: "popover.cleared"),
+                count: appState.clearedApps.count,
+                recentApp: appState.clearedApps.first  // clearedApps 以 insert(at:0) 排序
+            )
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+    }
+    
+    private func statusRow(color: Color, label: String, count: Int, recentApp: AppRecord?) -> some View {
+        HStack(spacing: 8) {
+            // 颜色指示条（始终显示，不置灰）
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(color)
+                .frame(width: 3, height: 22)
+            
+            // 标签
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(textPrimary.opacity(0.8))
             
             Spacer()
             
-            headerButton(systemImage: "arrow.triangle.2.circlepath") {
-                startScan()
+            // 计数
+            Text("\(count)")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(color)
+                .monospacedDigit()
+            
+            // 最近触发 App icon（点击 → 跳转主窗口 → 触发 ActionBubble）
+            if let app = recentApp {
+                Button {
+                    navigateToApp(app)
+                } label: {
+                    appIcon(for: app)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // 占位：对齐布局
+                Color.clear.frame(width: 24, height: 24)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 22)
-        .padding(.bottom, 16)
-    }
-    
-    private func headerButton(systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.45))
-                .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.04))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.white.opacity(0.04))
-                )
-        }
-        .buttonStyle(.plain)
-    }
-    
-    // MARK: - Main Content
-    
-    private var mainContent: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // 红绿灯
-            trafficLight
-            
-            // Lanes
-            VStack(spacing: 6) {
-                // 🔴 红灯 Lane — REJECTED
-                laneView(
-                    color: .red,
-                    label: "REJECTED",
-                    count: appState.rejectedApps.count,
-                    apps: appState.rejectedApps
-                )
-                
-                // 🟡 黄灯 Lane — DETECTED（待处理）
-                laneView(
-                    color: .yellow,
-                    label: "DETECTED",
-                    count: appState.detectedApps.count,
-                    apps: appState.detectedApps
-                )
-                
-                // 🟢 绿灯 Lane — CLEARED
-                laneView(
-                    color: .green,
-                    label: "CLEARED",
-                    count: appState.clearedApps.count,
-                    apps: appState.clearedApps
-                )
-            }
-            .padding(.leading, -8)
-        }
-        .padding(.horizontal, 24)
-    }
-    
-    // MARK: - Expand Coverage Card（§八）
-    
-    private var expandCoverageCard: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.blue.opacity(0.7))
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Only /Applications was scanned.")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                
-                Text("Grant access to Downloads and Desktop for a complete scan.")
-                    .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.4))
-            }
-            
-            Spacer()
-            
-            Button("Expand Coverage") {
-                showExpandCoverage = false
-                enhanceManager.requestEnhance()
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.blue)
-            .buttonStyle(.plain)
-        }
-        .padding(12)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.blue.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(Color.blue.opacity(0.15))
-                )
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.03))
         )
-        .padding(.horizontal, 24)
-        .padding(.top, 8)
     }
     
-    // MARK: - Traffic Light
-    
-    private var trafficLight: some View {
-        VStack(spacing: 0) {
-            // 灯体
-            VStack(spacing: 5) {
-                lightBulb(color: .red, isActive: !appState.rejectedApps.isEmpty)
-                lightBulb(color: .yellow, isActive: !appState.detectedApps.isEmpty)
-                lightBulb(color: .green, isActive: !appState.clearedApps.isEmpty)
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 13)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
+    private func appIcon(for app: AppRecord) -> some View {
+        Group {
+            if let iconData = app.appIcon, let nsImage = NSImage(data: iconData) {
+                Image(nsImage: nsImage)
+                    .resizable()
+            } else {
+                RoundedRectangle(cornerRadius: 6)
                     .fill(
                         LinearGradient(
-                            colors: [
-                                Color(white: 0.23),
-                                Color(white: 0.17),
-                                Color(white: 0.11),
-                                Color(white: 0.08),
-                                Color(white: 0.05)
-                            ],
+                            colors: [.blue, .purple],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: .black.opacity(0.5), radius: 12, x: 3, y: 0)
-            )
-            
-            // 灯柱
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [Color(white: 0.11), Color(white: 0.23), Color(white: 0.17), Color(white: 0.10)],
-                        startPoint: .leading,
-                        endPoint: .trailing
+                    .overlay(
+                        Text(String(app.appName.prefix(1)))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
                     )
-                )
-                .frame(width: 14, height: 28)
-            
-            // 底座
-            RoundedRectangle(cornerRadius: 4)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(white: 0.11), Color(white: 0.23), Color(white: 0.17), Color(white: 0.10)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(width: 44, height: 8)
-        }
-    }
-    
-    private func lightBulb(color: Color, isActive: Bool) -> some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: isActive ? activeColors(for: color) : dimColors(for: color),
-                    center: UnitPoint(x: 0.4, y: 0.35),
-                    startRadius: 2,
-                    endRadius: 25
-                )
-            )
-            .frame(width: 36, height: 36)
-            .shadow(color: isActive ? color.opacity(0.35) : .clear, radius: 14)
-            .overlay(
-                Circle()
-                    .strokeBorder(Color.black.opacity(0.3), lineWidth: 2)
-            )
-            .overlay(
-                // 高光反射
-                Ellipse()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.white.opacity(isActive ? 0.4 : 0.1), .clear],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 10
-                        )
-                    )
-                    .frame(width: 14, height: 10)
-                    .offset(x: -4, y: -6)
-                    .blur(radius: 2)
-            )
-    }
-    
-    private func activeColors(for color: Color) -> [Color] {
-        switch color {
-        case .red: return [Color(red: 1, green: 0.54, blue: 0.54), .red, Color(red: 0.72, green: 0.11, blue: 0.11)]
-        case .yellow: return [Color(red: 0.99, green: 0.9, blue: 0.54), .yellow, Color(red: 0.85, green: 0.47, blue: 0.04)]
-        case .green: return [Color(red: 0.65, green: 0.95, blue: 0.82), .green, Color(red: 0.08, green: 0.5, blue: 0.24)]
-        default: return [.gray]
-        }
-    }
-    
-    private func dimColors(for color: Color) -> [Color] {
-        switch color {
-        case .red: return [Color(red: 0.3, green: 0.1, blue: 0.1), Color(red: 0.2, green: 0.08, blue: 0.08)]
-        case .yellow: return [Color(red: 0.3, green: 0.25, blue: 0.1), Color(red: 0.2, green: 0.15, blue: 0.06)]
-        case .green: return [Color(red: 0.1, green: 0.2, blue: 0.1), Color(red: 0.06, green: 0.15, blue: 0.08)]
-        default: return [.gray]
-        }
-    }
-    
-    // MARK: - Lane View
-    
-    private func laneView(color: Color, label: String, count: Int, apps: [AppRecord]) -> some View {
-        HStack(spacing: 12) {
-            // Info（标签 + 计数）
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.25))
-                    .kerning(1.5)
-                
-                Text("\(count)")
-                    .font(.system(size: 22, weight: .heavy))
-                    .foregroundColor(color)
-            }
-            .frame(minWidth: 52, alignment: .leading)
-            
-            // 分隔线
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 1, height: 34)
-            
-            // App 图标区
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(apps) { app in
-                        appIconView(app: app, laneColor: color)
-                    }
-                }
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .padding(.leading, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.04))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.white.opacity(0.03))
-                )
+        .frame(width: 24, height: 24)
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5)
         )
-        .overlay(alignment: .leading) {
-            // 左侧霓虹线
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: 2.5)
-                .padding(.vertical, 8)
-                .shadow(color: color, radius: 5)
-        }
     }
     
-    // MARK: - App Icon
+    // MARK: - Quick Actions（macOS 标准功能）
     
-    private func appIconView(app: AppRecord, laneColor: Color) -> some View {
-        Button {
-            selectedApp = (selectedApp?.id == app.id) ? nil : app
-        } label: {
-            Group {
-                if let iconData = app.appIcon, let nsImage = NSImage(data: iconData) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                } else {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .overlay(
-                            Text(String(app.appName.prefix(1)))
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                        )
-                }
+    private var quickActions: some View {
+        VStack(spacing: 0) {
+            actionButton(icon: "macwindow", label: String(localized: "popover.showGreenLight")) {
+                activateMainWindow()
             }
-            .frame(width: 40, height: 40)
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.white.opacity(0.1))
-            )
+            
+            actionButton(icon: "gearshape", label: String(localized: "popover.settings")) {
+                openSettings()
+            }
+            
+            Divider()
+                .background(Color.white.opacity(0.06))
+                .padding(.horizontal, 12)
+            
+            actionButton(icon: "power", label: String(localized: "popover.quit")) {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private func actionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                    .foregroundColor(textPrimary.opacity(0.4))
+                    .frame(width: 18)
+                
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundColor(textPrimary.opacity(0.8))
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .popover(isPresented: Binding(
-            get: { selectedApp?.id == app.id },
-            set: { if !$0 { selectedApp = nil } }
-        )) {
-            ActionBubbleView(app: app, laneColor: laneColor)
-                .environmentObject(appState)
-        }
     }
     
-    // MARK: - Status Bar
+    // MARK: - Status Bar（品牌特色）
     
     private var statusBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-                .background(Color.white.opacity(0.04))
+        HStack(spacing: 6) {
+            Circle()
+                .fill(greenColor)
+                .frame(width: 5, height: 5)
+                .shadow(color: greenColor.opacity(0.35), radius: 3)
             
-            HStack(spacing: 7) {
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 6, height: 6)
-                    .shadow(color: .green.opacity(0.35), radius: 3)
-                
-                Text("累计亮绿灯 \(appState.totalGreenLights) 次")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.green.opacity(0.75))
-            }
-            .padding(.vertical, 12)
+            Text("dashboard.totalGreenLights \(appState.totalGreenLights)")
+                .font(.system(size: 11, weight: .light))
+                .foregroundColor(greenColor.opacity(0.5))
         }
+        .padding(.vertical, 10)
     }
     
-    // MARK: - 扫描（§八）
+    // MARK: - 辅助
     
-    private func startScan() {
-        guard !appState.isScanning else { return }
-        appState.isScanning = true
-        showExpandCoverage = false
-        
-        Task.detached {
-            let watcher = FSEventsWatcher()
-            
-            // 根据授权状态确定可扫描目录（不触发 TCC）
-            var scanDirs = FSEventsWatcher.level0Directories
-            let hasUngrantedDirs: Bool
-            
-            if Persistence.level1Granted {
-                scanDirs += FSEventsWatcher.level1Directories
-                hasUngrantedDirs = false
+    /// 点击 App icon → 关闭弹窗 → 激活主窗口 → 触发 ActionBubble
+    private func navigateToApp(_ app: AppRecord) {
+        dismissPopover()
+        // 延迟设置 pendingSelectedApp，确保主窗口完全显示后再触发
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            appState.pendingSelectedApp = app
+        }
+        activateMainWindow()
+    }
+    
+    /// 打开设置窗口
+    private func openSettings() {
+        dismissPopover()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // macOS 14+ 使用 showSettingsWindow:，macOS 13 使用 showPreferencesWindow:
+            if #available(macOS 14, *) {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             } else {
-                hasUngrantedDirs = true
+                NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
             }
-            
-            let events = watcher.scanApps(in: scanDirs)
-            let shouldShowExpand = hasUngrantedDirs
-            
-            await MainActor.run {
-                let deduplicator = EventDeduplicator(windowDuration: 0) // 扫描模式不去重
-                deduplicator.onEvent = { event in
-                    AppState.shared.addDetectedApp(from: event)
-                }
-                for event in events {
-                    deduplicator.receive(event)
-                }
-                appState.isScanning = false
-                
-                // 有未授权目录时显示 Expand Coverage 提示
-                if shouldShowExpand {
-                    showExpandCoverage = true
-                }
-            }
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
-}
-
-/// 操作气泡（点击 app 图标后弹出）
-struct ActionBubbleView: View {
-    let app: AppRecord
-    let laneColor: Color
-    @EnvironmentObject var appState: AppState
-    @Environment(\.dismiss) var dismiss
     
-    private let remover = QuarantineRemover()
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 头部：图标 + 名称 + 路径
-            HStack(spacing: 10) {
-                if let iconData = app.appIcon, let nsImage = NSImage(data: iconData) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .frame(width: 36, height: 36)
-                        .cornerRadius(8)
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.blue)
-                        .frame(width: 36, height: 36)
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(app.appName)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Text(app.path)
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.4))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-            }
-            
-            Divider()
-                .background(Color.white.opacity(0.08))
-            
-            // 操作按钮
-            if app.status == .detected {
-                HStack(spacing: 8) {
-                    Button("🔓 放行") {
-                        fix(shouldOpen: false)
-                    }
-                    .buttonStyle(ActionButtonStyle(isPrimary: false))
-                    
-                    Button("▶ 放行并打开") {
-                        fix(shouldOpen: true)
-                    }
-                    .buttonStyle(ActionButtonStyle(isPrimary: true))
-                }
-            } else if app.status == .cleared {
-                HStack(spacing: 8) {
-                    Button("📂 在 Finder 中显示") {
-                        NSWorkspace.shared.selectFile(app.path, inFileViewerRootedAtPath: "")
-                        dismiss()
-                    }
-                    .buttonStyle(ActionButtonStyle(isPrimary: false))
-                    
-                    if app.greenLightCount > 0 {
-                        Text("绿灯 ×\(app.greenLightCount)")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.green.opacity(0.7))
-                    }
-                }
-            }
-            // .rejected 状态不显示操作按钮（占位符历史记录）
-        }
-        .padding(16)
-        .frame(minWidth: 220)
-        .background(Color(red: 0.086, green: 0.11, blue: 0.176).opacity(0.97))
-    }
-    
-    private func fix(shouldOpen: Bool) {
-        let appPath = URL(fileURLWithPath: app.path)
-        let result = remover.removeQuarantine(at: appPath)
-        
-        switch result {
-        case .success:
-            appState.markAsCleared(app)
-            if shouldOpen {
-                remover.openApp(at: appPath)
-            }
-            dismiss()
-            
-        case .failure(let error):
-            if case .needsAdmin(_, let command) = error {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(command, forType: .string)
-            }
+    /// 激活主窗口
+    private func activateMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows where window.canBecomeMain {
+            window.makeKeyAndOrderFront(nil)
+            break
         }
     }
-}
-
-/// 操作按钮样式
-struct ActionButtonStyle: ButtonStyle {
-    let isPrimary: Bool
     
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .medium))
-            .foregroundColor(isPrimary ? .white : .white.opacity(0.8))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isPrimary ? Color.green : Color.white.opacity(0.08))
-            )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+    /// 关闭 Menu Bar Extra 弹窗
+    private func dismissPopover() {
+        // MenuBarExtra .window 样式的弹窗是 NSPanel/NSStatusBarWindow
+        for window in NSApp.windows {
+            let className = String(describing: type(of: window))
+            if className.contains("StatusBar") || className.contains("MenuBarExtra") {
+                window.close()
+                break
+            }
+        }
     }
 }

@@ -19,19 +19,19 @@ struct EnhancePanelView: View {
                     .font(.system(size: 18))
                     .foregroundColor(accentBlue)
                 
-                Text("Enhance Protection?")
+                Text("enhance.title")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(textPrimary)
             }
             
             // 原因说明
-            Text("GreenLight detected Gatekeeper activity but couldn't fully verify the file location.")
+            Text("enhance.reason")
                 .font(.system(size: 12))
                 .foregroundColor(textSecondary)
                 .lineSpacing(2)
             
             // 请求说明
-            Text("Grant access to Downloads and Desktop for comprehensive monitoring — files are only scanned locally, nothing is uploaded or shared.")
+            Text("enhance.request")
                 .font(.system(size: 12))
                 .foregroundColor(textSecondary)
                 .lineSpacing(2)
@@ -52,7 +52,7 @@ struct EnhancePanelView: View {
                 Spacer()
                 
                 Button(action: onNotNow) {
-                    Text("Not Now")
+                    Text("enhance.notNow")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(textSecondary)
                         .padding(.horizontal, 16)
@@ -65,7 +65,7 @@ struct EnhancePanelView: View {
                 .buttonStyle(.plain)
                 
                 Button(action: onGrantAccess) {
-                    Text("Grant Access")
+                    Text("enhance.grantAccess")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)

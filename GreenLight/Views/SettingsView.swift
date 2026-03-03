@@ -17,7 +17,7 @@ struct SettingsView: View {
             
             VStack(spacing: 0) {
                 // 标题
-                Text("Settings")
+                Text("settings.title")
                     .font(.system(size: 16, weight: .light))
                     .foregroundColor(textPrimary)
                     .padding(.top, 28)
@@ -26,10 +26,10 @@ struct SettingsView: View {
                 
                 VStack(spacing: 24) {
                     // 通用
-                    settingsSection(title: "通用") {
+                    settingsSection(title: String(localized: "settings.section.general")) {
                         settingsCard {
                             HStack {
-                                Label("开机时自动启动", systemImage: "arrow.clockwise")
+                                Label("settings.launchAtLogin", systemImage: "arrow.clockwise")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(textPrimary)
                                 
@@ -47,27 +47,27 @@ struct SettingsView: View {
                     }
                     
                     // 关于
-                    settingsSection(title: "关于") {
+                    settingsSection(title: String(localized: "settings.section.about")) {
                         settingsCard {
                             VStack(spacing: 0) {
-                                settingsRow(label: "版本", value: "1.0.0")
+                                settingsRow(label: String(localized: "settings.version"), value: "1.0.0")
                                 
                                 Divider()
                                     .background(Color.white.opacity(0.06))
                                     .padding(.vertical, 4)
                                 
-                                settingsRow(label: "累计亮绿灯", value: "\(appState.totalGreenLights) 次")
+                                settingsRow(label: String(localized: "settings.totalGreenLights"), value: String(localized: "settings.totalGreenLights.value \(appState.totalGreenLights)"))
                             }
                         }
                     }
                     
                     // 反馈
-                    settingsSection(title: "反馈") {
+                    settingsSection(title: String(localized: "settings.section.feedback")) {
                         settingsCard {
                             VStack(spacing: 0) {
                                 settingsLink(
                                     icon: "envelope.fill",
-                                    label: "联系我们",
+                                    label: String(localized: "settings.contactUs"),
                                     detail: "support@greenlight.app"
                                 ) {
                                     if let url = URL(string: "mailto:support@greenlight.app") {
@@ -81,7 +81,7 @@ struct SettingsView: View {
                                 
                                 settingsLink(
                                     icon: "globe",
-                                    label: "官网",
+                                    label: String(localized: "settings.website"),
                                     detail: "greenlight.app"
                                 ) {
                                     if let url = URL(string: "https://greenlight.app") {

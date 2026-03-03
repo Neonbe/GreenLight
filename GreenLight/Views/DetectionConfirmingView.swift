@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// §r06 确认态面板：GK 触发后、FSEvents 确认前的过渡 Loading 状态
-/// 视觉 Token 严格复用 DetectionPanelView
+/// §r06 确认态面板：安全扫描过渡 Loading 状态
+/// 蓝白色调 + 静态盾牌图标 + 文字旁小旋转指示器
 struct DetectionConfirmingView: View {
     let foundCount: Int
     
@@ -9,44 +9,49 @@ struct DetectionConfirmingView: View {
     @State private var panelOpacity: Double = 0
     @State private var panelOffset: CGFloat = -8
     @State private var panelScale: CGFloat = 0.96
-    @State private var statusOpacity: Double = 0
-    @State private var dotsOpacity: Double = 0
+    @State private var shieldOpacity: Double = 0
+    @State private var labelOpacity: Double = 0
     @State private var messageOpacity: Double = 0
-    @State private var dotPulsing = [false, false, false]
+    @State private var subMessageOpacity: Double = 0
     
-    // 倒计时（5s 超时兜底）
-    @State private var countdown: TimeInterval = 5.0
-    private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    // 旋转指示器
+    @State private var spinnerRotation: Double = 0
     
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
-    // MARK: - 色彩 Token（复用 DetectionPanelView）
+    // MARK: - 色彩 Token
     
     private let bgColor = Color(red: 22/255, green: 28/255, blue: 45/255).opacity(0.95)
     private let glassBorder = Color.white.opacity(0.08)
     private let innerHighlight = Color.white.opacity(0.06)
-    private let textSecondary = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.45)
-    private let textMuted = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.25)
-    private let amberColor = Color(red: 245/255, green: 158/255, blue: 11/255)
+    private let textSecondary = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.55)
+    private let textMuted = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.35)
+    private let scanBlue = Color(red: 100/255, green: 180/255, blue: 255/255)
     
     var body: some View {
-        VStack(spacing: 16) {
-            // 状态指示灯
-            statusIndicator
-                .opacity(statusOpacity)
+        VStack(spacing: 20) {
+            // 盾牌图标（静态主视觉）
+            shieldIcon
+                .opacity(shieldOpacity)
             
-            // 三点呼吸动画
-            dotsIndicator
-                .opacity(dotsOpacity)
+            // 状态标签 + 旋转指示器
+            scanLabel
+                .opacity(labelOpacity)
             
-            // 文案
-            messageSection
-                .opacity(messageOpacity)
-            
-            // 倒计时进度条
-            countdownBar
+            // 说明文案
+            VStack(spacing: 6) {
+                Text("confirming.verifying")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(textSecondary)
+                    .opacity(messageOpacity)
+                
+                Text("confirming.patience")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundColor(textMuted)
+                    .opacity(subMessageOpacity)
+            }
         }
-        .padding(20)
+        .padding(24)
         .frame(width: 320)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -72,82 +77,56 @@ struct DetectionConfirmingView: View {
         .offset(y: panelOffset)
         .scaleEffect(panelScale)
         .onAppear { playEnterAnimation() }
-        .onReceive(timer) { _ in
-            countdown -= 0.1
-        }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Checking blocked applications")
+        .accessibilityLabel(String(localized: "confirming.accessibility"))
     }
     
-    // MARK: - 状态指示灯
+    // MARK: - 盾牌图标（静态，柔和光晕）
     
-    private var statusIndicator: some View {
-        HStack(spacing: 8) {
+    private var shieldIcon: some View {
+        ZStack {
+            // 背景光晕
             Circle()
-                .fill(amberColor)
-                .frame(width: 8, height: 8)
-                .shadow(color: amberColor.opacity(0.6), radius: 4)
-                .modifier(AmberPulseModifier(reduceMotion: reduceMotion))
+                .fill(scanBlue.opacity(0.06))
+                .frame(width: 56, height: 56)
+                .blur(radius: 10)
             
-            Text("Checking...")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(textSecondary)
+            // 盾牌
+            Image(systemName: "shield")
+                .font(.system(size: 28, weight: .thin, design: .rounded))
+                .foregroundColor(scanBlue.opacity(0.7))
         }
+        .frame(width: 56, height: 56)
     }
     
-    // MARK: - 三点呼吸
+    // MARK: - 标签 + 小旋转指示器
     
-    private var dotsIndicator: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<3, id: \.self) { i in
-                Circle()
-                    .fill(amberColor.opacity(dotPulsing[i] ? 1.0 : 0.3))
-                    .frame(width: 6, height: 6)
-                    .animation(
-                        reduceMotion ? nil :
-                            .easeInOut(duration: 0.6)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(i) * 0.2),
-                        value: dotPulsing[i]
-                    )
-            }
-        }
-        .padding(.vertical, 8)
-    }
-    
-    // MARK: - 文案
-    
-    private var messageSection: some View {
-        VStack(spacing: 4) {
-            Text("Verifying a blocked app.")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(textSecondary)
+    private var scanLabel: some View {
+        HStack(spacing: 6) {
+            // 小旋转弧线（12px）
+            Circle()
+                .trim(from: 0, to: 0.7)
+                .stroke(
+                    scanBlue.opacity(0.6),
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round)
+                )
+                .frame(width: 12, height: 12)
+                .rotationEffect(.degrees(spinnerRotation))
             
-            Text("This only takes a moment.")
-                .font(.system(size: 11))
-                .foregroundColor(textMuted)
+            Text("confirming.title")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(scanBlue.opacity(0.9))
+                .tracking(0.5)
         }
     }
     
-    // MARK: - 倒计时进度条
-    
-    private var countdownBar: some View {
-        GeometryReader { geo in
-            RoundedRectangle(cornerRadius: 1)
-                .fill(amberColor.opacity(0.5))
-                .frame(width: geo.size.width * max(0, countdown / 5.0), height: 2)
-                .animation(reduceMotion ? .none : .linear(duration: 0.1), value: countdown)
-        }
-        .frame(height: 2)
-    }
-    
-    // MARK: - 入场动画（复用 NDAnimation）
+    // MARK: - 入场动画
     
     private func playEnterAnimation() {
         if reduceMotion {
             panelOpacity = 1; panelOffset = 0; panelScale = 1
-            statusOpacity = 1; dotsOpacity = 1; messageOpacity = 1
-            dotPulsing = [true, true, true]
+            shieldOpacity = 1; labelOpacity = 1
+            messageOpacity = 1; subMessageOpacity = 1
             return
         }
         
@@ -156,35 +135,25 @@ struct DetectionConfirmingView: View {
             panelOpacity = 1; panelOffset = 0; panelScale = 1
         }
         
-        // Phase 2: 内容交错入场
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(NDAnimation.cardEnter) { statusOpacity = 1 }
+        // Phase 2: 盾牌入场
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(NDAnimation.cardEnter) { shieldOpacity = 1 }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(NDAnimation.cardEnter) { dotsOpacity = 1 }
-            // 启动三点呼吸
-            for i in 0..<3 { dotPulsing[i] = true }
+        
+        // Phase 3: 标签 + 启动旋转
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            withAnimation(NDAnimation.cardEnter) { labelOpacity = 1 }
+            withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
+                spinnerRotation = 360
+            }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        
+        // Phase 4: 文案交错入场
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
             withAnimation(NDAnimation.cardEnter) { messageOpacity = 1 }
         }
-    }
-}
-
-// MARK: - 琥珀色脉冲（复用 DetectionPanelView.PulseModifier 模式）
-
-private struct AmberPulseModifier: ViewModifier {
-    let reduceMotion: Bool
-    @State private var isPulsing = false
-    
-    func body(content: Content) -> some View {
-        content
-            .opacity(reduceMotion ? 1 : (isPulsing ? 0.6 : 1.0))
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
-                    isPulsing = true
-                }
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+            withAnimation(NDAnimation.cardEnter) { subMessageOpacity = 1 }
+        }
     }
 }

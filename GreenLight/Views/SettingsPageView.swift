@@ -28,10 +28,10 @@ struct SettingsPageView: View {
             // 设置内容
             VStack(spacing: 24) {
                 // 通用
-                settingsSection(title: "通用") {
+                settingsSection(title: String(localized: "settings.section.general")) {
                     settingsCard {
                         HStack {
-                            Label("开机时自动启动", systemImage: "arrow.clockwise")
+                            Label("settings.launchAtLogin", systemImage: "arrow.clockwise")
                                 .font(.system(size: 13, weight: .regular))
                                 .foregroundColor(textPrimary)
                             
@@ -50,28 +50,28 @@ struct SettingsPageView: View {
                 .modifier(SettingsStagger(index: 1, appeared: appeared, reduceMotion: reduceMotion))
                 
                 // 关于
-                settingsSection(title: "关于") {
+                settingsSection(title: String(localized: "settings.section.about")) {
                     settingsCard {
                         VStack(spacing: 0) {
-                            settingsRow(label: "版本", value: "1.0.0")
+                            settingsRow(label: String(localized: "settings.version"), value: "1.0.0")
                             
                             Divider()
                                 .background(Color.white.opacity(0.06))
                                 .padding(.vertical, 4)
                             
-                            settingsRow(label: "累计亮绿灯", value: "\(appState.totalGreenLights) 次")
+                            settingsRow(label: String(localized: "settings.totalGreenLights"), value: String(localized: "settings.totalGreenLights.value \(appState.totalGreenLights)"))
                         }
                     }
                 }
                 .modifier(SettingsStagger(index: 2, appeared: appeared, reduceMotion: reduceMotion))
                 
                 // 反馈
-                settingsSection(title: "反馈") {
+                settingsSection(title: String(localized: "settings.section.feedback")) {
                     settingsCard {
                         VStack(spacing: 0) {
                             settingsLink(
                                 icon: "envelope.fill",
-                                label: "联系我们",
+                                label: String(localized: "settings.contactUs"),
                                 detail: "support@greenlight.app"
                             ) {
                                 if let url = URL(string: "mailto:support@greenlight.app") {
@@ -85,7 +85,7 @@ struct SettingsPageView: View {
                             
                             settingsLink(
                                 icon: "globe",
-                                label: "官网",
+                                label: String(localized: "settings.website"),
                                 detail: "greenlight.app"
                             ) {
                                 if let url = URL(string: "https://greenlight.app") {
@@ -98,11 +98,11 @@ struct SettingsPageView: View {
                 .modifier(SettingsStagger(index: 3, appeared: appeared, reduceMotion: reduceMotion))
                 
                 // 软件更新
-                settingsSection(title: "软件更新") {
+                settingsSection(title: String(localized: "settings.section.updates")) {
                     settingsCard {
                         VStack(spacing: 0) {
                             HStack {
-                                Label("自动检查更新", systemImage: "arrow.triangle.2.circlepath")
+                                Label("settings.autoCheckUpdates", systemImage: "arrow.triangle.2.circlepath")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(textPrimary)
                                 
@@ -122,7 +122,7 @@ struct SettingsPageView: View {
                                 .padding(.vertical, 4)
                             
                             HStack {
-                                Label("检查更新", systemImage: "arrow.clockwise.circle")
+                                Label("settings.checkForUpdates", systemImage: "arrow.clockwise.circle")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(textPrimary)
                                 
@@ -135,7 +135,7 @@ struct SettingsPageView: View {
                                 }
                                 
                                 Button(action: { updaterManager.checkForUpdates() }) {
-                                    Text("检查")
+                                    Text("settings.check")
                                         .font(.system(size: 12, weight: .medium))
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 12)
@@ -169,7 +169,7 @@ struct SettingsPageView: View {
     private var navBar: some View {
         ZStack {
             // 居中标题
-            Text("Settings")
+            Text("settings.title")
                 .font(.system(size: 16, weight: .light))
                 .foregroundColor(textPrimary)
             
@@ -179,7 +179,7 @@ struct SettingsPageView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 12, weight: .light))
-                        Text("Back")
+                        Text("settings.back")
                             .font(.system(size: 14, weight: .light))
                     }
                     .foregroundColor(textPrimary.opacity(0.5))

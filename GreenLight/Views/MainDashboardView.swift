@@ -45,6 +45,21 @@ struct MainDashboardView: View {
             }
         }
         .frame(width: 900, height: 620)
+        .onChange(of: appState.pendingSelectedApp?.id) { _ in
+            // Menu Bar Extra 点击 App icon → 自动弹出 ActionBubble
+            guard let app = appState.pendingSelectedApp else { return }
+            appState.pendingSelectedApp = nil
+            // 如果在 Settings 页面，先切回 Dashboard
+            if showSettings {
+                withAnimation(NDAnimation.panelTransition) {
+                    showSettings = false
+                }
+            }
+            // 延迟一帧确保 Dashboard 完成渲染
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                selectedApp = app
+            }
+        }
     }
     
     // MARK: - Dashboard Content
@@ -74,7 +89,7 @@ struct MainDashboardView: View {
     
     private var header: some View {
         HStack {
-            Text("G R E E N L I G H T")
+            Text("dashboard.header")
                 .font(.system(size: 14, weight: .light))
                 .foregroundColor(textPrimary.opacity(0.25))
             
@@ -119,28 +134,28 @@ struct MainDashboardView: View {
             VStack(spacing: 6) {
                 laneView(
                     color: redColor,
-                    label: "REJECTED",
+                    label: String(localized: "dashboard.lane.rejected"),
                     count: appState.rejectedApps.count,
                     apps: appState.rejectedApps,
-                    emptyText: "No rejected apps",
+                    emptyText: String(localized: "dashboard.lane.noRejected"),
                     staggerIndex: 2
                 )
                 
                 laneView(
                     color: amberColor,
-                    label: "DETECTED",
+                    label: String(localized: "dashboard.lane.detected"),
                     count: appState.detectedApps.count,
                     apps: appState.detectedApps,
-                    emptyText: "No detected apps",
+                    emptyText: String(localized: "dashboard.lane.noDetected"),
                     staggerIndex: 3
                 )
                 
                 laneView(
                     color: greenColor,
-                    label: "CLEARED",
+                    label: String(localized: "dashboard.lane.cleared"),
                     count: appState.clearedApps.count,
                     apps: appState.clearedApps,
-                    emptyText: "No apps cleared yet",
+                    emptyText: String(localized: "dashboard.lane.noCleared"),
                     staggerIndex: 4
                 )
             }
@@ -377,18 +392,18 @@ struct MainDashboardView: View {
                 .foregroundColor(.blue.opacity(0.7))
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("Only /Applications was scanned.")
+                Text("dashboard.expandCoverage.title")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
                 
-                Text("Grant access to Downloads and Desktop for a complete scan.")
+                Text("dashboard.expandCoverage.subtitle")
                     .font(.system(size: 10))
                     .foregroundColor(.white.opacity(0.4))
             }
             
             Spacer()
             
-            Button("Expand Coverage") {
+            Button("dashboard.expandCoverage.button") {
                 showExpandCoverage = false
                 enhanceManager.requestEnhance()
             }
@@ -422,7 +437,7 @@ struct MainDashboardView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 11))
-                    Text("Settings")
+                    Text("dashboard.settings")
                         .font(.system(size: 11, weight: .light))
                 }
                 .foregroundColor(textPrimary.opacity(0.3))
@@ -438,7 +453,7 @@ struct MainDashboardView: View {
                     .frame(width: 5, height: 5)
                     .shadow(color: greenColor.opacity(0.35), radius: 3)
                 
-                Text("累计亮绿灯 \(appState.totalGreenLights) 次")
+                Text("dashboard.totalGreenLights \(appState.totalGreenLights)")
                     .font(.system(size: 11, weight: .light))
                     .foregroundColor(greenColor.opacity(0.4))
             }
