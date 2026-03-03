@@ -48,7 +48,7 @@ struct GreenLightApp: App {
         
         // 2. Menu Bar 常驻（轻量入口 + 状态指示器）
         MenuBarExtra {
-            PopoverView(enhanceManager: enhanceManager)
+            PopoverView()
                 .environmentObject(appState)
                 .environmentObject(updaterManager)
         } label: {
@@ -250,9 +250,25 @@ struct GreenLightApp: App {
                 for event in events {
                     deduplicator.receive(event)
                 }
+                // 扫描完成后 reconcile：文件消失的 🟡 → 🔴
+                Task { @MainActor in
+                    AppState.shared.reconcileDetectedApps()
+                }
             }
             fallbackScanTimer = work
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.5, execute: work)
+            
+            // 被动观察：GK 弹窗后用户可能点了 "Move to Trash"，延迟 3s reconcile
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                let appState = AppState.shared
+                appState.reconcileDetectedApps()
+                // 如果当前面板显示的 app 已消失，自动关闭面板
+                if let panelEvent = appState.pendingPanelEvent,
+                   !FileManager.default.fileExists(atPath: panelEvent.appPath.path) {
+                    GLLog.panel.notice("Panel app trashed by user, auto-closing")
+                    DetectionPanelController.shared.dismiss()
+                }
+            }
         }
         
         // EnhancePromptManager 回调连接

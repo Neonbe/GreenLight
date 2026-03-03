@@ -68,6 +68,13 @@ struct MainDashboardView: View {
                 .modifier(DashboardStagger(index: 6, appeared: appeared, reduceMotion: reduceMotion))
         }
         .onAppear { appeared = true }
+        .onChange(of: appState.pendingSelectedApp?.id) { _ in
+            // Menu Bar Extra 点击 App icon → 自动弹出 ActionBubble
+            if let app = appState.pendingSelectedApp {
+                selectedApp = app
+                appState.pendingSelectedApp = nil
+            }
+        }
     }
     
     // MARK: - Header

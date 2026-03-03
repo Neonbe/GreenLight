@@ -424,7 +424,7 @@ struct AppStateDismissedTests {
         )
         appState.addDetectedApp(from: event1)
         if let record = appState.detectedApps.first(where: { $0.path == testPath }) {
-            appState.rejectApp(record)
+            appState.markAsRejected(record)
         }
         
         // Verify: dismissed
@@ -464,7 +464,7 @@ struct AppStateDismissedTests {
         )
         appState.addDetectedApp(from: event1)
         if let record = appState.detectedApps.first(where: { $0.path == testPath }) {
-            appState.rejectApp(record)
+            appState.markAsRejected(record)
         }
         
         // Verify: dismissed
@@ -587,7 +587,7 @@ struct ProactiveScanTests {
         )
         appState.addDetectedApp(from: event1)
         if let record = appState.detectedApps.first(where: { $0.path == testPath }) {
-            appState.rejectApp(record)
+            appState.markAsRejected(record)
         }
         
         // Verify: dismissed
