@@ -210,6 +210,7 @@ class LogStreamMonitor: ObservableObject {
         } else if line.contains("evaluateScanResult") {
             category = .evaluate
             GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)))")
+            onGKActivity?()  // §r05: evaluate 也触发主动扫描
         } else if line.contains("<private>") {
             category = .unrecognized
             GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)))")

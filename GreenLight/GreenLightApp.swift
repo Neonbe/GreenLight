@@ -122,7 +122,9 @@ struct GreenLightApp: App {
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
         GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
         
-        // onGKActivity → 置信度记录 + Level 0 兜底扫描（§3.5 目标化 + 120s 冷却）
+        // onGKActivity → Channel C 主动扫描（§r05）+ 置信度记录 + fallback 兜底
+        var lastProactiveScanTime: Date?
+        let proactiveScanCooldown: TimeInterval = 5  // §r05: 5 秒冷却
         var fallbackScanTimer: DispatchWorkItem?
         var lastFallbackScanTime: Date?
         let fallbackCooldown: TimeInterval = 120  // §3.5: 120 秒冷却
@@ -130,27 +132,58 @@ struct GreenLightApp: App {
             // 记录 GK 活动到置信度窗口
             enhanceManager.recordGKActivity()
             
-            // 120 秒冷却检查
-            if let lastScan = lastFallbackScanTime {
-                let elapsed = Date().timeIntervalSince(lastScan)
-                if elapsed < fallbackCooldown {
-                    let remaining = Int(fallbackCooldown - elapsed)
-                    GLLog.pipeline.debug("Fallback scan skipped: cooldown (\(remaining)s remaining)")
-                    return
+            // §r05 Channel C: 主动扫描（5 秒冷却）
+            let now = Date()
+            if let lastScan = lastProactiveScanTime, now.timeIntervalSince(lastScan) < proactiveScanCooldown {
+                let remaining = String(format: "%.1f", proactiveScanCooldown - now.timeIntervalSince(lastScan))
+                GLLog.pipeline.debug("proactiveScan skipped: cooldown (\(remaining)s remaining)")
+            } else {
+                lastProactiveScanTime = now
+                // 在主线程读取 knownPaths，然后在后台执行扫描
+                Task { @MainActor in
+                    let appState = AppState.shared
+                    let knownPaths = Set(
+                        appState.blockedApps.map(\.path) + appState.clearedApps.map(\.path)
+                    )
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let events = fsWatcher.proactiveScan(knownPaths: knownPaths)
+                        guard !events.isEmpty else { return }
+                        // §r05: 直出（跳过 Dedup）
+                        for event in events {
+                            let appName = event.appPath.deletingPathExtension().lastPathComponent
+                            let greenLightEvent = GreenLightEvent(
+                                appPath: event.appPath,
+                                appName: appName,
+                                bundleId: event.bundleId,
+                                sources: [.proactiveScan],
+                                timestamp: event.timestamp
+                            )
+                            let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
+                            GLLog.pipeline.notice("proactiveScan direct: \(appName), latency=\(latencyMs)ms")
+                            Task { @MainActor in
+                                appState.addBlockedApp(from: greenLightEvent)
+                                DetectionPanelController.shared.show(event: greenLightEvent)
+                                NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: greenLightEvent)
+                            }
+                        }
+                    }
                 }
             }
             
-            // Level 0 兜底扫描（500ms 去抖，目标化扫描 recentCandidates）
+            // 原有 fallback scan（120 秒冷却，500ms 去抖）
+            if let lastScan = lastFallbackScanTime {
+                let elapsed = now.timeIntervalSince(lastScan)
+                if elapsed < fallbackCooldown {
+                    return
+                }
+            }
             fallbackScanTimer?.cancel()
             let work = DispatchWorkItem {
-                GLLog.pipeline.info("Fallback scan triggered by GK Prompt shown")
+                GLLog.pipeline.info("Fallback scan triggered by GK activity")
                 lastFallbackScanTime = Date()
                 let events = fsWatcher.scanApps()
                 for event in events {
                     deduplicator.receive(event)
-                }
-                if events.isEmpty {
-                    GLLog.pipeline.debug("Fallback scan: no rejected apps found")
                 }
             }
             fallbackScanTimer = work

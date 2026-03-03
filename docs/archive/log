@@ -1,0 +1,186 @@
+neobott@Mac-mini ~ % gg
+🚦 GreenLight — 构建中...
+[1/1] Planning build
+Building for debugging...
+[11/11] Applying GreenLight
+Build complete! (1.93s)
+📦 打包 .app Bundle...
+🔄 嵌入 Sparkle.framework...
+/Users/neobott/Desktop/GreenLight/.build/GreenLight.app: replacing existing signature
+🚀 启动 GreenLight...
+
+✅ GreenLight 已启动！
+   按 Ctrl+C 退出日志监听（App 仍在后台运行）
+   要关闭 App: pkill -f 'GreenLight.app'
+
+📋 开始监听日志...
+
+Filtering the log data using "subsystem == "com.greenlight.app""
+Timestamp               Ty Process[PID:TID]
+2026-03-03 11:50:04.473 Df GreenLight[55937:71270d] [com.greenlight.app:logStream] log stream process started, pid=55941
+2026-03-03 11:50:04.474 Df GreenLight[55937:71270d] [com.greenlight.app:fsEvents] FSEvents started, directories=1, paths=<private>
+2026-03-03 11:50:04.477 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] Pipeline started: logStream=true, fsEvents=true
+2026-03-03 11:50:04.477 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Monitoring directories: <private>
+2026-03-03 11:50:07.014 I  GreenLight[55937:71270d] [com.greenlight.app:onboarding] Onboarding step: 2
+2026-03-03 11:50:07.718 I  GreenLight[55937:71270d] [com.greenlight.app:onboarding] Login item set: true
+2026-03-03 11:50:07.718 Df GreenLight[55937:71270d] [com.greenlight.app:onboarding] Onboarding completed
+2026-03-03 11:50:16.864 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772509816864 — user action NOW
+2026-03-03 11:50:37.351 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772509837351 — user action NOW
+2026-03-03 11:50:41.324 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:50:41.324 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK scan initiated: <private>
+2026-03-03 11:50:41.324 I  GreenLight[55937:7128db] [com.greenlight.app:logStream] GK event: <private>, interval=-1ms, total_recent=1
+2026-03-03 11:50:41.329 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:50:41.329 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK line unrecognized: <private>
+2026-03-03 11:50:41.329 I  GreenLight[55937:7128db] [com.greenlight.app:logStream] GK event: <private>, interval=5ms, total_recent=2
+2026-03-03 11:50:41.447 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:50:41.447 Db GreenLight[55937:7128db] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:50:41.447 I  GreenLight[55937:7128db] [com.greenlight.app:logStream] GK event: <private>, interval=118ms, total_recent=3
+2026-03-03 11:50:45.154 Db GreenLight[55937:71270d] [com.greenlight.app:fsEvents] FS event: <private>, flags=163840
+2026-03-03 11:50:45.160 Df GreenLight[55937:7128dd] [com.greenlight.app:gkAssess] SecStaticCode VALIDITY failed: <private>, OSStatus=-67056
+2026-03-03 11:50:45.160 I  GreenLight[55937:7128dd] [com.greenlight.app:gkAssess] GK assess (SecStaticCode→rejected): <private>
+2026-03-03 11:50:45.161 I  GreenLight[55937:7128dd] [com.greenlight.app:fsEvents] FSEvents detected + assess: <private>, result=rejected, bundleId=<private>
+2026-03-03 11:50:45.161 Df GreenLight[55937:7128dd] [com.greenlight.app:pipeline] FS↔GK correlation: 3 GK events in last 10s (scan=1 eval=1 prompt=0 other=1), oldest=3837ms ago
+2026-03-03 11:50:45.162 I  GreenLight[55937:7128dd] [com.greenlight.app:dedup] Dedup new: <private>, source=<private>, window=1.000000s
+2026-03-03 11:50:46.227 I  GreenLight[55937:7128db] [com.greenlight.app:dedup] Dedup flush: <private>, sources=<private>, bundleId=<private>
+2026-03-03 11:50:46.228 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Pipeline received: <private>, sources=<private>, latency=1073ms
+2026-03-03 11:50:46.500 Df GreenLight[55937:71270d] [com.greenlight.app:state] Blocked: <private>, total=1
+2026-03-03 11:50:46.502 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 1 records, totalGreenLights=0
+2026-03-03 11:50:46.502 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Showing panel for: <private>
+2026-03-03 11:50:46.502 Df GreenLight[55937:71270d] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-03 11:50:46.520 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1401.000000)
+2026-03-03 11:50:46.525 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1226.000000)
+2026-03-03 11:50:46.525 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Sending system notification for: <private>
+2026-03-03 11:50:46.526 Db GreenLight[55937:71270d] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-03 11:50:52.588 I  GreenLight[55937:71270d] [com.greenlight.app:panel] User dismissed: <private>
+2026-03-03 11:50:52.588 I  GreenLight[55937:71270d] [com.greenlight.app:state] Dismissed: <private>
+2026-03-03 11:50:52.589 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 1 records, totalGreenLights=0
+2026-03-03 11:50:52.792 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:51:04.474 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 60s, lines=235, gkHits=3, detections=0
+2026-03-03 11:51:04.474 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (3 events): <private>
+2026-03-03 11:52:02.808 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772509922808 — user action NOW
+2026-03-03 11:52:04.475 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 120s, lines=289, gkHits=3, detections=0
+2026-03-03 11:52:04.475 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (3 events): <private>
+2026-03-03 11:52:05.502 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:52:05.503 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK scan initiated: <private>
+2026-03-03 11:52:05.503 I  GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK event: <private>, interval=84055ms, total_recent=1
+2026-03-03 11:52:05.558 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:52:05.558 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK line unrecognized: <private>
+2026-03-03 11:52:05.558 I  GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK event: <private>, interval=55ms, total_recent=2
+2026-03-03 11:52:05.637 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:52:05.637 Db GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:52:05.637 I  GreenLight[55937:7139b6] [com.greenlight.app:logStream] GK event: <private>, interval=79ms, total_recent=3
+2026-03-03 11:52:12.001 Db GreenLight[55937:71270d] [com.greenlight.app:fsEvents] FS event: <private>, flags=163840
+2026-03-03 11:52:12.005 I  GreenLight[55937:7128db] [com.greenlight.app:gkAssess] SecStaticCode passed: <private>, signature valid
+2026-03-03 11:52:12.005 I  GreenLight[55937:7128db] [com.greenlight.app:gkAssess] GK assess: SecStaticCode passed for <private>, falling through to spctl
+2026-03-03 11:52:12.037 I  GreenLight[55937:7128db] [com.greenlight.app:gkAssess] GK assess (spctl): <private>, exitCode=3, result=<private>
+2026-03-03 11:52:12.038 I  GreenLight[55937:7128db] [com.greenlight.app:fsEvents] FSEvents detected + assess: <private>, result=rejected, bundleId=<private>
+2026-03-03 11:52:12.038 Df GreenLight[55937:7128db] [com.greenlight.app:pipeline] FS↔GK correlation: 3 GK events in last 10s (scan=1 eval=1 prompt=0 other=1), oldest=6535ms ago
+2026-03-03 11:52:12.038 I  GreenLight[55937:7139b6] [com.greenlight.app:dedup] Dedup new: <private>, source=<private>, window=1.000000s
+2026-03-03 11:52:13.104 I  GreenLight[55937:7139b6] [com.greenlight.app:dedup] Dedup flush: <private>, sources=<private>, bundleId=<private>
+2026-03-03 11:52:13.104 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Pipeline received: <private>, sources=<private>, latency=1102ms
+2026-03-03 11:52:13.414 Df GreenLight[55937:71270d] [com.greenlight.app:state] Blocked: <private>, total=2
+2026-03-03 11:52:13.417 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 2 records, totalGreenLights=0
+2026-03-03 11:52:13.417 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Showing panel for: <private>
+2026-03-03 11:52:13.417 Df GreenLight[55937:71270d] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-03 11:52:13.421 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1401.000000)
+2026-03-03 11:52:13.423 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1226.000000)
+2026-03-03 11:52:13.424 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Sending system notification for: <private>
+2026-03-03 11:52:13.424 Db GreenLight[55937:71270d] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-03 11:52:23.426 I  GreenLight[55937:71270d] [com.greenlight.app:panel] Panel auto-dismissed (timeout)
+2026-03-03 11:52:23.522 I  GreenLight[55937:71270d] [com.greenlight.app:panel] User dismissed: <private>
+2026-03-03 11:52:23.522 I  GreenLight[55937:71270d] [com.greenlight.app:state] Dismissed: <private>
+2026-03-03 11:52:23.526 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 2 records, totalGreenLights=0
+2026-03-03 11:52:23.560 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:52:23.561 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:52:56.176 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772509976176 — user action NOW
+2026-03-03 11:53:03.070 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:53:03.071 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK scan initiated: <private>
+2026-03-03 11:53:03.071 I  GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK event: <private>, interval=57433ms, total_recent=4
+2026-03-03 11:53:03.134 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:53:03.135 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK line unrecognized: <private>
+2026-03-03 11:53:03.135 I  GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK event: <private>, interval=63ms, total_recent=5
+2026-03-03 11:53:03.224 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:53:03.224 Db GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:53:03.224 I  GreenLight[55937:713b3b] [com.greenlight.app:logStream] GK event: <private>, interval=89ms, total_recent=6
+2026-03-03 11:53:04.474 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 180s, lines=1078, gkHits=9, detections=0
+2026-03-03 11:53:04.474 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (6 events): <private>
+2026-03-03 11:53:08.106 Db GreenLight[55937:71270d] [com.greenlight.app:fsEvents] FS event: <private>, flags=163840
+2026-03-03 11:53:08.110 I  GreenLight[55937:71428e] [com.greenlight.app:gkAssess] SecStaticCode passed: <private>, signature valid
+2026-03-03 11:53:08.110 I  GreenLight[55937:71428e] [com.greenlight.app:gkAssess] GK assess: SecStaticCode passed for <private>, falling through to spctl
+2026-03-03 11:53:08.169 I  GreenLight[55937:71428e] [com.greenlight.app:gkAssess] GK assess (spctl): <private>, exitCode=3, result=<private>
+2026-03-03 11:53:08.169 I  GreenLight[55937:71428e] [com.greenlight.app:fsEvents] FSEvents detected + assess: <private>, result=rejected, bundleId=<private>
+2026-03-03 11:53:08.169 Df GreenLight[55937:71428e] [com.greenlight.app:pipeline] FS↔GK correlation: 3 GK events in last 10s (scan=1 eval=1 prompt=0 other=1), oldest=5098ms ago
+2026-03-03 11:53:08.169 I  GreenLight[55937:714004] [com.greenlight.app:dedup] Dedup new: <private>, source=<private>, window=1.000000s
+2026-03-03 11:53:09.234 I  GreenLight[55937:714004] [com.greenlight.app:dedup] Dedup flush: <private>, sources=<private>, bundleId=<private>
+2026-03-03 11:53:09.234 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Pipeline received: <private>, sources=<private>, latency=1127ms
+2026-03-03 11:53:09.514 Df GreenLight[55937:71270d] [com.greenlight.app:state] Blocked: <private>, total=3
+2026-03-03 11:53:09.517 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 3 records, totalGreenLights=0
+2026-03-03 11:53:09.517 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Showing panel for: <private>
+2026-03-03 11:53:09.517 Df GreenLight[55937:71270d] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-03 11:53:09.531 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1401.000000)
+2026-03-03 11:53:09.535 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1226.000000)
+2026-03-03 11:53:09.535 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Sending system notification for: <private>
+2026-03-03 11:53:09.535 Db GreenLight[55937:71270d] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-03 11:53:19.536 I  GreenLight[55937:71270d] [com.greenlight.app:panel] Panel auto-dismissed (timeout)
+2026-03-03 11:53:19.633 I  GreenLight[55937:71270d] [com.greenlight.app:panel] User dismissed: <private>
+2026-03-03 11:53:19.633 I  GreenLight[55937:71270d] [com.greenlight.app:state] Dismissed: <private>
+2026-03-03 11:53:19.637 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 3 records, totalGreenLights=0
+2026-03-03 11:53:19.674 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:53:19.675 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:54:01.201 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510041201 — user action NOW
+2026-03-03 11:54:03.428 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:54:03.428 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK scan initiated: <private>
+2026-03-03 11:54:03.428 I  GreenLight[55937:71428e] [com.greenlight.app:logStream] GK event: <private>, interval=60204ms, total_recent=1
+2026-03-03 11:54:03.443 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:54:03.443 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK line unrecognized: <private>
+2026-03-03 11:54:03.443 I  GreenLight[55937:71428e] [com.greenlight.app:logStream] GK event: <private>, interval=14ms, total_recent=2
+2026-03-03 11:54:03.544 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:54:03.544 Db GreenLight[55937:71428e] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:54:03.544 I  GreenLight[55937:71428e] [com.greenlight.app:logStream] GK event: <private>, interval=101ms, total_recent=3
+2026-03-03 11:54:04.474 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 240s, lines=1786, gkHits=12, detections=0
+2026-03-03 11:54:04.474 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (3 events): <private>
+2026-03-03 11:54:19.378 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510059378 — user action NOW
+2026-03-03 11:54:30.872 Db GreenLight[55937:714858] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:54:30.872 Db GreenLight[55937:714858] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:54:30.872 I  GreenLight[55937:714858] [com.greenlight.app:logStream] GK event: <private>, interval=27327ms, total_recent=4
+2026-03-03 11:54:33.822 Db GreenLight[55937:71270d] [com.greenlight.app:fsEvents] FS event: <private>, flags=163840
+2026-03-03 11:54:33.876 Df GreenLight[55937:714858] [com.greenlight.app:gkAssess] SecStaticCode VALIDITY failed: <private>, OSStatus=-67056
+2026-03-03 11:54:33.876 I  GreenLight[55937:714858] [com.greenlight.app:gkAssess] GK assess (SecStaticCode→rejected): <private>
+2026-03-03 11:54:33.876 I  GreenLight[55937:714858] [com.greenlight.app:fsEvents] FSEvents detected + assess: <private>, result=rejected, bundleId=<private>
+2026-03-03 11:54:33.876 Df GreenLight[55937:714858] [com.greenlight.app:pipeline] FS↔GK correlation: 1 GK events in last 10s (scan=0 eval=1 prompt=0 other=0), oldest=3003ms ago
+2026-03-03 11:54:33.876 I  GreenLight[55937:714858] [com.greenlight.app:dedup] Dedup new: <private>, source=<private>, window=1.000000s
+2026-03-03 11:54:34.939 I  GreenLight[55937:71428e] [com.greenlight.app:dedup] Dedup flush: <private>, sources=<private>, bundleId=<private>
+2026-03-03 11:54:34.939 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Pipeline received: <private>, sources=<private>, latency=1117ms
+2026-03-03 11:54:35.683 Df GreenLight[55937:71270d] [com.greenlight.app:state] Blocked: <private>, total=4
+2026-03-03 11:54:35.687 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 4 records, totalGreenLights=0
+2026-03-03 11:54:35.687 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Showing panel for: <private>
+2026-03-03 11:54:35.687 Df GreenLight[55937:71270d] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-03 11:54:35.692 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1401.000000)
+2026-03-03 11:54:35.695 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel positioned at: (2284.000000, 1226.000000)
+2026-03-03 11:54:35.695 I  GreenLight[55937:71270d] [com.greenlight.app:pipeline] Sending system notification for: <private>
+2026-03-03 11:54:35.695 Db GreenLight[55937:71270d] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-03 11:54:45.700 I  GreenLight[55937:71270d] [com.greenlight.app:panel] Panel auto-dismissed (timeout)
+2026-03-03 11:54:45.794 I  GreenLight[55937:71270d] [com.greenlight.app:panel] User dismissed: <private>
+2026-03-03 11:54:45.794 I  GreenLight[55937:71270d] [com.greenlight.app:state] Dismissed: <private>
+2026-03-03 11:54:45.805 Db GreenLight[55937:71270d] [com.greenlight.app:state] Saved 4 records, totalGreenLights=0
+2026-03-03 11:54:45.874 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:54:45.874 Db GreenLight[55937:71270d] [com.greenlight.app:panel] Panel closed
+2026-03-03 11:55:04.475 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 300s, lines=1874, gkHits=13, detections=0
+2026-03-03 11:55:04.475 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (4 events): <private>
+2026-03-03 11:55:53.794 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510153794 — user action NOW
+2026-03-03 11:55:56.233 Db GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:55:56.233 Db GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:55:56.233 I  GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK event: <private>, interval=85360ms, total_recent=1
+2026-03-03 11:56:04.474 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 360s, lines=2254, gkHits=14, detections=0
+2026-03-03 11:56:04.475 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (1 events): <private>
+2026-03-03 11:56:25.998 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510185998 — user action NOW
+2026-03-03 11:56:41.738 Db GreenLight[55937:715c41] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:56:41.738 Db GreenLight[55937:715c41] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:56:41.738 I  GreenLight[55937:715c41] [com.greenlight.app:logStream] GK event: <private>, interval=45504ms, total_recent=2
+2026-03-03 11:56:53.513 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510213513 — user action NOW
+2026-03-03 11:57:04.475 Db GreenLight[55937:71270d] [com.greenlight.app:logStream] logStream heartbeat: alive 420s, lines=2495, gkHits=15, detections=0
+2026-03-03 11:57:04.475 I  GreenLight[55937:71270d] [com.greenlight.app:logStream] GK timeline (2 events): <private>
+2026-03-03 11:57:31.790 Db GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK line: <private>
+2026-03-03 11:57:31.790 Db GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK evaluate (no scan trigger): <private>
+2026-03-03 11:57:31.790 I  GreenLight[55937:714f7a] [com.greenlight.app:logStream] GK event: <private>, interval=50052ms, total_recent=2
+2026-03-03 11:57:45.703 Df GreenLight[55937:71270d] [com.greenlight.app:pipeline] ⏱ USER_MARK: 1772510265703 — user action NOW

@@ -523,3 +523,84 @@ struct DetectionEventSourceTests {
     }
 }
 
+// MARK: - §r05 主动扫描 (proactiveScan) 测试
+
+@Suite("ProactiveScan Channel C")
+struct ProactiveScanTests {
+    
+    @Test(".proactiveScan 不破坏去重合并")
+    func proactiveScanDeduplication() async {
+        let dedup = EventDeduplicator(windowDuration: 0.1)
+        
+        var receivedEvents: [GreenLightEvent] = []
+        dedup.onEvent = { event in
+            receivedEvents.append(event)
+        }
+        
+        let path = URL(fileURLWithPath: "/Applications/TestProactiveDedup.app")
+        let event1 = DetectionEvent(source: .proactiveScan, appPath: path, bundleId: nil, timestamp: Date())
+        let event2 = DetectionEvent(source: .fsEvents, appPath: path, bundleId: "com.test", timestamp: Date())
+        
+        dedup.receive(event1)
+        dedup.receive(event2)
+        
+        try? await Task.sleep(for: .milliseconds(200))
+        
+        #expect(receivedEvents.count == 1)
+        #expect(receivedEvents.first?.sources.contains(.proactiveScan) == true)
+        #expect(receivedEvents.first?.sources.contains(.fsEvents) == true)
+    }
+    
+    @Test(".proactiveScan 不重置 dismissed 状态")
+    @MainActor func proactiveScanDoesNotReblockDismissed() async {
+        let appState = AppState.shared
+        let testPath = "/Applications/_TestProactiveDismissed_\(UUID().uuidString).app"
+        
+        // Setup: 添加一个 blocked record 并 dismiss
+        let event1 = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestProactiveDismissed", bundleId: nil,
+            sources: [.fsEvents],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: event1)
+        if let record = appState.blockedApps.first(where: { $0.path == testPath }) {
+            appState.dismissApp(record)
+        }
+        
+        // Verify: dismissed
+        let beforeRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(beforeRecord?.status == .dismissed)
+        
+        // Act: 模拟 proactiveScan 来源事件
+        let proactiveEvent = GreenLightEvent(
+            appPath: URL(fileURLWithPath: testPath),
+            appName: "TestProactiveDismissed", bundleId: nil,
+            sources: [.proactiveScan],
+            timestamp: Date()
+        )
+        appState.addBlockedApp(from: proactiveEvent)
+        
+        // Verify: 仍为 dismissed（proactiveScan 不含 realtime signal）
+        let afterRecord = appState.blockedApps.first { $0.path == testPath }
+        #expect(afterRecord?.status == .dismissed)
+        
+        // 清理
+        if let idx = appState.blockedApps.firstIndex(where: { $0.path == testPath }) {
+            appState.blockedApps.remove(at: idx)
+        }
+    }
+    
+    @Test("evaluateScanResult 日志行触发 onGKActivity")
+    func evaluateScanResultTriggersGKActivity() {
+        let monitor = LogStreamMonitor()
+        var activityTriggered = false
+        monitor.onGKActivity = { activityTriggered = true }
+        
+        let line = "syspolicyd: GK evaluateScanResult: granted(bundle_id: com.example.test)"
+        _ = monitor.parseLogLine(line)
+        
+        #expect(activityTriggered == true)
+    }
+}
+
