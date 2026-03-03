@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import Dispatch
 import AppKit
 import Sparkle
 
@@ -180,6 +181,8 @@ struct GreenLightApp: App {
         var confirmTimeoutWork: DispatchWorkItem?
         
         logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
+            // 记录 GK 活动到置信度窗口
+            enhanceManager.recordGKActivity()
             
             // §r06: Menu Bar 黄灯 + Channel C 主动扫描
             let now = Date()
