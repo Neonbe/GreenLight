@@ -460,12 +460,6 @@ struct ActionBubbleView: View {
                         fix(shouldOpen: true)
                     }
                     .buttonStyle(ActionButtonStyle(isPrimary: true))
-                    
-                    Button("🗑 丢弃") {
-                        appState.rejectApp(app)
-                        dismiss()
-                    }
-                    .buttonStyle(ActionButtonStyle(isPrimary: false))
                 }
             } else if app.status == .cleared {
                 HStack(spacing: 8) {

@@ -204,28 +204,15 @@ final class DetectionPanelController {
             },
             onFix: { [weak self] shouldOpen in
                 self?.handleFixAction(for: event, shouldOpen: shouldOpen)
-            },
-            onReject: { [weak self] in
-                self?.handleRejectAction(for: event)
             }
         )
     }
     
     // MARK: - 动作处理
     
-    /// §6.3: “不做改变”——关闭面板，app 留在 🟡（不改变状态）
+    /// 忽略——关闭面板，app 留在 🟡（不改变状态）
     private func handleDismissAction() {
         GLLog.panel.info("User dismissed panel (no state change)")
-        dismiss()
-    }
-    
-    /// §4: 丢弃——Move to Trash → 🔴
-    private func handleRejectAction(for event: GreenLightEvent) {
-        GLLog.panel.info("User reject: \(event.appName)")
-        let appState = AppState.shared
-        if let record = appState.blockedApps.first(where: { $0.path == event.appPath.path }) {
-            appState.rejectApp(record)
-        }
         dismiss()
     }
     
