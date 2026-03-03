@@ -365,6 +365,26 @@ struct GatekeeperAssessorTests {
         #expect(result == .accepted)
     }
     
+    @Test("系统 app 二次调用走缓存 → 同样 accepted")
+    func systemAppCacheHit() {
+        let assessor = GatekeeperAssessor()
+        // 第一次调用建立缓存
+        let first = assessor.assess(appPath: "/System/Applications/Calculator.app")
+        // 第二次应走缓存
+        let second = assessor.assess(appPath: "/System/Applications/Calculator.app")
+        #expect(first == .accepted)
+        #expect(second == .accepted)
+    }
+    
+    @Test("SecStaticCode 不存在的 App → rejected")
+    func nonExistentAppRejected() {
+        let assessor = GatekeeperAssessor()
+        let result = assessor.assess(appPath: "/nonexistent_path_test_12345.app")
+        // 不存在的路径 SecStaticCodeCreateWithPath 应失败 → rejected
+        // 或 spctl 也会返回非 0
+        #expect(result == .rejected || result == .unknown)
+    }
+    
     @Test("FakeAssessor: rejected")
     func fakeRejected() {
         let fake = FakeGatekeeperAssessor(result: .rejected)

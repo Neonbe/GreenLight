@@ -53,8 +53,8 @@ class FSEventsWatcher: ObservableObject {
             &context,
             paths,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-            1.0, // latency: 1秒
-            UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes)
+            0.5, // latency: 0.5秒（§3.1 优化）
+            UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagNoDefer)
         ) else {
             GLLog.fsEvents.fault("Failed to create FSEventStream for paths=\(dirs.map(\.path))")
             return

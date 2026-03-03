@@ -1,10 +1,12 @@
 import SwiftUI
 import AppKit
+import Sparkle
 
 @main
 struct GreenLightApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var appState = AppState.shared
+    @StateObject private var updaterManager = UpdaterManager()
     
     
     private let logMonitor = LogStreamMonitor()
@@ -22,6 +24,7 @@ struct GreenLightApp: App {
         WindowGroup {
             MainWindowView()
                 .environmentObject(appState)
+                .environmentObject(updaterManager)
                 .preferredColorScheme(.dark)
         }
         .windowStyle(.hiddenTitleBar)
@@ -34,6 +37,7 @@ struct GreenLightApp: App {
         MenuBarExtra {
             PopoverView(enhanceManager: enhanceManager)
                 .environmentObject(appState)
+                .environmentObject(updaterManager)
         } label: {
             MenuBarLabel()
                 .environmentObject(appState)
@@ -44,6 +48,7 @@ struct GreenLightApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appState)
+                .environmentObject(updaterManager)
         }
     }
     
@@ -69,6 +74,14 @@ struct GreenLightApp: App {
                 GLLog.pipeline.info("Pipeline received: \(event.appName), sources=\(event.sources.map { String(describing: $0) }), latency=\(latencyMs)ms")
                 
                 let appState = AppState.shared
+                
+                // §3.2 优化：已 blocked 的 App 跳过重复弹窗
+                if let existing = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
+                   existing.status == .blocked {
+                    GLLog.pipeline.info("Already blocked, skip panel: \(event.appName)")
+                    return
+                }
+                
                 appState.addBlockedApp(from: event)
                 
                 // 弹出检测浮动面板
