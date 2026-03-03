@@ -28,6 +28,15 @@ struct GreenLightApp: App {
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {} // 单窗口 App，禁止 Cmd+N
+            
+            // §r04: 用户操作打点器
+            CommandGroup(after: .toolbar) {
+                Button("⛱ User Timestamp") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK: \(ts) — user action NOW")
+                }
+                .keyboardShortcut("t", modifiers: [.command, .shift])
+            }
         }
         
         // 2. Menu Bar 常驻（轻量入口 + 状态指示器）
@@ -58,7 +67,20 @@ struct GreenLightApp: App {
         }
         
         // Channel B → EventDeduplicator
-        fsWatcher.onDetection = { [deduplicator] event in
+        fsWatcher.onDetection = { [deduplicator, logMonitor] event in
+            // §r04: FSEvents 检出时关联最近 GK 事件
+            let now = Date()
+            let recentGK = logMonitor.recentGKEvents.filter { now.timeIntervalSince($0.timestamp) < 10 }
+            if !recentGK.isEmpty {
+                let scanCount = recentGK.filter { $0.category == .scan }.count
+                let evalCount = recentGK.filter { $0.category == .evaluate }.count
+                let promptCount = recentGK.filter { $0.category == .prompt }.count
+                let otherCount = recentGK.filter { $0.category == .unrecognized }.count
+                let oldestMs = Int(now.timeIntervalSince(recentGK.first!.timestamp) * 1000)
+                GLLog.pipeline.notice("FS↔GK correlation: \(recentGK.count) GK events in last 10s (scan=\(scanCount) eval=\(evalCount) prompt=\(promptCount) other=\(otherCount)), oldest=\(oldestMs)ms ago")
+            } else {
+                GLLog.pipeline.notice("FS↔GK correlation: 0 GK events in last 10s")
+            }
             deduplicator.receive(event)
         }
         

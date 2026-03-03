@@ -1,5 +1,18 @@
 import Foundation
 
+/// GK 事件记录（用于时间线分析）
+struct GKEventRecord {
+    enum Category: String {
+        case scan = "scan"
+        case evaluate = "evaluate"
+        case prompt = "prompt"
+        case unrecognized = "other"
+    }
+    let timestamp: Date
+    let category: Category
+    let intervalMs: Int  // 距上一个 GK 事件的间隔（ms），首个为 -1
+}
+
 /// Channel A: 监听 syspolicyd 进程日志，实时捕获 Gatekeeper 拦截事件
 class LogStreamMonitor: ObservableObject {
     private var process: Process?
@@ -11,6 +24,13 @@ class LogStreamMonitor: ObservableObject {
     
     /// GK 活动但无法提取路径时的回调（用于触发兜底扫描）
     var onGKActivity: (() -> Void)?
+    
+    // MARK: - GK 事件时间线（§r04 实验）
+    
+    /// 最近 60s 的 GK 事件记录（供 FSEvents 关联查询）
+    private(set) var recentGKEvents: [GKEventRecord] = []
+    private var lastGKEventTime: Date?
+    private let gkEventWindow: TimeInterval = 60
     
     // MARK: - 正则（基于实验 A 真实日志）
     
@@ -120,6 +140,12 @@ class LogStreamMonitor: ObservableObject {
             guard let self = self else { return }
             let uptime = Int(Date().timeIntervalSince(self.startTime))
             GLLog.logStream.debug("logStream heartbeat: alive \(uptime)s, lines=\(self.totalLines), gkHits=\(self.gkHitCount), detections=\(self.detectionCount)")
+            
+            // §r04: 输出最近 60s 的 GK 事件时间线
+            if !self.recentGKEvents.isEmpty {
+                let timeline = self.recentGKEvents.map { "\($0.category.rawValue)(\($0.intervalMs)ms)" }.joined(separator: " → ")
+                GLLog.logStream.info("GK timeline (\(self.recentGKEvents.count) events): \(timeline)")
+            }
         }
     }
     
@@ -134,6 +160,10 @@ class LogStreamMonitor: ObservableObject {
         // GK 行命中
         gkHitCount += 1
         GLLog.logStream.debug("GK line: \(line)")
+        
+        // §r04: 清理过期事件
+        let now = Date()
+        recentGKEvents = recentGKEvents.filter { now.timeIntervalSince($0.timestamp) < gkEventWindow }
         
         // 提取 file:// URL 路径
         let lineRange = NSRange(line.startIndex..., in: line)
@@ -160,9 +190,10 @@ class LogStreamMonitor: ObservableObject {
             )
         }
         
-        // 无 file:// 路径的 GK 行 → 按子类型分类日志
+        // 无 file:// 路径的 GK 行 → 按子类型分类日志 + 记录时间线
+        let category: GKEventRecord.Category
         if line.contains("Prompt shown") {
-            // 提取 bundleId（如果有）
+            category = .prompt
             var bundleId: String? = "unknown"
             if let bundleMatch = Self.bundleIdPattern.firstMatch(in: line, range: lineRange),
                let bundleRange = Range(bundleMatch.range(at: 1), in: line) {
@@ -171,18 +202,32 @@ class LogStreamMonitor: ObservableObject {
             GLLog.logStream.info("GK prompt shown, bundleId=\(bundleId ?? "unknown")")
             onGKActivity?()
         } else if line.contains("performScan") {
+            category = .scan
             GLLog.logStream.debug("GK scan initiated: \(String(line.prefix(120)))")
         } else if line.contains("scan complete") {
+            category = .scan
             GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)))")
         } else if line.contains("evaluateScanResult") {
+            category = .evaluate
             GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)))")
-            // §3.4: evaluateScanResult 是后台常规操作，不触发 scan（避免反馈循环）
         } else if line.contains("<private>") {
+            category = .unrecognized
             GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)))")
-            // §3.4: <private> catch-all 噪声最大，已删除触发
         } else {
+            category = .unrecognized
             GLLog.logStream.debug("GK line unrecognized: \(String(line.prefix(120)))")
         }
+        
+        // §r04: 记录 GK 事件到时间线
+        let intervalMs: Int
+        if let last = lastGKEventTime {
+            intervalMs = Int(now.timeIntervalSince(last) * 1000)
+        } else {
+            intervalMs = -1
+        }
+        lastGKEventTime = now
+        recentGKEvents.append(GKEventRecord(timestamp: now, category: category, intervalMs: intervalMs))
+        GLLog.logStream.info("GK event: \(category.rawValue), interval=\(intervalMs)ms, total_recent=\(self.recentGKEvents.count)")
         
         return nil
     }

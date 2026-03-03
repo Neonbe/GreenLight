@@ -19,7 +19,7 @@ class EventDeduplicator {
         var timer: DispatchWorkItem?
     }
     
-    init(windowDuration: TimeInterval = 3.0) {
+    init(windowDuration: TimeInterval = 1.0) {  // §3.2 优化：3s→1s
         self.windowDuration = windowDuration
     }
     
