@@ -1,0 +1,68 @@
+# GreenLight 本地化文案审核清单
+
+> 审核框架：**copy-editing** Seven Sweeps + **ux-writing** 四项质量标准
+> 审核范围：[Localizable.xcstrings](file:///Users/neobott/Desktop/GreenLight/GreenLight/Resources/Localizable.xcstrings) 中 ~60 个 key 的 en + zh-Hans 文案
+
+---
+
+## 🔴 高严重等级
+
+| # | Key | 问题 | 当前 en | 当前 zh | 建议 en | 建议 zh | 理由 |
+|---|-----|------|---------|---------|---------|---------|------|
+| 1 | `detection.securityCheck` | 与 `confirming.title` 术语不一致（Check vs Scan） | Security Check | 安全确认 | Security Scan | 安全扫描 | 同一流程两阶段应统一术语，且视觉上是扫描动画 |
+| 2 | `dashboard.lane.detected` | "Detected" 对用户不直观，是 system-oriented language | DETECTED | 已检测 | BLOCKED | 已拦截 | 实际含义是"被 Gatekeeper 拦截"，应与 notification 文案 "macOS blocked" 一致 |
+| 2b | `popover.detected` | 同上 | Detected | 已检测 | Blocked | 已拦截 | 同上 |
+| 2c | `dashboard.lane.noDetected` | 同上联动修改 | No detected apps | 无检测到的应用 | No blocked apps | 无拦截的应用 | 联动 |
+
+---
+
+## 🟡 中严重等级
+
+| # | Key | 问题 | 当前 en | 当前 zh | 建议 en | 建议 zh | 理由 |
+|---|-----|------|---------|---------|---------|---------|------|
+| 3 | `action.unblock` | 按钮含 emoji，不符合 macOS HIG | 🔓 Unblock | 🔓 放行 | Unblock | 放行 | macOS 原生按钮不使用 emoji 前缀 |
+| 3b | `action.unblockAndOpen` | 同上 | ▶ Unblock & Open | ▶ 放行并打开 | Unblock & Open | 放行并打开 | 同上 |
+| 3c | `action.showInFinder` | 同上 | 📂 Show in Finder | 📂 在 Finder 中显示 | Show in Finder | 在 Finder 中显示 | 同上 |
+| 3d | `notification.action.dismiss` | 同上（通知按钮） | ❌ Dismiss | ❌ 忽略 | Dismiss | 忽略 | 同上 |
+| 3e | `notification.action.fix` | 同上 | 🔓 Fix | 🔓 修复 | Fix | 修复 | 同上 |
+| 3f | `notification.action.fixAndOpen` | 同上 | 🛠 Fix & Open | 🛠 修复并打开 | Fix & Open | 修复并打开 | 同上；通知**标题**的 emoji（🚦✅⚠️）可保留 |
+| 4 | `detection.fixAndOpen` | "Fix" 暗示"坏了"，过于技术化 | Fix & Open | 修复并打开 | Allow & Open | 允许并打开 | 实际操作是"允许运行"，macOS Gatekeeper 对话框原文用的就是 "Allow" |
+| 4b | `notification.action.fix` | 同上 | Fix | 修复 | Allow | 允许 | 同上 |
+| 4c | `notification.action.fixAndOpen` | 同上 | Fix & Open | 修复并打开 | Allow & Open | 允许并打开 | 同上 |
+| 4d | `detection.fixFailed` | 同上 | Fix Failed | 修复失败 | Couldn't Allow App | 无法放行 | 同上 |
+| 4e | `notification.failure.title` | 同上 | ⚠️ Fix Failed | ⚠️ 修复失败 | ⚠️ Authorization Failed | ⚠️ 放行失败 | 同上 |
+| 5 | `dashboard.lane.noCleared` | Empty state 纯陈述，缺少行动引导 | No apps cleared yet | 暂无放行的应用 | No apps allowed yet | 暂无放行的应用 | UX writing 最佳实践: empty state 应含 解释+引导（可酌情在 UI 层添加副文案） |
+| 6 | `dashboard.expandCoverage.title` | 暴露 Unix 路径 `/Applications` | Only /Applications was scanned. | 仅扫描了 /Applications 目录。 | Only system apps were scanned. | 仅扫描了系统应用。 | 非技术用户不理解路径，违反 plain language 原则 |
+| 7 | `detection.dismiss` | 与 `detection.close` 语义太近，在同一面板中易混淆 | Dismiss | 忽略 | Skip | 跳过 | Dismiss=保留在列表稍后处理，Close=纯关闭，文案应反映区别 |
+
+---
+
+## 🟢 低严重等级
+
+| # | Key | 问题 | 当前 en | 当前 zh | 建议 en | 建议 zh | 理由 |
+|---|-----|------|---------|---------|---------|---------|------|
+| 8 | `dashboard.lane.cleared` | 核心操作术语不统一（Unblock/Fix/Cleared 三套） | CLEARED | 已放行 | ALLOWED | 已放行 | 统一为 Allow 系列，与 macOS Gatekeeper 对话框一致；zh "已放行"可保留 |
+| 8b | `popover.cleared` | 同上 | Cleared | 已放行 | Allowed | 已放行 | 同上 |
+| 8c | `dashboard.lane.noCleared` | 同上联动 | No apps cleared yet | 暂无放行的应用 | No apps allowed yet | 暂无放行的应用 | 联动 |
+| 9 | `settings.launchAtLogin` | zh 措辞冗余，与 macOS 原生不一致 | Launch at Login | 开机时自动启动 | *(保持)* | 登录时打开 | macOS「系统设置 → 登录项」原文为"登录时打开" |
+| 9b | `onboarding.launchAtLogin` | 同上 | Launch at login | 开机时自动启动 | *(保持)* | 登录时打开 | 同上 |
+| 10 | `enhance.reason` | 暴露技术术语 "Gatekeeper" | GreenLight detected Gatekeeper activity but couldn't fully verify the file location. | GreenLight 检测到 Gatekeeper 活动，但无法完全验证文件位置。 | GreenLight detected that macOS blocked an app, but couldn't fully verify where it's located. | GreenLight 检测到 macOS 拦截了一个应用，但无法完全确认其位置。 | 普通用户不了解 Gatekeeper 是什么 |
+
+---
+
+## 决策汇总
+
+| # | 严重等级 | 简述 | 你的决策 |
+|---|---------|------|---------|
+| 1 | 🔴 高 | "Security Check" → "Security Scan" 统一术语 | ▢ 采纳 / ▢ 不改 |
+| 2 | 🔴 高 | "Detected" → "Blocked" / "已拦截" | ▢ 采纳 / ▢ 不改 |
+| 3 | 🟡 中 | 移除按钮/通知动作中的 emoji 前缀 | ▢ 采纳 / ▢ 不改 |
+| 4 | 🟡 中 | "Fix" → "Allow" / "允许" 系列 | ▢ 采纳 / ▢ 不改 |
+| 5 | 🟡 中 | Empty state 添加引导文案 | ▢ 采纳 / ▢ 不改 |
+| 6 | 🟡 中 | `/Applications` → "system apps" | ▢ 采纳 / ▢ 不改 |
+| 7 | 🟡 中 | "Dismiss" → "Skip" / "跳过" | ▢ 采纳 / ▢ 不改 |
+| 8 | 🟢 低 | "Cleared" → "Allowed" 统一术语 | ▢ 采纳 / ▢ 不改 |
+| 9 | 🟢 低 | zh "开机时自动启动" → "登录时打开" | ▢ 采纳 / ▢ 不改 |
+| 10 | 🟢 低 | "Gatekeeper" → "macOS blocked an app" | ▢ 采纳 / ▢ 不改 |
+
+请逐条确认，我再批量修改。

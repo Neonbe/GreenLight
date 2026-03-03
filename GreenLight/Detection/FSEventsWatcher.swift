@@ -10,6 +10,9 @@ class FSEventsWatcher: ObservableObject {
     /// 检测到事件时的回调
     var onDetection: ((DetectionEvent) -> Void)?
     
+    /// 目录变更回调（任何 .app 的 FS 事件，含文件消失），用于触发 reconcile
+    var onDirectoryChange: (() -> Void)?
+    
     /// GK 判定器（可注入，便于测试）
     var assessor: GatekeeperAssessing = GatekeeperAssessor()
     
@@ -286,6 +289,8 @@ class FSEventsWatcher: ObservableObject {
         // §3.1 P1: quarantine 预过滤（排除无 quarantine 的 app，getxattr 纳秒级不阻塞）
         guard Self.hasQuarantine(at: appPath) else {
             GLLog.fsEvents.debug("Quarantine check: \(appPath), hasQuarantine=false, skipped")
+            // 文件可能被移到了 Trash，通知上层 reconcile
+            onDirectoryChange?()
             return
         }
         

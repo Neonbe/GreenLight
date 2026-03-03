@@ -43,26 +43,26 @@ struct ActionBubbleView: View {
             // 操作按钮
             if app.status == .detected {
                 HStack(spacing: 8) {
-                    Button("🔓 放行") {
+                    Button(String(localized: "action.unblock")) {
                         fix(shouldOpen: false)
                     }
                     .buttonStyle(ActionButtonStyle(isPrimary: false))
                     
-                    Button("▶ 放行并打开") {
+                    Button(String(localized: "action.unblockAndOpen")) {
                         fix(shouldOpen: true)
                     }
                     .buttonStyle(ActionButtonStyle(isPrimary: true))
                 }
             } else if app.status == .cleared {
                 HStack(spacing: 8) {
-                    Button("📂 在 Finder 中显示") {
+                    Button(String(localized: "action.showInFinder")) {
                         NSWorkspace.shared.selectFile(app.path, inFileViewerRootedAtPath: "")
                         dismiss()
                     }
                     .buttonStyle(ActionButtonStyle(isPrimary: false))
                     
                     if app.greenLightCount > 0 {
-                        Text("绿灯 ×\(app.greenLightCount)")
+                        Text("action.greenLightCount \(app.greenLightCount)")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(.green.opacity(0.7))
                     }

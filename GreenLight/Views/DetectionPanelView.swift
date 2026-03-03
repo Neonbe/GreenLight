@@ -1,16 +1,14 @@
 import SwiftUI
 import AppKit
 
-/// 检测浮动面板的 SwiftUI 视图
-/// PRD §3.1.1 — §3.1.3 严格实现
+/// 检测浮动面板 — 结果态视图
+/// 展示被拦截应用信息，提供忽略/修复并打开两个操作
 struct DetectionPanelView: View {
     let event: GreenLightEvent
     let onDismiss: () -> Void
     let onFix: (Bool) -> Void  // Bool = shouldOpen
     
-    @State private var phase: PanelPhase = .entering
-    @State private var contentTransition: ContentTransition = .idle
-    @State private var countdown: TimeInterval = 10.0
+    @State private var countdown: TimeInterval = 15.0
     @State private var timerActive = true
     @State private var fixState: FixState = .idle
     @State private var shakeOffset: CGFloat = 0
@@ -26,45 +24,44 @@ struct DetectionPanelView: View {
     @State private var buttonOpacity: Double = 0
     @State private var buttonOffset: CGFloat = 4
     
+    // 按钮 hover 状态
+    @State private var isDismissHovered = false
+    @State private var isFixHovered = false
+    
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     
-    enum PanelPhase { case entering, visible, exiting }
-    enum ContentTransition { case idle, exitingOld, enteringNew }
     enum FixState { case idle, fixing, success, failure }
     
-    // MARK: - 色彩 Token（复用 ui_design_spec）
+    // MARK: - 色彩 Token
     
     private let bgColor = Color(red: 22/255, green: 28/255, blue: 45/255).opacity(0.95)
     private let glassBorder = Color.white.opacity(0.08)
     private let innerHighlight = Color.white.opacity(0.06)
     private let textPrimary = Color(red: 248/255, green: 250/255, blue: 252/255)
-    private let textSecondary = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.45)
-    private let textMuted = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.25)
+    private let textSecondary = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.55)
+    private let textMuted = Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.30)
+    private let warmAmber = Color(red: 245/255, green: 180/255, blue: 80/255)
+    private let actionBlue = Color(red: 55/255, green: 135/255, blue: 250/255)
     private let redColor = Color(red: 239/255, green: 68/255, blue: 68/255)
-    private let greenColor = Color(red: 34/255, green: 197/255, blue: 94/255)
+    
+    private let maxCountdown: TimeInterval = 15.0
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 状态指示灯
+        VStack(alignment: .leading, spacing: 20) {
             statusIndicator
                 .opacity(statusOpacity)
             
-            // App 信息区
             appInfoSection
                 .opacity(appInfoOpacity)
                 .offset(x: appInfoOffset)
             
-            // 按钮区
             buttonSection
                 .opacity(buttonOpacity)
                 .offset(y: buttonOffset)
-            
-            // 倒计时进度条
-            countdownBar
         }
-        .padding(20)
+        .padding(24)
         .frame(width: 320)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -78,7 +75,6 @@ struct DetectionPanelView: View {
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(glassBorder, lineWidth: 1)
         )
-        // 内高光
         .overlay(alignment: .top) {
             RoundedRectangle(cornerRadius: 16)
                 .fill(innerHighlight)
@@ -104,21 +100,19 @@ struct DetectionPanelView: View {
             playEnterAnimation()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("GreenLight 检测到 \(event.appName) 被拦截")
+        .accessibilityLabel(String(localized: "detection.accessibility.needsConfirmation \(event.appName)"))
     }
     
-    // MARK: - 状态指示灯
+    // MARK: - 状态指示
     
     private var statusIndicator: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(redColor)
-                .frame(width: 8, height: 8)
-                .shadow(color: redColor.opacity(0.6), radius: 4)
-                .modifier(PulseModifier(reduceMotion: reduceMotion))
+        HStack(spacing: 6) {
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundColor(warmAmber)
             
-            Text("检测到拦截")
-                .font(.system(size: 11, weight: .semibold))
+            Text("detection.securityCheck")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundColor(textSecondary)
         }
     }
@@ -126,20 +120,19 @@ struct DetectionPanelView: View {
     // MARK: - App 信息区
     
     private var appInfoSection: some View {
-        HStack(spacing: 12) {
-            // App 图标
+        HStack(spacing: 14) {
             appIcon
-                .frame(width: 40, height: 40)
-                .cornerRadius(10)
+                .frame(width: 48, height: 48)
+                .cornerRadius(12)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(event.appName)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(textPrimary)
                     .lineLimit(1)
                 
                 Text(event.appPath.path)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundColor(textMuted)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -158,96 +151,100 @@ struct DetectionPanelView: View {
     // MARK: - 按钮区
     
     private var buttonSection: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             if fixState == .failure {
-                // 错误状态：显示错误信息
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(errorMessage ?? "修复失败")
-                        .font(.system(size: 12, weight: .medium))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(errorMessage ?? String(localized: "detection.fixFailed"))
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundColor(redColor)
                     
-                    HStack(spacing: 8) {
-                        panelButton("关闭", style: .secondary) {
-                            dismissPanel()
-                        }
-                    }
+                    dismissActionButton(title: String(localized: "detection.close"), showCountdown: false)
                 }
             } else {
-                // 忽略
-                panelButton("忽略", style: .secondary) {
-                    cancelTimer()
-                    onDismiss()
-                }
-                .accessibilityHint("关闭面板，应用留在待处理列表")
+                dismissActionButton(title: String(localized: "detection.dismiss"), showCountdown: timerActive)
+                    .accessibilityHint(String(localized: "detection.accessibility.dismissHint"))
                 
-                // 修复
-                panelButton("修复", style: .tertiary) {
-                    cancelTimer()
-                    performFix(shouldOpen: false)
-                }
-                .accessibilityHint("移除隔离属性但不打开")
+                Spacer()
                 
-                // 修复并打开
-                panelButton(
-                    fixState == .success ? "✓" : "修复并打开",
-                    style: .primary
-                ) {
-                    cancelTimer()
-                    performFix(shouldOpen: true)
-                }
-                .accessibilityHint("移除隔离属性并自动打开")
-                .disabled(fixState == .fixing || fixState == .success)
+                fixAndOpenButton
+                    .accessibilityHint(String(localized: "detection.accessibility.fixHint"))
             }
         }
     }
     
-    // MARK: - 倒计时进度条
+    // MARK: - 忽略按钮（边框倒计时描边 + 秒数）
     
-    private var countdownBar: some View {
-        GeometryReader { geo in
-            RoundedRectangle(cornerRadius: 1)
-                .fill(countdown <= 3 ? redColor : textMuted)
-                .frame(width: geo.size.width * max(0, countdown / 10.0), height: 2)
-                .animation(reduceMotion ? .none : .linear(duration: 0.1), value: countdown)
+    private func dismissActionButton(title: String, showCountdown: Bool) -> some View {
+        Button(action: {
+            cancelTimer()
+            onDismiss()
+        }) {
+            HStack(spacing: 0) {
+                Text(title)
+                if showCountdown {
+                    Text(" (\(Int(ceil(countdown))))")
+                        .monospacedDigit()
+                }
+            }
+            .font(.system(size: 13, weight: .medium, design: .rounded))
+            .foregroundColor(textSecondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                ZStack {
+                    // 填充背景
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.06))
+                    
+                    if showCountdown {
+                        // 底层轨道边框
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.white.opacity(0.04), lineWidth: 1.5)
+                        
+                        // 倒计时描边进度
+                        RoundedRectangle(cornerRadius: 10)
+                            .trim(from: 0, to: max(0, countdown / maxCountdown))
+                            .stroke(
+                                Color.white.opacity(0.35),
+                                style: StrokeStyle(lineWidth: 1.5, lineCap: .round)
+                            )
+                            .animation(reduceMotion ? .none : NDAnimation.countdownTick, value: countdown)
+                    }
+                }
+            )
         }
-        .frame(height: 2)
-        .opacity(timerActive ? 1 : 0)
+        .buttonStyle(.plain)
+        .focusable()
+        .onHover { isDismissHovered = $0 }
+        .scaleEffect(isDismissHovered ? 1.03 : 1.0)
+        .brightness(isDismissHovered ? 0.06 : 0)
+        .animation(reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 0.86), value: isDismissHovered)
     }
     
-    // MARK: - 按钮组件
+    // MARK: - 修复并打开按钮（蓝色）
     
-    enum ButtonStyleType { case primary, secondary, tertiary }
-    
-    private func panelButton(_ title: String, style: ButtonStyleType, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(buttonTextColor(for: style))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+    private var fixAndOpenButton: some View {
+        Button(action: {
+            cancelTimer()
+            performFix(shouldOpen: true)
+        }) {
+            Text(fixState == .success ? "✓" : String(localized: "detection.fixAndOpen"))
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(buttonBgColor(for: style))
+                        .fill(actionBlue)
                 )
         }
         .buttonStyle(.plain)
         .focusable()
-    }
-    
-    private func buttonTextColor(for style: ButtonStyleType) -> Color {
-        switch style {
-        case .primary: return .white
-        case .secondary: return textSecondary
-        case .tertiary: return textPrimary
-        }
-    }
-    
-    private func buttonBgColor(for style: ButtonStyleType) -> Color {
-        switch style {
-        case .primary: return fixState == .success ? greenColor.opacity(1.1) : greenColor
-        case .secondary: return Color.white.opacity(0.06)
-        case .tertiary: return Color.white.opacity(0.08)
-        }
+        .disabled(fixState == .fixing || fixState == .success)
+        .onHover { isFixHovered = $0 }
+        .scaleEffect(isFixHovered ? 1.03 : 1.0)
+        .brightness(isFixHovered ? 0.08 : 0)
+        .animation(reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 0.86), value: isFixHovered)
     }
     
     // MARK: - 动作
@@ -257,7 +254,6 @@ struct DetectionPanelView: View {
         onFix(shouldOpen)
     }
     
-    /// 外部调用：标记修复成功
     func markSuccess() {
         fixState = .success
     }
@@ -274,62 +270,32 @@ struct DetectionPanelView: View {
     
     private func playEnterAnimation() {
         if reduceMotion {
-            panelOpacity = 1
-            panelOffset = 0
-            panelScale = 1
+            panelOpacity = 1; panelOffset = 0; panelScale = 1
             statusOpacity = 1
-            appInfoOpacity = 1
-            appInfoOffset = 0
-            buttonOpacity = 1
-            buttonOffset = 0
+            appInfoOpacity = 1; appInfoOffset = 0
+            buttonOpacity = 1; buttonOffset = 0
             return
         }
         
-        // Phase 1: 面板容器
         withAnimation(NDAnimation.panelTransition) {
-            panelOpacity = 1
-            panelOffset = 0
-            panelScale = 1
+            panelOpacity = 1; panelOffset = 0; panelScale = 1
         }
         
-        // Phase 2: 内容交错入场
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(NDAnimation.cardEnter) {
-                statusOpacity = 1
-            }
+            withAnimation(NDAnimation.cardEnter) { statusOpacity = 1 }
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             withAnimation(NDAnimation.cardEnter) {
-                appInfoOpacity = 1
-                appInfoOffset = 0
+                appInfoOpacity = 1; appInfoOffset = 0
             }
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             withAnimation(NDAnimation.cardEnter) {
-                buttonOpacity = 1
-                buttonOffset = 0
+                buttonOpacity = 1; buttonOffset = 0
             }
         }
-    }
-}
-
-// MARK: - 脉冲动画修饰器
-
-private struct PulseModifier: ViewModifier {
-    let reduceMotion: Bool
-    @State private var isPulsing = false
-    
-    func body(content: Content) -> some View {
-        content
-            .opacity(reduceMotion ? 1 : (isPulsing ? 0.6 : 1.0))
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
-                    isPulsing = true
-                }
-            }
     }
 }
 

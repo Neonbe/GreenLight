@@ -33,6 +33,17 @@ enum NDAnimation {
     /// 修复失败抖动（response: 0.1, damping: 0.2）
     static var errorShake: Animation { .spring(response: 0.1, dampingFraction: 0.2) }
     
+    // MARK: - 扫描动画
+    
+    /// 扫描主弧旋转（线性无限循环，1.2s 一周）
+    static var scanRotation: Animation { .linear(duration: 1.2).repeatForever(autoreverses: false) }
+    
+    /// 扫描副弧旋转（稍慢，1.8s 一周）
+    static var scanRotationSlow: Animation { .linear(duration: 1.8).repeatForever(autoreverses: false) }
+    
+    /// 倒计时 tick（平滑更新）
+    static var countdownTick: Animation { .linear(duration: 0.1) }
+    
     // MARK: - 交错入场间隔
     static let staggerInterval: Double = 0.05  // 50ms
 }

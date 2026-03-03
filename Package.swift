@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "GreenLight",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/alienator88/AlinFoundation.git", branch: "main"),
@@ -13,7 +14,8 @@ let package = Package(
             name: "GreenLight",
             dependencies: ["AlinFoundation", "Sparkle"],
             path: "GreenLight",
-            exclude: ["Info.plist", "Resources"]
+            exclude: ["Info.plist"],
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "GreenLightTests",

@@ -33,7 +33,7 @@ struct PopoverView: View {
     
     private var header: some View {
         HStack {
-            Text("GREENLIGHT")
+            Text("popover.header")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(textPrimary.opacity(0.2))
                 .kerning(3)
@@ -50,19 +50,19 @@ struct PopoverView: View {
         VStack(spacing: 2) {
             statusRow(
                 color: redColor,
-                label: "Rejected",
+                label: String(localized: "popover.rejected"),
                 count: appState.rejectedApps.count,
                 recentApp: appState.rejectedApps.last
             )
             statusRow(
                 color: amberColor,
-                label: "Detected",
+                label: String(localized: "popover.detected"),
                 count: appState.detectedApps.count,
                 recentApp: appState.detectedApps.last
             )
             statusRow(
                 color: greenColor,
-                label: "Cleared",
+                label: String(localized: "popover.cleared"),
                 count: appState.clearedApps.count,
                 recentApp: appState.clearedApps.first  // clearedApps 以 insert(at:0) 排序
             )
@@ -145,11 +145,11 @@ struct PopoverView: View {
     
     private var quickActions: some View {
         VStack(spacing: 0) {
-            actionButton(icon: "macwindow", label: "Show GreenLight") {
+            actionButton(icon: "macwindow", label: String(localized: "popover.showGreenLight")) {
                 activateMainWindow()
             }
             
-            actionButton(icon: "gearshape", label: "Settings...") {
+            actionButton(icon: "gearshape", label: String(localized: "popover.settings")) {
                 openSettings()
             }
             
@@ -157,7 +157,7 @@ struct PopoverView: View {
                 .background(Color.white.opacity(0.06))
                 .padding(.horizontal, 12)
             
-            actionButton(icon: "power", label: "Quit GreenLight") {
+            actionButton(icon: "power", label: String(localized: "popover.quit")) {
                 NSApplication.shared.terminate(nil)
             }
         }
@@ -194,7 +194,7 @@ struct PopoverView: View {
                 .frame(width: 5, height: 5)
                 .shadow(color: greenColor.opacity(0.35), radius: 3)
             
-            Text("累计亮绿灯 \(appState.totalGreenLights) 次")
+            Text("dashboard.totalGreenLights \(appState.totalGreenLights)")
                 .font(.system(size: 11, weight: .light))
                 .foregroundColor(greenColor.opacity(0.5))
         }

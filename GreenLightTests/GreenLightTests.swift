@@ -238,7 +238,7 @@ struct FSEventsWatcherDirectoryTests {
 @Suite("EnhancePromptManager 分级触发")
 struct EnhancePromptManagerTests {
     
-    @Test("T1 未达标不触发 — 窗口内仅 1 次 GK 活动")
+    @Test("T1 未达标不触发 — 窗口内仅 1 次 GK 活动", .disabled("T1 已断开，数据源不再注入"))
     func t1BelowThreshold() async {
         let manager = EnhancePromptManager(windowDuration: 0.1, minGKCount: 2)
         manager.checkDirectoryAccess = { _ in false }  // 模拟无 TCC 权限
@@ -255,7 +255,7 @@ struct EnhancePromptManagerTests {
         #expect(panelShown == false)
     }
     
-    @Test("T1 达标触发 — 窗口内 ≥2 次 GK + 0 次检测")
+    @Test("T1 达标触发 — 窗口内 ≥2 次 GK + 0 次检测", .disabled("T1 已断开，数据源不再注入"))
     func t1MeetsThreshold() async {
         let manager = EnhancePromptManager(windowDuration: 0.5, minGKCount: 2)
         manager.checkDirectoryAccess = { _ in false }  // 模拟无 TCC 权限
@@ -280,7 +280,7 @@ struct EnhancePromptManagerTests {
         Persistence.lastEnhancePromptDate = nil
     }
     
-    @Test("T1 有成功检测不触发")
+    @Test("T1 有成功检测不触发", .disabled("T1 已断开，数据源不再注入"))
     func t1WithDetectionSuppressed() async {
         let manager = EnhancePromptManager(windowDuration: 0.5, minGKCount: 2)
         manager.checkDirectoryAccess = { _ in false }
@@ -299,7 +299,7 @@ struct EnhancePromptManagerTests {
         #expect(panelShown == false)
     }
     
-    @Test("T1 会话级冷却 — Not Now 后不再弹")
+    @Test("T1 会话级冷却 — Not Now 后不再弹", .disabled("T1 已断开，数据源不再注入"))
     func t1SessionCooldown() {
         let manager = EnhancePromptManager(windowDuration: 0.1, minGKCount: 1)
         manager.checkDirectoryAccess = { _ in false }

@@ -68,9 +68,7 @@ struct GreenLightApp: App {
     
     private func setupPipeline() {
         // Channel A → EventDeduplicator
-        logMonitor.onDetection = { [deduplicator, enhanceManager] event in
-            // 标记窗口内有成功检测（§5.2）
-            enhanceManager.markDetection()
+        logMonitor.onDetection = { [deduplicator] event in
             deduplicator.receive(event)
         }
         
@@ -90,6 +88,20 @@ struct GreenLightApp: App {
                 GLLog.pipeline.notice("FS↔GK correlation: 0 GK events in last 10s")
             }
             deduplicator.receive(event)
+        }
+        
+        // 被动观察：FSEvents 检测到 .app 变更（含文件消失）→ reconcile
+        fsWatcher.onDirectoryChange = {
+            Task { @MainActor in
+                let appState = AppState.shared
+                appState.reconcileDetectedApps()
+                // 如果面板正在展示的 app 已消失，自动关闭
+                if let panelEvent = appState.pendingPanelEvent,
+                   !FileManager.default.fileExists(atPath: panelEvent.appPath.path) {
+                    GLLog.panel.notice("Panel app gone (user trashed), auto-closing")
+                    DetectionPanelController.shared.dismiss()
+                }
+            }
         }
         
         // EventDeduplicator → 浮动面板 + 状态更新
@@ -168,8 +180,6 @@ struct GreenLightApp: App {
         var confirmTimeoutWork: DispatchWorkItem?
         
         logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
-            // 记录 GK 活动到置信度窗口
-            enhanceManager.recordGKActivity()
             
             // §r06: Menu Bar 黄灯
             Task { @MainActor in
