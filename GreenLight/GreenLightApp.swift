@@ -22,7 +22,11 @@ struct GreenLightApp: App {
     var body: some Scene {
         // 1. 主窗口（Dock App 的核心入口）
         WindowGroup {
-            MainWindowView()
+            MainWindowView(onWarmup: { [fsWatcher] in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    fsWatcher.warmupScan()
+                }
+            })
                 .environmentObject(appState)
                 .environmentObject(updaterManager)
                 .preferredColorScheme(.dark)
@@ -99,16 +103,28 @@ struct GreenLightApp: App {
                 
                 // §3.2 优化：已 blocked 的 App 跳过重复弹窗
                 if let existing = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
-                   existing.status == .blocked {
-                    GLLog.pipeline.info("Already blocked, skip panel: \(event.appName)")
+                   existing.status == .detected {
+                    GLLog.pipeline.info("Already detected, skip panel: \(event.appName)")
+                    // 但如果确认态面板还在等，仍然要替换
+                    if DetectionPanelController.shared.isConfirming {
+                        appState.isScanning = false
+                        DetectionPanelController.shared.confirmWith(event: event)
+                    }
                     return
                 }
                 
-                appState.addBlockedApp(from: event)
+                appState.addDetectedApp(from: event)
+                appState.isScanning = false
                 
-                // 弹出检测浮动面板
-                GLLog.pipeline.info("Showing panel for: \(event.appName)")
-                DetectionPanelController.shared.show(event: event)
+                // §r06: 如果确认态面板正在等 → 无缝替换
+                if DetectionPanelController.shared.isConfirming {
+                    GLLog.pipeline.info("Confirming → confirmed: \(event.appName)")
+                    DetectionPanelController.shared.confirmWith(event: event)
+                } else {
+                    // 弹出检测浮动面板
+                    GLLog.pipeline.info("Showing panel for: \(event.appName)")
+                    DetectionPanelController.shared.show(event: event)
+                }
                 
                 // 可选：如有系统通知权限，同时发送系统通知
                 GLLog.pipeline.info("Sending system notification for: \(event.appName)")
@@ -135,51 +151,87 @@ struct GreenLightApp: App {
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
         GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
         
-        // onGKActivity → Channel C 主动扫描（§r05）+ 置信度记录 + fallback 兜底
+        // §r06: 启动预热扫描（轻量 SecStaticCode，仅填充 L2 缓存）
+        if Persistence.hasCompletedOnboarding {
+            // 非首次启动：立即预热
+            DispatchQueue.global(qos: .userInitiated).async { [fsWatcher] in
+                fsWatcher.warmupScan()
+            }
+        }
+        // 首次启动：由 OnboardingView BrandStep.onAppear 触发预热（见 §2.1）
+        
+        // onGKActivity → §r06 确认态流程 + 置信度记录 + fallback 兜底
         var lastProactiveScanTime: Date?
-        let proactiveScanCooldown: TimeInterval = 5  // §r05: 5 秒冷却
+        let proactiveScanCooldown: TimeInterval = 5
         var fallbackScanTimer: DispatchWorkItem?
         var lastFallbackScanTime: Date?
-        let fallbackCooldown: TimeInterval = 120  // §3.5: 120 秒冷却
+        let fallbackCooldown: TimeInterval = 120
+        var confirmTimeoutWork: DispatchWorkItem?
+        
         logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
             // 记录 GK 活动到置信度窗口
             enhanceManager.recordGKActivity()
             
-            // §r05 Channel C: 主动扫描（5 秒冷却）
+            // §r06: Menu Bar 黄灯
+            Task { @MainActor in
+                AppState.shared.isScanning = true
+            }
+            
+            // §r06 Channel C: 主动扫描 → 确认态面板
             let now = Date()
             if let lastScan = lastProactiveScanTime, now.timeIntervalSince(lastScan) < proactiveScanCooldown {
                 let remaining = String(format: "%.1f", proactiveScanCooldown - now.timeIntervalSince(lastScan))
                 GLLog.pipeline.debug("proactiveScan skipped: cooldown (\(remaining)s remaining)")
             } else {
                 lastProactiveScanTime = now
-                // 在主线程读取 knownPaths，然后在后台执行扫描
-                Task { @MainActor in
-                    let appState = AppState.shared
-                    let knownPaths = Set(
-                        appState.blockedApps.map(\.path) + appState.clearedApps.map(\.path)
-                    )
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        let events = fsWatcher.proactiveScan(knownPaths: knownPaths)
-                        guard !events.isEmpty else { return }
-                        // §r05: 直出（跳过 Dedup）
-                        for event in events {
-                            let appName = event.appPath.deletingPathExtension().lastPathComponent
-                            let greenLightEvent = GreenLightEvent(
-                                appPath: event.appPath,
-                                appName: appName,
-                                bundleId: event.bundleId,
-                                sources: [.proactiveScan],
-                                timestamp: event.timestamp
-                            )
-                            let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
-                            GLLog.pipeline.notice("proactiveScan direct: \(appName), latency=\(latencyMs)ms")
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let events = fsWatcher.proactiveScan(knownPaths: [])
+                    guard !events.isEmpty else {
+                        // 无发现 → 5s 后恢复绿灯
+                        let greenLightWork = DispatchWorkItem {
                             Task { @MainActor in
-                                appState.addBlockedApp(from: greenLightEvent)
-                                DetectionPanelController.shared.show(event: greenLightEvent)
-                                NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: greenLightEvent)
+                                if AppState.shared.isScanning {
+                                    AppState.shared.isScanning = false
+                                }
                             }
                         }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: greenLightWork)
+                        return
                     }
+                    
+                    // 有发现 → 弹确认态面板
+                    let sortedEvents = events.sorted { $0.appPath.path < $1.appPath.path }
+                    let latencyMs = Int(Date().timeIntervalSince(events[0].timestamp) * 1000)
+                    GLLog.pipeline.notice("proactiveScan: \(events.count) found, latency=\(latencyMs)ms, showing confirming panel")
+                    
+                    Task { @MainActor in
+                        DetectionPanelController.shared.showConfirming(foundCount: events.count)
+                    }
+                    
+                    // 5s 超时兜底：用 proactiveScan 首个结果替换
+                    confirmTimeoutWork?.cancel()
+                    let timeoutWork = DispatchWorkItem {
+                        Task { @MainActor in
+                            guard DetectionPanelController.shared.isConfirming else { return }
+                            let first = sortedEvents[0]
+                            let appName = first.appPath.deletingPathExtension().lastPathComponent
+                            let greenLightEvent = GreenLightEvent(
+                                appPath: first.appPath,
+                                appName: appName,
+                                bundleId: first.bundleId,
+                                sources: [.proactiveScan],
+                                timestamp: first.timestamp
+                            )
+                            GLLog.pipeline.notice("proactiveScan timeout fallback: \(appName)")
+                            let appState = AppState.shared
+                            appState.addDetectedApp(from: greenLightEvent)
+                            appState.isScanning = false
+                            DetectionPanelController.shared.confirmWith(event: greenLightEvent)
+                            NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: greenLightEvent)
+                        }
+                    }
+                    confirmTimeoutWork = timeoutWork
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeoutWork)
                 }
             }
             
@@ -247,18 +299,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 /// Menu Bar 图标标签
 struct MenuBarLabel: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPulsing = false
     
     var body: some View {
-        let blockedCount = appState.blockedApps.filter { $0.status != .dismissed || $0.status == .blocked }.count
+        let detectedCount = appState.detectedApps.count  // §6.4: badge 显示 🟡 待处理数
         
-        if blockedCount > 0 {
-            Label("\(blockedCount)", systemImage: "circle.fill")
+        if detectedCount > 0 {
+            Label("\(detectedCount)", systemImage: "circle.fill")
                 .symbolRenderingMode(.palette)
-                .foregroundStyle(.red)
+                .foregroundStyle(.yellow)
         } else if appState.isScanning {
             Image(systemName: "circle.fill")
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(.yellow)
+                .opacity(reduceMotion ? 1 : (isPulsing ? 0.6 : 1.0))
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
+                        isPulsing = true
+                    }
+                }
+                .onChange(of: appState.isScanning) { scanning in
+                    if !scanning { isPulsing = false }
+                }
         } else {
             Image(systemName: "circle.fill")
                 .symbolRenderingMode(.palette)

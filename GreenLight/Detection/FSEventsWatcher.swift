@@ -21,8 +21,19 @@ class FSEventsWatcher: ObservableObject {
     private(set) var recentCandidates: [String: Date] = [:]
     private let candidateWindow: TimeInterval = 30.0
     
-    /// §r05 L2 缓存：SecStaticCode 验证通过的 app（Key="路径|modDate"）
-    private var knownSafePaths: Set<String> = []
+    /// §r06 L2 缓存：SecStaticCode 验证通过的 app（Key="路径|modDate"，串行队列保护）
+    private let l2Queue = DispatchQueue(label: "com.greenlight.l2cache")
+    private var _knownSafePaths: Set<String> = []
+    
+    private func containsSafePath(_ key: String) -> Bool {
+        l2Queue.sync { _knownSafePaths.contains(key) }
+    }
+    private func insertSafePath(_ key: String) {
+        l2Queue.sync { _knownSafePaths.insert(key) }
+    }
+    private var safeCacheCount: Int {
+        l2Queue.sync { _knownSafePaths.count }
+    }
     
     /// 当前监控中的目录列表
     private(set) var currentMonitoredDirectories: [URL] = []
@@ -155,11 +166,11 @@ class FSEventsWatcher: ObservableObject {
                 // L3: 跳过 AppState 已知（blocked/dismissed/cleared）
                 guard !knownPaths.contains(path) else { continue }
                 
-                // L2: knownSafePaths 缓存（Key=路径+modDate）
+                // L2: knownSafePaths 缓存（Key=路径+modDate，线程安全）
                 let modDate = (try? fm.attributesOfItem(atPath: path)[.modificationDate] as? Date)
                     ?? Date.distantPast
                 let cacheKey = "\(path)|\(modDate.timeIntervalSince1970)"
-                guard !knownSafePaths.contains(cacheKey) else { continue }
+                guard !containsSafePath(cacheKey) else { continue }
                 
                 // SecStaticCode 验签（仅此，不走 spctl）
                 let cfURL = URL(fileURLWithPath: path) as CFURL
@@ -175,9 +186,8 @@ class FSEventsWatcher: ObservableObject {
                     continue
                 }
                 
-                // SecStaticCode 快速验签（跳过资源验证，仅检查签名结构）
-                // kSecCSDoNotValidateResources: 避免逐文件哈希大型 App（如 Xcode），单次 <1ms
-                let checkStatus = SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSDoNotValidateResources), nil)
+                // SecStaticCode 验签（完整校验，含资源验证）
+                let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
                 if checkStatus != errSecSuccess {
                     // 签名无效 → 拦截
                     GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent), OSStatus=\(checkStatus)")
@@ -187,14 +197,59 @@ class FSEventsWatcher: ObservableObject {
                     ))
                 } else {
                     // 签名有效 → 加入 L2 缓存，后续跳过
-                    knownSafePaths.insert(cacheKey)
+                    insertSafePath(cacheKey)
                 }
             }
         }
         
         let elapsed = String(format: "%.1f", Date().timeIntervalSince(scanStart) * 1000)
-        GLLog.fsEvents.notice("proactiveScan: \(results.count) found, \(elapsed)ms, quarantined=\(l1Count), dirs=\(dirs.count), L2cache=\(self.knownSafePaths.count)")
+        GLLog.fsEvents.notice("proactiveScan: \(results.count) found, \(elapsed)ms, quarantined=\(l1Count), dirs=\(dirs.count), L2cache=\(self.safeCacheCount)")
         return results
+    }
+    
+    // MARK: - §r06 启动预热（轻量 SecStaticCode，仅填充 L2 缓存）
+    
+    /// 启动时静默预热：用 kSecCSDoNotValidateResources 快速填充 L2 缓存
+    /// 不返回结果，不触发检测
+    func warmupScan() {
+        let scanStart = Date()
+        let dirs = currentMonitoredDirectories
+        guard !dirs.isEmpty else { return }
+        
+        let fm = FileManager.default
+        var l1Count = 0
+        
+        for dir in dirs {
+            guard let contents = try? fm.contentsOfDirectory(
+                at: dir, includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            ) else { continue }
+            
+            for item in contents where item.pathExtension == "app" {
+                let path = item.path
+                guard Self.hasQuarantine(at: path) else { continue }
+                l1Count += 1
+                
+                let modDate = (try? fm.attributesOfItem(atPath: path)[.modificationDate] as? Date)
+                    ?? Date.distantPast
+                let cacheKey = "\(path)|\(modDate.timeIntervalSince1970)"
+                guard !containsSafePath(cacheKey) else { continue }
+                
+                let cfURL = URL(fileURLWithPath: path) as CFURL
+                var codeRef: SecStaticCode?
+                let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
+                guard createStatus == errSecSuccess, let code = codeRef else { continue }
+                
+                // 完整验签（必须与 proactiveScan 标准一致，否则会错误缓存 unsigned app）
+                let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
+                if checkStatus == errSecSuccess {
+                    insertSafePath(cacheKey)
+                }
+            }
+        }
+        
+        let elapsed = String(format: "%.1f", Date().timeIntervalSince(scanStart) * 1000)
+        GLLog.fsEvents.notice("warmupScan: \(elapsed)ms, quarantined=\(l1Count), dirs=\(dirs.count), L2cache=\(self.safeCacheCount)")
     }
     
     // MARK: - 事件处理

@@ -13,11 +13,13 @@ class AppState: ObservableObject {
     @Published var isScanning: Bool = false
     @Published var pendingPanelEvent: GreenLightEvent?
     
-    /// 🔴 被拒绝的应用（Gatekeeper 拦截，status == .blocked）
-    var rejectedApps: [AppRecord] { blockedApps.filter { $0.status == .blocked } }
+    /// 🟡 待处理的应用（扫描/检测发现，文件仍存在）
+    var detectedApps: [AppRecord] {
+        blockedApps.filter { $0.status == .detected && FileManager.default.fileExists(atPath: $0.path) }
+    }
     
-    /// 🟡 未决策的应用（用户未处理，status == .pending 或 .dismissed）
-    var unresolvedApps: [AppRecord] { blockedApps.filter { $0.status == .pending || $0.status == .dismissed } }
+    /// 🔴 用户丢弃的应用（占位符记录）
+    var rejectedApps: [AppRecord] { blockedApps.filter { $0.status == .rejected } }
     
     private init() {
         load()
@@ -25,51 +27,36 @@ class AppState: ObservableObject {
     
     // MARK: - 事件处理
     
-    /// 检测到新的被拦截应用
-    func addBlockedApp(from event: GreenLightEvent) {
-        // 检查是否已存在（更新后重新隔离的情况）
+    /// 检测到新应用 → 进入 🟡 detected（§3.1: 所有来源统一）
+    func addDetectedApp(from event: GreenLightEvent) {
+        // 已在 🟢 cleared → 移回 🟡（更新后重新隔离）
         if let existingIndex = clearedApps.firstIndex(where: { $0.path == event.appPath.path }) {
-            // 从已放行移回被拦截
             var record = clearedApps.remove(at: existingIndex)
-            record.status = .blocked
+            record.status = .detected
             record.firstDetected = event.timestamp
             blockedApps.append(record)
-            GLLog.state.notice("Re-blocked (update): \(record.appName)")
+            GLLog.state.notice("Re-detected (update): \(record.appName)")
         } else if let existingIndex = blockedApps.firstIndex(where: { $0.path == event.appPath.path }) {
-            if blockedApps[existingIndex].status == .dismissed {
-                // §3.6: 按最高置信来源判断是否 re-block
-                let hasRealtimeSignal = event.sources.contains(.logStream)
-                    || event.sources.contains(.fsEvents)
-                if !hasRealtimeSignal {
-                    // 仅来自 scan → 不重置 dismissed
-                    GLLog.state.debug("Scan result for dismissed app, skip: \(event.appName)")
-                    return
-                }
-                // 来自实时检测 → 重置为 blocked
-                blockedApps[existingIndex].status = .blocked
-                blockedApps[existingIndex].firstDetected = event.timestamp
-                GLLog.state.notice("Re-blocked (dismissed → blocked, realtime): \(event.appName)")
-            } else {
-                // 已经是 .blocked，跳过
-                GLLog.state.debug("Already blocked, skip: \(event.appPath.path)")
-                return
-            }
+            // §3.2: 已在列表中 → 跳过（不重复添加）
+            let existing = blockedApps[existingIndex]
+            GLLog.state.debug("Already in list (\(existing.status.rawValue)), skip: \(event.appName)")
+            return
         } else {
-            // 新 app
+            // 新 app → 🟡 detected
             var record = AppRecord(
                 path: event.appPath.path,
                 bundleId: event.bundleId,
                 appName: event.appName,
-                status: .blocked
+                status: .detected
             )
             record.appIcon = loadAppIcon(at: event.appPath)
             blockedApps.append(record)
-            GLLog.state.notice("Blocked: \(event.appName), total=\(self.blockedApps.count)")
+            GLLog.state.notice("Detected: \(event.appName), total=\(self.blockedApps.count)")
         }
         save()
     }
     
-    /// 修复应用（移除 quarantine 成功后调用）
+    /// 放行应用 → 🟢 cleared（移除 quarantine 成功后调用）
     func markAsCleared(_ record: AppRecord) {
         if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
             var updated = blockedApps.remove(at: index)
@@ -83,11 +70,43 @@ class AppState: ObservableObject {
         }
     }
     
-    /// 忽略应用（关闭通知但仍在列表）
-    func dismissApp(_ record: AppRecord) {
-        if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
-            blockedApps[index].status = .dismissed
-            GLLog.state.info("Dismissed: \(record.appName)")
+    /// 丢弃应用 → 🔴 rejected（§4: Move to Trash + 留占位符）
+    func rejectApp(_ record: AppRecord) {
+        let url = URL(fileURLWithPath: record.path)
+        do {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            if let index = blockedApps.firstIndex(where: { $0.id == record.id }) {
+                blockedApps[index].status = .rejected
+                blockedApps[index].rejectedDate = Date()
+                // 快照图标（文件已不存在，后续无法再读取）
+                GLLog.state.notice("Rejected (trashed): \(record.appName)")
+                save()
+            }
+        } catch {
+            GLLog.state.error("Failed to trash: \(record.appName), \(error)")
+            // 失败则不改状态，留在 🟡
+        }
+    }
+    
+    /// 更新面板展示时间戳（§5.2: 面板重弹冷却）
+    func updatePanelTimestamp(for path: String) {
+        if let index = blockedApps.firstIndex(where: { $0.path == path }) {
+            blockedApps[index].lastPanelShownAt = Date()
+            save()
+        }
+    }
+    
+    /// §7.1: 清理 30 天前的 rejected 占位符
+    func cleanupExpiredRejections() {
+        let cutoff = Date().addingTimeInterval(-30 * 24 * 3600)
+        let beforeCount = blockedApps.count
+        blockedApps.removeAll { record in
+            guard record.status == .rejected, let rejectedDate = record.rejectedDate else { return false }
+            return rejectedDate < cutoff
+        }
+        let removed = beforeCount - blockedApps.count
+        if removed > 0 {
+            GLLog.state.notice("Cleanup: removed \(removed) expired rejected records")
             save()
         }
     }
@@ -102,9 +121,11 @@ class AppState: ObservableObject {
     
     func load() {
         let records = Persistence.loadRecords()
-        blockedApps = records.filter { $0.status == .blocked || $0.status == .dismissed }
+        blockedApps = records.filter { $0.status == .detected || $0.status == .rejected }
         clearedApps = records.filter { $0.status == .cleared }
         totalGreenLights = Persistence.loadTotalGreenLights()
+        // §7.1: 启动时清理过期 rejected
+        cleanupExpiredRejections()
     }
     
     // MARK: - 辅助

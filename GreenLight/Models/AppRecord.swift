@@ -10,15 +10,16 @@ struct AppRecord: Codable, Identifiable {
     var greenLightCount: Int
     var firstDetected: Date
     var lastFixed: Date?
+    var lastPanelShownAt: Date?   // §5.2: 上次弹面板时间（用于重弹冷却）
+    var rejectedDate: Date?       // §7.1: 被丢弃的时间（用于 30天清理）
     
     enum Status: String, Codable {
-        case pending    // 🟡 等待去重
-        case blocked    // 🔴 被拦截，待处理
-        case dismissed  // 🔴 用户点了忽略，仍在列表但不再推送通知
-        case cleared    // 🟢 已放行
+        case detected  // 🟡 扫描/检测发现，待用户决策
+        case rejected  // 🔴 用户主动丢到垃圾箱
+        case cleared   // 🟢 已放行（quarantine 已移除）
     }
     
-    init(path: String, bundleId: String? = nil, appName: String, status: Status = .pending) {
+    init(path: String, bundleId: String? = nil, appName: String, status: Status = .detected) {
         self.id = UUID()
         self.path = path
         self.bundleId = bundleId
