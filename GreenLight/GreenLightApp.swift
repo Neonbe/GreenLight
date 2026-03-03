@@ -181,66 +181,87 @@ struct GreenLightApp: App {
         
         logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
             
-            // §r06: Menu Bar 黄灯
-            Task { @MainActor in
-                AppState.shared.isScanning = true
-            }
-            
-            // §r06 Channel C: 主动扫描 → 确认态面板
+            // §r06: Menu Bar 黄灯 + Channel C 主动扫描
             let now = Date()
             if let lastScan = lastProactiveScanTime, now.timeIntervalSince(lastScan) < proactiveScanCooldown {
                 let remaining = String(format: "%.1f", proactiveScanCooldown - now.timeIntervalSince(lastScan))
                 GLLog.pipeline.debug("proactiveScan skipped: cooldown (\(remaining)s remaining)")
+                Task { @MainActor in
+                    AppState.shared.isScanning = true
+                }
             } else {
                 lastProactiveScanTime = now
-                DispatchQueue.global(qos: .userInitiated).async {
-                    let events = fsWatcher.proactiveScan(knownPaths: [])
-                    guard !events.isEmpty else {
-                        // 无发现 → 5s 后恢复绿灯
-                        let greenLightWork = DispatchWorkItem {
-                            Task { @MainActor in
-                                if AppState.shared.isScanning {
-                                    AppState.shared.isScanning = false
+                Task { @MainActor in
+                    let appState = AppState.shared
+                    appState.isScanning = true
+                    // L3: 取已知路径快照（blockedApps + clearedApps）
+                    let knownPaths = Set(
+                        appState.blockedApps.map { $0.path }
+                        + appState.clearedApps.map { $0.path }
+                    )
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let events = fsWatcher.proactiveScan(knownPaths: knownPaths)
+                        guard !events.isEmpty else {
+                            // 无发现 → 5s 后恢复绿灯
+                            let greenLightWork = DispatchWorkItem {
+                                Task { @MainActor in
+                                    if AppState.shared.isScanning {
+                                        AppState.shared.isScanning = false
+                                    }
                                 }
                             }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: greenLightWork)
+                            return
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: greenLightWork)
-                        return
-                    }
-                    
-                    // 有发现 → 弹确认态面板
-                    let sortedEvents = events.sorted { $0.appPath.path < $1.appPath.path }
-                    let latencyMs = Int(Date().timeIntervalSince(events[0].timestamp) * 1000)
-                    GLLog.pipeline.notice("proactiveScan: \(events.count) found, latency=\(latencyMs)ms, showing confirming panel")
-                    
-                    Task { @MainActor in
-                        DetectionPanelController.shared.showConfirming(foundCount: events.count)
-                    }
-                    
-                    // 5s 超时兜底：用 proactiveScan 首个结果替换
-                    confirmTimeoutWork?.cancel()
-                    let timeoutWork = DispatchWorkItem {
+                        
+                        // 有发现 → 弹确认态面板
+                        let sortedEvents = events.sorted { $0.appPath.path < $1.appPath.path }
+                        let latencyMs = Int(Date().timeIntervalSince(events[0].timestamp) * 1000)
+                        GLLog.pipeline.notice("proactiveScan: \(events.count) found, latency=\(latencyMs)ms, showing confirming panel")
+                        
                         Task { @MainActor in
-                            guard DetectionPanelController.shared.isConfirming else { return }
-                            let first = sortedEvents[0]
-                            let appName = first.appPath.deletingPathExtension().lastPathComponent
-                            let greenLightEvent = GreenLightEvent(
-                                appPath: first.appPath,
-                                appName: appName,
-                                bundleId: first.bundleId,
-                                sources: [.proactiveScan],
-                                timestamp: first.timestamp
-                            )
-                            GLLog.pipeline.notice("proactiveScan timeout fallback: \(appName)")
-                            let appState = AppState.shared
-                            appState.addDetectedApp(from: greenLightEvent)
-                            appState.isScanning = false
-                            DetectionPanelController.shared.confirmWith(event: greenLightEvent)
-                            NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: greenLightEvent)
+                            DetectionPanelController.shared.showConfirming(foundCount: events.count)
                         }
+                        
+                        // 5s 超时兜底：用首个未知 app 替换
+                        confirmTimeoutWork?.cancel()
+                        let timeoutWork = DispatchWorkItem {
+                            Task { @MainActor in
+                                guard DetectionPanelController.shared.isConfirming else { return }
+                                let appState = AppState.shared
+                                
+                                // 过滤已知 app（竞态兜底：Channel A/B 可能已在 5s 内添加）
+                                let newEvents = sortedEvents.filter { event in
+                                    !appState.blockedApps.contains { $0.path == event.appPath.path }
+                                    && !appState.clearedApps.contains { $0.path == event.appPath.path }
+                                }
+                                
+                                guard let first = newEvents.first else {
+                                    // 全部已知 → 静默关闭确认态
+                                    GLLog.pipeline.notice("proactiveScan timeout: all known, dismissing")
+                                    appState.isScanning = false
+                                    DetectionPanelController.shared.dismiss()
+                                    return
+                                }
+                                
+                                let appName = first.appPath.deletingPathExtension().lastPathComponent
+                                let greenLightEvent = GreenLightEvent(
+                                    appPath: first.appPath,
+                                    appName: appName,
+                                    bundleId: first.bundleId,
+                                    sources: [.proactiveScan],
+                                    timestamp: first.timestamp
+                                )
+                                GLLog.pipeline.notice("proactiveScan timeout fallback: \(appName)")
+                                appState.addDetectedApp(from: greenLightEvent)
+                                appState.isScanning = false
+                                DetectionPanelController.shared.confirmWith(event: greenLightEvent)
+                                NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: greenLightEvent)
+                            }
+                        }
+                        confirmTimeoutWork = timeoutWork
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeoutWork)
                     }
-                    confirmTimeoutWork = timeoutWork
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeoutWork)
                 }
             }
             
