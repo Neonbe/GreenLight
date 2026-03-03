@@ -153,6 +153,17 @@ struct GreenLightApp: App {
 // MARK: - AppDelegate（处理 Dock 图标点击重开窗口）
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // MenuBarExtra + WindowGroup 并存时，SwiftUI 不一定会自动打开主窗口
+        // 延迟一帧确保 WindowGroup 已创建，再显式激活
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            for window in NSApp.windows where window.canBecomeMain {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+    }
+    
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
             // 点击 Dock 图标 → 重新显示主窗口

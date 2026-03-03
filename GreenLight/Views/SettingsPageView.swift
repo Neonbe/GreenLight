@@ -5,6 +5,7 @@ import ServiceManagement
 /// PRD: V1.0.0-r02-主界面重构 §五
 struct SettingsPageView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var updaterManager: UpdaterManager
     @State private var launchAtLogin = false
     @State private var appeared = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -95,6 +96,63 @@ struct SettingsPageView: View {
                     }
                 }
                 .modifier(SettingsStagger(index: 3, appeared: appeared, reduceMotion: reduceMotion))
+                
+                // 软件更新
+                settingsSection(title: "软件更新") {
+                    settingsCard {
+                        VStack(spacing: 0) {
+                            HStack {
+                                Label("自动检查更新", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(textPrimary)
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: Binding(
+                                    get: { updaterManager.automaticallyChecksForUpdates },
+                                    set: { updaterManager.automaticallyChecksForUpdates = $0 }
+                                ))
+                                .toggleStyle(.switch)
+                                .tint(greenColor)
+                                .labelsHidden()
+                            }
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.06))
+                                .padding(.vertical, 4)
+                            
+                            HStack {
+                                Label("检查更新", systemImage: "arrow.clockwise.circle")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(textPrimary)
+                                
+                                Spacer()
+                                
+                                if let lastCheck = updaterManager.lastUpdateCheckDate {
+                                    Text(lastCheck, style: .relative)
+                                        .font(.system(size: 11, weight: .light))
+                                        .foregroundColor(textPrimary.opacity(0.4))
+                                }
+                                
+                                Button(action: { updaterManager.checkForUpdates() }) {
+                                    Text("检查")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 5)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(greenColor.opacity(0.8))
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!updaterManager.canCheckForUpdates)
+                                .opacity(updaterManager.canCheckForUpdates ? 1 : 0.5)
+                            }
+                        }
+                    }
+                }
+                .modifier(SettingsStagger(index: 4, appeared: appeared, reduceMotion: reduceMotion))
             }
             .frame(maxWidth: 480)
             
