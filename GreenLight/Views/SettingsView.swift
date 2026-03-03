@@ -4,6 +4,7 @@ import ServiceManagement
 /// 设置窗口
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var updaterManager: UpdaterManager
     @State private var launchAtLogin = false
     
     var body: some View {
@@ -18,6 +19,18 @@ struct SettingsView: View {
             Section("关于") {
                 LabeledContent("版本", value: "1.0.0")
                 LabeledContent("累计亮绿灯", value: "\(appState.totalGreenLights) 次")
+            }
+            
+            Section("软件更新") {
+                Toggle("自动检查更新", isOn: Binding(
+                    get: { updaterManager.automaticallyChecksForUpdates },
+                    set: { updaterManager.automaticallyChecksForUpdates = $0 }
+                ))
+                
+                Button("检查更新") {
+                    updaterManager.checkForUpdates()
+                }
+                .disabled(!updaterManager.canCheckForUpdates)
             }
         }
         .formStyle(.grouped)

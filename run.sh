@@ -34,6 +34,27 @@ if [ -f "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" ]; then
     cp "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
 fi
 
+# Step 5.5: 嵌入 Sparkle.framework（自动更新）
+SPARKLE_FRAMEWORK=""
+# SPM artifacts 下的 Sparkle.xcframework
+SPARKLE_XCFW=$(find "$PROJECT_DIR/.build/artifacts" -name "Sparkle.xcframework" -type d 2>/dev/null | head -1)
+if [ -n "$SPARKLE_XCFW" ]; then
+    SPARKLE_FRAMEWORK="$SPARKLE_XCFW/macos-arm64_x86_64/Sparkle.framework"
+fi
+
+if [ -d "$SPARKLE_FRAMEWORK" ]; then
+    echo "🔄 嵌入 Sparkle.framework..."
+    mkdir -p "$CONTENTS/Frameworks"
+    cp -R "$SPARKLE_FRAMEWORK" "$CONTENTS/Frameworks/"
+    # 修正 rpath，确保运行时能找到动态库
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "$MACOS/GreenLight" 2>/dev/null || true
+else
+    echo "⚠️ 未找到 Sparkle.framework，跳过嵌入（自动更新功能不可用）"
+fi
+
+# Step 5.6: 重新签名（嵌入 framework 后签名失效，必须重签）
+codesign --force --deep --sign - "$APP_BUNDLE"
+
 # Step 6: 杀死旧进程（如果有）
 pkill -f "GreenLight.app" 2>/dev/null || true
 sleep 0.5
@@ -42,15 +63,12 @@ sleep 0.5
 defaults delete com.greenlight.app 2>/dev/null || true
 
 echo "🚀 启动 GreenLight..."
-echo "   📍 请查看屏幕右上角菜单栏 — 你会看到一个绿色圆点 🟢"
-echo "   （这是一个 Menu Bar App，没有主窗口）"
 echo ""
 
 # Step 6: 启动
 open "$APP_BUNDLE"
 
 echo "✅ GreenLight 已启动！"
-echo "   点击菜单栏的 🟢 图标即可看到主面板"
 echo "   按 Ctrl+C 退出日志监听（App 仍在后台运行）"
 echo "   要关闭 App: pkill -f 'GreenLight.app'"
 echo ""

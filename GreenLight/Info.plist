@@ -30,5 +30,12 @@
     <string>GreenLight monitors your Desktop for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
     <key>NSDownloadsFolderUsageDescription</key>
     <string>GreenLight monitors your Downloads for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
+    <!-- Sparkle 自动更新配置 -->
+    <key>SUFeedURL</key>
+    <string>https://greenlight.app/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>YOUR_EDDSA_PUBLIC_KEY_HERE</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
 </dict>
 </plist>
