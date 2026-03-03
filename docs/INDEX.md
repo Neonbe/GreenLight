@@ -25,6 +25,11 @@
 - **定位**：竞品分析、可行性评审、技术探索。
 - **命名**：`{类型}-{描述}-{YYYY.MM.DD}.md`
 
+## 🔭 当前活跃文档 (Active Work)
+
+- [V1.0.0-r03-检测管线延迟优化](file:///Users/neobott/Desktop/GreenLight/docs/V1.0.0-r03-检测管线延迟优化-2026.03.03.md)
+- [V1.0.0-r04-延迟实验方案 (实验分支)](file:///Users/neobott/Desktop/GreenLight/docs/V1.0.0-r04-延迟链路实验方案-2026.03.03.md)
+
 ### 4. `docs/archive/` —— 归档区（终态）
 
 - **定位**：已完成上线或明确废弃的文档。

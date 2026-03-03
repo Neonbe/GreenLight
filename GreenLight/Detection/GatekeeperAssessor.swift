@@ -44,13 +44,15 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         }
         
         // §3.3: SecStaticCode 快速排除
-        if let quickResult = quickReject(appPath: appPath) {
-            GLLog.gkAssess.info("GK assess (SecStaticCode): \(appName), result=\(String(describing: quickResult))")
+        let quickResult = quickReject(appPath: appPath, appName: appName)
+        if let quickResult = quickResult {
+            GLLog.gkAssess.info("GK assess (SecStaticCode→rejected): \(appName)")
             cacheResult(appPath: appPath, result: quickResult)
             return quickResult
         }
         
         // 签名正常 → spctl 兜底确认
+        GLLog.gkAssess.info("GK assess: SecStaticCode passed for \(appName), falling through to spctl")
         let result = ShellExecutor.run("/usr/sbin/spctl",
             arguments: ["--assess", "--type", "exec", appPath])
         
@@ -72,23 +74,24 @@ struct GatekeeperAssessor: GatekeeperAssessing {
     /// 快速检查签名有效性。返回值含义：
     /// - `.rejected`: 签名异常（损坏/不存在），直接判定拦截
     /// - `nil`: 签名正常，需要 spctl 兜底确认（可能未公证）
-    private func quickReject(appPath: String) -> GKAssessResult? {
+    private func quickReject(appPath: String, appName: String) -> GKAssessResult? {
         let url = URL(fileURLWithPath: appPath) as CFURL
         var codeRef: SecStaticCode?
         
         let createStatus = SecStaticCodeCreateWithPath(url, [], &codeRef)
         guard createStatus == errSecSuccess, let code = codeRef else {
-            GLLog.gkAssess.info("SecStaticCode create failed: \(appPath), status=\(createStatus)")
+            GLLog.gkAssess.notice("SecStaticCode CREATE failed: \(appName), OSStatus=\(createStatus)")
             return .rejected  // 无法创建代码对象 → 视为异常
         }
         
         let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
         if checkStatus != errSecSuccess {
-            GLLog.gkAssess.info("SecStaticCode validity failed: \(appPath), status=\(checkStatus)")
+            GLLog.gkAssess.notice("SecStaticCode VALIDITY failed: \(appName), OSStatus=\(checkStatus)")
             return .rejected  // 签名无效/损坏
         }
         
         // 签名正常，不能判定 → 需要 spctl 兜底
+        GLLog.gkAssess.info("SecStaticCode passed: \(appName), signature valid")
         return nil
     }
     

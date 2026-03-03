@@ -1,5 +1,6 @@
 import Foundation
 import CoreServices
+import Security
 
 /// Channel B: 文件系统监控，检测新出现的带 quarantine 属性的 .app
 class FSEventsWatcher: ObservableObject {
@@ -19,6 +20,9 @@ class FSEventsWatcher: ObservableObject {
     /// §3.5: 近期候选路径（30 秒内有 FS 活动的 .app 路径），供目标化 fallback scan 使用
     private(set) var recentCandidates: [String: Date] = [:]
     private let candidateWindow: TimeInterval = 30.0
+    
+    /// §r05 L2 缓存：SecStaticCode 验证通过的 app（Key="路径|modDate"）
+    private var knownSafePaths: Set<String> = []
     
     /// 当前监控中的目录列表
     private(set) var currentMonitoredDirectories: [URL] = []
@@ -119,6 +123,77 @@ class FSEventsWatcher: ObservableObject {
         }
         
         GLLog.fsEvents.notice("Fallback scan completed: \(results.count) rejected apps found")
+        return results
+    }
+    
+    // MARK: - §r05 主动扫描（Channel C）
+    
+    /// GK evaluate 触发的主动扫描：遍历监控目录 → 三层过滤 → SecStaticCode 验签
+    /// 仅用 SecStaticCode（~6ms），不走 spctl（~3s），失败即判定拦截
+    func proactiveScan(knownPaths: Set<String>) -> [DetectionEvent] {
+        let scanStart = Date()
+        let dirs = currentMonitoredDirectories
+        guard !dirs.isEmpty else { return [] }
+        
+        var results: [DetectionEvent] = []
+        let fm = FileManager.default
+        var l1Count = 0
+        
+        for dir in dirs {
+            guard let contents = try? fm.contentsOfDirectory(
+                at: dir, includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            ) else { continue }
+            
+            for item in contents where item.pathExtension == "app" {
+                let path = item.path
+                
+                // L1: quarantine 预过滤（纳秒级）
+                guard Self.hasQuarantine(at: path) else { continue }
+                l1Count += 1
+                
+                // L3: 跳过 AppState 已知（blocked/dismissed/cleared）
+                guard !knownPaths.contains(path) else { continue }
+                
+                // L2: knownSafePaths 缓存（Key=路径+modDate）
+                let modDate = (try? fm.attributesOfItem(atPath: path)[.modificationDate] as? Date)
+                    ?? Date.distantPast
+                let cacheKey = "\(path)|\(modDate.timeIntervalSince1970)"
+                guard !knownSafePaths.contains(cacheKey) else { continue }
+                
+                // SecStaticCode 验签（仅此，不走 spctl）
+                let cfURL = URL(fileURLWithPath: path) as CFURL
+                var codeRef: SecStaticCode?
+                let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
+                guard createStatus == errSecSuccess, let code = codeRef else {
+                    // 无法创建代码对象 → 视为拦截
+                    GLLog.fsEvents.info("proactiveScan found (no code): \(item.lastPathComponent)")
+                    results.append(DetectionEvent(
+                        source: .proactiveScan, appPath: item,
+                        bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
+                    ))
+                    continue
+                }
+                
+                // SecStaticCode 快速验签（跳过资源验证，仅检查签名结构）
+                // kSecCSDoNotValidateResources: 避免逐文件哈希大型 App（如 Xcode），单次 <1ms
+                let checkStatus = SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSDoNotValidateResources), nil)
+                if checkStatus != errSecSuccess {
+                    // 签名无效 → 拦截
+                    GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent), OSStatus=\(checkStatus)")
+                    results.append(DetectionEvent(
+                        source: .proactiveScan, appPath: item,
+                        bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
+                    ))
+                } else {
+                    // 签名有效 → 加入 L2 缓存，后续跳过
+                    knownSafePaths.insert(cacheKey)
+                }
+            }
+        }
+        
+        let elapsed = String(format: "%.1f", Date().timeIntervalSince(scanStart) * 1000)
+        GLLog.fsEvents.notice("proactiveScan: \(results.count) found, \(elapsed)ms, quarantined=\(l1Count), dirs=\(dirs.count), L2cache=\(self.knownSafePaths.count)")
         return results
     }
     
