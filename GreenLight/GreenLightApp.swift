@@ -321,37 +321,147 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// Menu Bar 图标标签
+/// Menu Bar 图标标签 — 盾牌 + 交通灯（NSImage template 渲染）
 struct MenuBarLabel: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isPulsing = false
+    @State private var scanRotation: Double = 0
     
     var body: some View {
-        let detectedCount = appState.detectedApps.count  // §6.4: badge 显示 🟡 待处理数
+        let detectedCount = appState.detectedApps.count
         
         if detectedCount > 0 {
-            Label("\(detectedCount)", systemImage: "circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.yellow)
+            // 检测到目标：盾牌 + 数字角标
+            Label {
+                Text("\(detectedCount)")
+            } icon: {
+                Image(nsImage: MenuBarIconRenderer.shieldIcon())
+            }
         } else if appState.isScanning {
-            Image(systemName: "circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.yellow)
-                .opacity(reduceMotion ? 1 : (isPulsing ? 0.6 : 1.0))
+            // 扫描中：盾牌 + 旋转弧线
+            Image(nsImage: MenuBarIconRenderer.scanningIcon())
+                .rotationEffect(.degrees(scanRotation))
                 .onAppear {
                     guard !reduceMotion else { return }
-                    withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
-                        isPulsing = true
+                    withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                        scanRotation = 360
                     }
                 }
                 .onChange(of: appState.isScanning) { scanning in
-                    if !scanning { isPulsing = false }
+                    if !scanning { scanRotation = 0 }
                 }
         } else {
-            Image(systemName: "circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.green)
+            // 常规态：盾牌 + 三点
+            Image(nsImage: MenuBarIconRenderer.shieldIcon())
         }
     }
 }
+
+// MARK: - Menu Bar 图标渲染器
+
+/// 使用 NSImage + NSBezierPath 绘制 Menu Bar 模板图标
+enum MenuBarIconRenderer {
+    
+    /// 盾牌 + 三圆点（常规态 / 检测态）
+    static func shieldIcon(size: CGFloat = 18) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            let w = rect.width
+            let h = rect.height
+            
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+            
+            // 盾牌路径
+            let shield = NSBezierPath()
+            shield.move(to: NSPoint(x: w * 0.5, y: h * 0.94))   // 顶部中心（flipped 坐标）
+            shield.line(to: NSPoint(x: w * 0.88, y: h * 0.76))
+            shield.line(to: NSPoint(x: w * 0.88, y: h * 0.48))
+            shield.curve(to: NSPoint(x: w * 0.5, y: h * 0.06),
+                         controlPoint1: NSPoint(x: w * 0.88, y: h * 0.22),
+                         controlPoint2: NSPoint(x: w * 0.72, y: h * 0.10))
+            shield.curve(to: NSPoint(x: w * 0.12, y: h * 0.48),
+                         controlPoint1: NSPoint(x: w * 0.28, y: h * 0.10),
+                         controlPoint2: NSPoint(x: w * 0.12, y: h * 0.22))
+            shield.line(to: NSPoint(x: w * 0.12, y: h * 0.76))
+            shield.close()
+            shield.lineWidth = 1.2
+            shield.lineJoinStyle = .round
+            shield.stroke()
+            
+            // 三个圆点（从下到上：flipped 坐标系）
+            let dotR: CGFloat = w * 0.08
+            let dotPositions: [CGFloat] = [h * 0.68, h * 0.50, h * 0.32]
+            for cy in dotPositions {
+                let dotRect = NSRect(x: w * 0.5 - dotR, y: cy - dotR, width: dotR * 2, height: dotR * 2)
+                NSBezierPath(ovalIn: dotRect).fill()
+            }
+            
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+    
+    /// 盾牌 + 环绕弧线（扫描态）— 弧线会被 SwiftUI rotationEffect 旋转
+    static func scanningIcon(size: CGFloat = 18) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            let w = rect.width
+            let h = rect.height
+            
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+            
+            // 内缩盾牌（留出弧线空间）
+            let inset: CGFloat = 2
+            let iw = w - inset * 2
+            let ih = h - inset * 2
+            
+            let shield = NSBezierPath()
+            shield.move(to: NSPoint(x: w * 0.5, y: inset + ih * 0.92))
+            shield.line(to: NSPoint(x: inset + iw * 0.85, y: inset + ih * 0.74))
+            shield.line(to: NSPoint(x: inset + iw * 0.85, y: inset + ih * 0.48))
+            shield.curve(to: NSPoint(x: w * 0.5, y: inset + ih * 0.08),
+                         controlPoint1: NSPoint(x: inset + iw * 0.85, y: inset + ih * 0.24),
+                         controlPoint2: NSPoint(x: inset + iw * 0.70, y: inset + ih * 0.12))
+            shield.curve(to: NSPoint(x: inset + iw * 0.15, y: inset + ih * 0.48),
+                         controlPoint1: NSPoint(x: inset + iw * 0.30, y: inset + ih * 0.12),
+                         controlPoint2: NSPoint(x: inset + iw * 0.15, y: inset + ih * 0.24))
+            shield.line(to: NSPoint(x: inset + iw * 0.15, y: inset + ih * 0.74))
+            shield.close()
+            shield.lineWidth = 1.0
+            shield.lineJoinStyle = .round
+            shield.stroke()
+            
+            // 三圆点
+            let dotR: CGFloat = iw * 0.07
+            let dotYs: [CGFloat] = [inset + ih * 0.66, inset + ih * 0.50, inset + ih * 0.34]
+            for cy in dotYs {
+                let dotRect = NSRect(x: w * 0.5 - dotR, y: cy - dotR, width: dotR * 2, height: dotR * 2)
+                NSBezierPath(ovalIn: dotRect).fill()
+            }
+            
+            // 环绕弧线（两段对称弧）
+            let center = NSPoint(x: w * 0.5, y: h * 0.5)
+            let radius = min(w, h) * 0.47
+            
+            let arc1 = NSBezierPath()
+            arc1.appendArc(withCenter: center, radius: radius,
+                           startAngle: 30, endAngle: 150, clockwise: false)
+            arc1.lineWidth = 1.3
+            arc1.lineCapStyle = .round
+            arc1.stroke()
+            
+            let arc2 = NSBezierPath()
+            arc2.appendArc(withCenter: center, radius: radius,
+                           startAngle: 210, endAngle: 330, clockwise: false)
+            arc2.lineWidth = 1.3
+            arc2.lineCapStyle = .round
+            arc2.stroke()
+            
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+}
+

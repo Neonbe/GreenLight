@@ -34,6 +34,19 @@ if [ -f "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" ]; then
     cp "$PROJECT_DIR/GreenLight/Resources/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
 fi
 
+# Step 5.1: 编译 .xcstrings → .lproj/*.strings（SPM swift build 不做此步骤）
+echo "🌐 编译本地化资源..."
+python3 "$PROJECT_DIR/scripts/compile_xcstrings.py" \
+    "$CONTENTS/Resources" \
+    "$PROJECT_DIR/GreenLight/Resources/Localizable.xcstrings" \
+    "$PROJECT_DIR/GreenLight/Resources/InfoPlist.xcstrings"
+
+# Step 5.2: 拷贝 SPM 资源 bundle（包含未编译资源的备用）
+RESOURCE_BUNDLE="$BUILD_DIR/GreenLight_GreenLight.bundle"
+if [ -d "$RESOURCE_BUNDLE" ]; then
+    cp -R "$RESOURCE_BUNDLE" "$CONTENTS/Resources/"
+fi
+
 # Step 5.5: 嵌入 Sparkle.framework（自动更新）
 SPARKLE_FRAMEWORK=""
 # SPM artifacts 下的 Sparkle.xcframework

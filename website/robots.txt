@@ -1,5 +1,5 @@
 # GreenLight Website
-# https://greenlight.app
+# https://greenlight.notedock.app
 
 # Allow all standard search engines
 User-agent: Googlebot
@@ -36,4 +36,4 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://greenlight.app/sitemap.xml
+Sitemap: https://greenlight.notedock.app/sitemap.xml
