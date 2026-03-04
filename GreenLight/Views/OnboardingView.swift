@@ -36,8 +36,17 @@ struct OnboardingView: View {
                             GLLog.onboarding.info("Onboarding step: 2")
                         }
                         .transition(pageTransition)
-                    } else {
+                    } else if currentStep == 1 {
                         TrustStep(reduceMotion: reduceMotion) {
+                            let anim: Animation = reduceMotion
+                                ? .linear(duration: 0.15)
+                                : .spring(response: 0.45, dampingFraction: 0.88)
+                            withAnimation(anim) { currentStep = 2 }
+                            GLLog.onboarding.info("Onboarding step: 3")
+                        }
+                        .transition(pageTransition)
+                    } else {
+                        ScanningStep(reduceMotion: reduceMotion) {
                             GLLog.onboarding.notice("Onboarding completed")
                             Persistence.hasCompletedOnboarding = true
                             onComplete()
@@ -181,6 +190,323 @@ private struct TrustStep: View {
             GLLog.onboarding.info("Login item set: \(enabled)")
         } catch {
             GLLog.onboarding.error("Login item failed: \(error)")
+        }
+    }
+}
+
+// MARK: - Step 3 · Scanning（扫描过场）
+
+private struct ScanningStep: View {
+    let reduceMotion: Bool
+    let onComplete: () -> Void
+    @EnvironmentObject var appState: AppState
+    
+    private enum Phase { case scanning, found, clear }
+    
+    @State private var phase: Phase = .scanning
+    @State private var appeared = false
+    
+    // Shield
+    @State private var shieldTint = OB.textPrimary
+    @State private var shieldBrightness: Double = 0
+    
+    // Scanning
+    @State private var arcOpacity: Double = 0
+    @State private var arcRotation: Double = 0
+    @State private var shimmerOffset: CGFloat = -120
+    
+    // Result
+    @State private var animatedCount = 0
+    @State private var iconsAppeared = false
+    @State private var ctaAppeared = false
+    @State private var minDisplayElapsed = false
+    @State private var transitioned = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            shieldView
+                .stagger(0, appeared: appeared, reduceMotion: reduceMotion)
+            
+            Spacer().frame(height: 32)
+            
+            ZStack {
+                if phase == .scanning {
+                    scanningContent.transition(.opacity)
+                }
+                if phase == .found {
+                    resultContent.transition(.opacity)
+                }
+                if phase == .clear {
+                    clearContent.transition(.opacity)
+                }
+            }
+        }
+        .onAppear {
+            appeared = true
+            startScanning()
+        }
+        .onChange(of: appState.detectedApps.count) { _ in
+            guard minDisplayElapsed, !transitioned else { return }
+            transitioned = true
+            transitionToResult()
+        }
+    }
+    
+    // MARK: - Shield + Arc
+    
+    private var shieldView: some View {
+        ZStack {
+            // 旋转弧线
+            Circle()
+                .trim(from: 0, to: 0.25)
+                .stroke(OB.scanBlue.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                .frame(width: 56, height: 56)
+                .rotationEffect(.degrees(arcRotation))
+                .opacity(arcOpacity)
+            
+            // 盾牌
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.system(size: 44, weight: .ultraLight))
+                .foregroundStyle(.linearGradient(
+                    colors: [shieldTint.opacity(0.8), shieldTint.opacity(0.4)],
+                    startPoint: .top, endPoint: .bottom
+                ))
+                .brightness(shieldBrightness)
+        }
+    }
+    
+    // MARK: - Phase 1: Scanning
+    
+    private var scanningContent: some View {
+        VStack(spacing: 16) {
+            Text("onboarding.scanning.checking")
+                .font(.system(size: 15, weight: .light))
+                .foregroundColor(OB.textPrimary)
+                .stagger(1, appeared: appeared, reduceMotion: reduceMotion)
+            
+            shimmerBar
+                .stagger(2, appeared: appeared, reduceMotion: reduceMotion)
+        }
+    }
+    
+    private var shimmerBar: some View {
+        Capsule()
+            .fill(Color.white.opacity(0.06))
+            .frame(width: 200, height: 2)
+            .overlay(
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, OB.scanBlue.opacity(0.4), OB.scanBlue.opacity(0.15), .clear],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 60)
+                    .offset(x: shimmerOffset)
+            )
+            .clipShape(Capsule())
+    }
+    
+    // MARK: - Phase 2A: Found
+    
+    private var resultContent: some View {
+        VStack(spacing: 0) {
+            if animatedCount > 0 {
+                Text("\(animatedCount)")
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundColor(OB.amber)
+            }
+            
+            Spacer().frame(height: 12)
+            
+            Text("onboarding.scanning.found \(appState.detectedApps.count)")
+                .font(.system(size: 18, weight: .light))
+                .foregroundColor(OB.textPrimary)
+            
+            Spacer().frame(height: 8)
+            
+            Text("onboarding.scanning.reviewSubtitle")
+                .font(.system(size: 13, weight: .light))
+                .foregroundColor(OB.textMuted)
+            
+            Spacer().frame(height: 24)
+            
+            appIconsRow
+            
+            Spacer().frame(height: 32)
+            
+            // CTA
+            VStack(spacing: 12) {
+                Button("onboarding.scanning.reviewNow", action: onComplete)
+                    .buttonStyle(OBButtonStyle(isPrimary: true))
+                
+                Button("onboarding.scanning.skip", action: onComplete)
+                    .font(.system(size: 13, weight: .light))
+                    .foregroundColor(OB.textPrimary.opacity(0.3))
+                    .buttonStyle(.plain)
+            }
+            .opacity(ctaAppeared ? 1 : 0)
+            .offset(y: ctaAppeared ? 0 : 10)
+            .animation(reduceMotion ? nil : NDAnimation.cardEnter, value: ctaAppeared)
+        }
+    }
+    
+    private var appIconsRow: some View {
+        let apps = Array(appState.detectedApps.prefix(6))
+        let overflow = max(0, appState.detectedApps.count - 6)
+        
+        return HStack(spacing: 8) {
+            ForEach(Array(apps.enumerated()), id: \.element.id) { index, app in
+                Group {
+                    if let iconData = app.appIcon, let nsImage = NSImage(data: iconData) {
+                        Image(nsImage: nsImage).resizable()
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ))
+                            .overlay(
+                                Text(String(app.appName.prefix(1)))
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            )
+                    }
+                }
+                .frame(width: 40, height: 40)
+                .cornerRadius(10)
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.1)))
+                .opacity(iconsAppeared ? 1 : 0)
+                .scaleEffect(iconsAppeared ? 1 : 0.6)
+                .animation(
+                    reduceMotion ? nil : NDAnimation.cardEnter.delay(Double(index) * 0.06),
+                    value: iconsAppeared
+                )
+            }
+            
+            if overflow > 0 {
+                Text("+\(overflow)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(OB.textMuted)
+                    .opacity(iconsAppeared ? 1 : 0)
+                    .animation(
+                        reduceMotion ? nil : NDAnimation.cardEnter.delay(Double(apps.count) * 0.06),
+                        value: iconsAppeared
+                    )
+            }
+        }
+    }
+    
+    // MARK: - Phase 2B: All Clear
+    
+    private var clearContent: some View {
+        VStack(spacing: 0) {
+            Text("onboarding.scanning.allClear")
+                .font(.system(size: 20, weight: .light))
+                .foregroundColor(OB.textPrimary)
+            
+            Spacer().frame(height: 12)
+            
+            Text("onboarding.scanning.noIssues")
+                .font(.system(size: 13, weight: .light))
+                .foregroundColor(OB.textMuted)
+            
+            Spacer().frame(height: 32)
+            
+            Button("onboarding.scanning.getStarted", action: onComplete)
+                .buttonStyle(OBButtonStyle(isPrimary: true))
+                .opacity(ctaAppeared ? 1 : 0)
+                .offset(y: ctaAppeared ? 0 : 10)
+                .animation(reduceMotion ? nil : NDAnimation.cardEnter, value: ctaAppeared)
+        }
+    }
+    
+    // MARK: - Animation Orchestration
+    
+    private func startScanning() {
+        if reduceMotion {
+            let count = appState.detectedApps.count
+            phase = count > 0 ? .found : .clear
+            shieldTint = count > 0 ? OB.amber : OB.green
+            animatedCount = count
+            iconsAppeared = true
+            ctaAppeared = true
+            transitioned = true
+            return
+        }
+        
+        // Phase 1: 弧线入场 + 旋转 + shimmer
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(NDAnimation.cardEnter) { arcOpacity = 1 }
+            withAnimation(NDAnimation.scanRotation) { arcRotation = 360 }
+            withAnimation(NDAnimation.shimmer) { shimmerOffset = 120 }
+        }
+        
+        // 最小展示时间 0.8s：如果数据已就绪则立即过渡
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            minDisplayElapsed = true
+            if appState.detectedApps.count > 0, !transitioned {
+                transitioned = true
+                transitionToResult()
+            }
+        }
+        
+        // 最大等待 3s：无论如何过渡（可能确实 All clear）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            guard !transitioned else { return }
+            transitioned = true
+            transitionToResult()
+        }
+    }
+    
+    private func transitionToResult() {
+        let count = appState.detectedApps.count
+        let isFound = count > 0
+        
+        // 弧线 + shimmer 退场
+        withAnimation(NDAnimation.cardExit) { arcOpacity = 0 }
+        
+        // Phase 切换（crossfade）
+        withAnimation(NDAnimation.panelTransition) {
+            phase = isFound ? .found : .clear
+        }
+        
+        // 盾牌变色
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.65)) {
+                shieldTint = isFound ? OB.amber : OB.green
+            }
+        }
+        
+        if isFound {
+            // Count-up
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                for i in 1...count {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08 * Double(i)) {
+                        animatedCount = i
+                    }
+                }
+            }
+            // 图标入场
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                iconsAppeared = true
+            }
+            // CTA 入场
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation(NDAnimation.cardEnter) { ctaAppeared = true }
+            }
+        } else {
+            // 亮闪
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation(.easeInOut(duration: 0.3)) { shieldBrightness = 0.12 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.easeInOut(duration: 0.3)) { shieldBrightness = 0 }
+                }
+            }
+            // CTA
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(NDAnimation.cardEnter) { ctaAppeared = true }
+            }
         }
     }
 }
@@ -437,4 +763,5 @@ private enum OB {
     static let green         = Color(red: 34/255,  green: 197/255, blue: 94/255)
     static let red           = Color(red: 239/255, green: 68/255,  blue: 68/255)
     static let amber         = Color(red: 245/255, green: 158/255, blue: 11/255)
+    static let scanBlue      = Color(red: 100/255, green: 180/255, blue: 255/255)
 }
