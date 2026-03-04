@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 主窗口仪表盘 — 900×620 全尺寸主界面
 /// PRD: V1.0.0-r02-主界面重构 §三
@@ -8,6 +9,7 @@ struct MainDashboardView: View {
     @State private var selectedApp: AppRecord?
     @State private var showExpandCoverage = false
     @State private var appeared = false
+    @State private var isDropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     let enhanceManager: EnhancePromptManager
@@ -43,8 +45,19 @@ struct MainDashboardView: View {
                 dashboardContent
                     .transition(reduceMotion ? .opacity : .move(edge: .leading).combined(with: .opacity))
             }
+            
+            // Drop Zone 覆盖层
+            if isDropTargeted {
+                DropZoneOverlay(reduceMotion: reduceMotion)
+                    .transition(.opacity)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isDropTargeted)
+            }
         }
         .frame(width: 900, height: 620)
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            handleWindowDrop(providers: providers)
+            return true
+        }
         .onChange(of: appState.pendingSelectedApp?.id) { _ in
             // Menu Bar Extra 点击 App icon → 自动弹出 ActionBubble
             guard let app = appState.pendingSelectedApp else { return }
@@ -501,6 +514,55 @@ struct MainDashboardView: View {
             }
         }
     }
+    
+    // MARK: - Window Drop
+    
+    private func handleWindowDrop(providers: [NSItemProvider]) {
+        for provider in providers {
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, error in
+                guard let data = item as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else {
+                    return
+                }
+                
+                guard url.pathExtension == "app" else {
+                    GLLog.pipeline.notice("Window drop: not an app bundle: \(url.lastPathComponent)")
+                    return
+                }
+                
+                guard FileManager.default.fileExists(atPath: url.path) else {
+                    GLLog.pipeline.notice("Window drop: file not found: \(url.path)")
+                    return
+                }
+                
+                Task { @MainActor in
+                    guard FSEventsWatcher.hasQuarantine(at: url.path) else {
+                        GLLog.pipeline.info("Window drop: no quarantine on \(url.lastPathComponent)")
+                        return
+                    }
+                    
+                    let appName = url.deletingPathExtension().lastPathComponent
+                    let bundleId = Bundle(url: url)?.bundleIdentifier
+                    let event = GreenLightEvent(
+                        appPath: url,
+                        appName: appName,
+                        bundleId: bundleId,
+                        sources: [.dockDrop],
+                        timestamp: Date()
+                    )
+                    
+                    GLLog.pipeline.notice("Window drop: \(appName), showing panel")
+                    
+                    let appState = AppState.shared
+                    if !appState.blockedApps.contains(where: { $0.path == url.path }) {
+                        appState.addDetectedApp(from: event)
+                    }
+                    
+                    DetectionPanelController.shared.show(event: event)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - App Icon Button Style (§7.3)
@@ -549,5 +611,66 @@ private struct DashboardStagger: ViewModifier {
                     : NDAnimation.cardEnter.delay(0.08 + Double(index) * NDAnimation.staggerInterval),
                 value: appeared
             )
+    }
+}
+
+// MARK: - Drop Zone Overlay（拖拽修复 §8.2）
+
+/// 拖放目标覆盖层：绿色呼吸虚线边框 + 中心下箭头 + 半透明遮罩
+private struct DropZoneOverlay: View {
+    let reduceMotion: Bool
+    
+    @State private var dashPhase: CGFloat = 0
+    @State private var iconScale: CGFloat = 0.8
+    @State private var glowOpacity: Double = 0.15
+    
+    private let greenColor = Color(red: 34/255, green: 197/255, blue: 94/255)
+    private let bgColor    = Color(red: 15/255, green: 23/255, blue: 42/255)
+    
+    var body: some View {
+        ZStack {
+            // 半透明遮罩
+            bgColor.opacity(0.85)
+            
+            // 虚线边框
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(
+                    style: StrokeStyle(lineWidth: 2, dash: [8, 6], dashPhase: dashPhase)
+                )
+                .foregroundColor(greenColor.opacity(0.5))
+                .padding(24)
+            
+            // 中心内容
+            VStack(spacing: 12) {
+                Image(systemName: "arrow.down.doc.fill")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundColor(greenColor.opacity(0.5))
+                    .scaleEffect(iconScale)
+                
+                Text("dropzone.hint")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(red: 248/255, green: 250/255, blue: 252/255).opacity(0.6))
+            }
+        }
+        .shadow(color: greenColor.opacity(glowOpacity), radius: 30)
+        .accessibilityLabel(Text("dropzone.accessibility"))
+        .onAppear {
+            guard !reduceMotion else {
+                iconScale = 1.0
+                return
+            }
+            // 虚线流动动画
+            withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                dashPhase = 28  // dash + gap = 8 + 6 = 14, 两个周期
+            }
+            // 中心图标弹入
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
+                iconScale = 1.0
+            }
+            // 光晕脉冲
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                glowOpacity = 0.25
+            }
+        }
     }
 }

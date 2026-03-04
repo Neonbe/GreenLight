@@ -1,11 +1,16 @@
-# macOS
+# =============================================
+# GreenLight .gitignore
+# 部分开源策略：闭源核心文件不推送到 GitHub
+# =============================================
+
+# === macOS ===
 .DS_Store
 .AppleDouble
 .LSOverride
 Icon?
 ._*
 
-# Xcode
+# === Xcode ===
 build/
 DerivedData/
 *.xcuserstate
@@ -16,13 +21,56 @@ DerivedData/
 *.perspectivev3
 xcuserdata/
 
-# Swift Package Manager
+# === Swift Package Manager ===
 .build/
 Packages/
 Package.resolved
+.swiftpm/
 
-# Temporary files
+# === Temporary files ===
 tmp/
 *.swp
 *.swo
 *~
+
+# =============================================
+#  🔒 闭源核心（不推送到 GitHub）
+# =============================================
+
+# 检测引擎核心
+GreenLight/Detection/FSEventsWatcher.swift
+GreenLight/Detection/LogStreamMonitor.swift
+GreenLight/Detection/GatekeeperAssessor.swift
+GreenLight/Detection/EventDeduplicator.swift
+GreenLight/Detection/EnhancePromptManager.swift
+
+# 安全操作
+GreenLight/Action/QuarantineRemover.swift
+GreenLight/Action/ShellExecutor.swift
+
+# App 入口（含三管线编排逻辑）
+GreenLight/GreenLightApp.swift
+
+# =============================================
+#  📁 内部文档与工具（不公开）
+# =============================================
+
+# 全部内部文档（README 为唯一公开文档）
+docs/
+
+# AI 工具配置
+.agents/
+.claude/
+skills-lock.json
+
+# 开发脚本
+run.sh
+create_test_apps.sh
+scripts/
+
+# 测试
+GreenLightTests/
+
+# 杂项
+Copy Review
+.wrangler/

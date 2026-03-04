@@ -41,6 +41,7 @@ struct GreenLightApp: App {
         MenuBarExtra {
             PopoverView()
                 .environmentObject(appState)
+                .environmentObject(updaterManager)
         } label: {
             MenuBarLabel()
                 .environmentObject(appState)
@@ -418,6 +419,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         return true
+    }
+    
+    // MARK: - 拖拽文件到 Dock 图标
+    
+    func application(_ sender: NSApplication, openFiles filenames: [String]) {
+        for filename in filenames {
+            guard FileManager.default.fileExists(atPath: filename) else {
+                GLLog.pipeline.notice("Dock drop: file not found: \(filename)")
+                continue
+            }
+            let fileURL = URL(fileURLWithPath: filename)
+            guard fileURL.pathExtension == "app" else {
+                GLLog.pipeline.notice("Dock drop: not an app bundle: \(filename)")
+                continue
+            }
+            handleDockDrop(appURL: fileURL)
+        }
+    }
+    
+    private func handleDockDrop(appURL: URL) {
+        Task { @MainActor in
+            // 检查是否有 quarantine
+            guard FSEventsWatcher.hasQuarantine(at: appURL.path) else {
+                GLLog.pipeline.info("Dock drop: no quarantine on \(appURL.lastPathComponent)")
+                return
+            }
+            
+            // 构造 GreenLightEvent，复用面板
+            let appName = appURL.deletingPathExtension().lastPathComponent
+            let bundleId = Bundle(url: appURL)?.bundleIdentifier
+            let event = GreenLightEvent(
+                appPath: appURL,
+                appName: appName,
+                bundleId: bundleId,
+                sources: [.dockDrop],
+                timestamp: Date()
+            )
+            
+            GLLog.pipeline.notice("Dock drop: \(appName), showing panel")
+            
+            // 加入检测列表（如果尚未存在）
+            let appState = AppState.shared
+            if !appState.blockedApps.contains(where: { $0.path == appURL.path }) {
+                appState.addDetectedApp(from: event)
+            }
+            
+            // 弹面板
+            DetectionPanelController.shared.show(event: event)
+        }
     }
 }
 
