@@ -41,6 +41,9 @@ enum NDAnimation {
     /// 扫描副弧旋转（稍慢，1.8s 一周）
     static var scanRotationSlow: Animation { .linear(duration: 1.8).repeatForever(autoreverses: false) }
     
+    /// Shimmer 扫描条（线性循环，1.5s）
+    static var shimmer: Animation { .linear(duration: 1.5).repeatForever(autoreverses: false) }
+    
     /// 倒计时 tick（平滑更新）
     static var countdownTick: Animation { .linear(duration: 0.1) }
     

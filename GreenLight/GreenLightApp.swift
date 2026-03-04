@@ -176,9 +176,9 @@ struct GreenLightApp: App {
         let fallbackCooldown: TimeInterval = 120
         var confirmTimeoutWork: DispatchWorkItem?
         
-        logMonitor.onGKActivity = { [fsWatcher, deduplicator, enhanceManager] in
-            // 记录 GK 活动到置信度窗口
-            enhanceManager.recordGKActivity()
+        logMonitor.onGKActivity = { [fsWatcher, deduplicator] in
+            // T1 被动触发已禁用：不再记录 GK 活动到置信度窗口
+            // 权限请求仅通过 T2（用户手动操作 Dashboard 按钮）触发
             
             // §r06: Menu Bar 黄灯 + Channel C 主动扫描
             let now = Date()
