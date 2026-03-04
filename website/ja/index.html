@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac「アプリケーションは壊れているため開けません」を自動修復 — GreenLight（無料）</title>
+    <meta name="description"
+        content="macOSで「壊れているため開けません」「開発元を検証できないため開けません」と表示される？GreenLightが自動で検出・ワンクリック修復。無料・オープンソース・ターミナル不要。">
+    <meta name="keywords"
+        content="アプリケーション 壊れている 開けません, 開発元を検証できない mac, macOS Gatekeeper 修復, xattr 削除, com.apple.quarantine 修復, Mac アプリ ブロック 解除">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://greenlight.notedock.app/ja/">
+    <link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/">
+    <link rel="alternate" hreflang="zh" href="https://greenlight.notedock.app/zh/">
+    <link rel="alternate" hreflang="ja" href="https://greenlight.notedock.app/ja/">
+    <link rel="alternate" hreflang="ko" href="https://greenlight.notedock.app/ko/">
+    <link rel="alternate" hreflang="x-default" href="https://greenlight.notedock.app/">
+    <meta property="og:title" content="GreenLight — macOS Gatekeeperブロックを自動修復（無料・オープンソース）">
+    <meta property="og:description" content="「壊れているため開けません」「開発元を検証できない」エラーをワンクリックで自動修復。ターミナル不要。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://greenlight.notedock.app/ja/">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'DM Sans', sans-serif;
+        }
+    </style>
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "GreenLight",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13+",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"},
+        "description": "GreenLightは無料のオープンソースmacOSユーティリティです。Gatekeeperにブロックされたアプリを自動検出し、ワンクリックでcom.apple.quarantine属性を解除します。"
+      },
+      {
+        "@type": "HowTo",
+        "name": "macOS「アプリケーションは壊れているため開けません」の修復方法",
+        "description": "GreenLightを使って、macOS Gatekeeperエラーを自動修復する方法。",
+        "step": [
+          {"@type": "HowToStep", "name": "GreenLightをダウンロード", "text": "GitHub Releasesから無料でダウンロード。MITオープンソースライセンス。"},
+          {"@type": "HowToStep", "name": "インストール後は放置", "text": "アプリケーションフォルダにドラッグするだけ。メニューバーで静かに動作し、設定不要。"},
+          {"@type": "HowToStep", "name": "自動修復", "text": "Gatekeeperがアプリをブロックすると、5秒以内に通知が表示され、「修復して開く」をクリックするだけ。"}
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {"@type": "Question", "name": "「アプリケーションは壊れているため開けません」とは？", "acceptedAnswer": {"@type": "Answer", "text": "このmacOSエラーは、アプリが実際に壊れているわけではありません。macOS Gatekeeperがダウンロードしたファイルにcom.apple.quarantine属性を付与し、Apple公証がないアプリの起動をブロックしています。GreenLightをインストールすれば、自動検出・ワンクリック修復できます。"}},
+          {"@type": "Question", "name": "ターミナルを使わずにブロックされたアプリを開く方法は？", "acceptedAnswer": {"@type": "Answer", "text": "GreenLightをインストールしてください。無料のオープンソースmacOSユーティリティで、Gatekeeperにブロックされたアプリをリアルタイムで検出し、通知から「修復して開く」をクリックするだけで解除できます。ターミナルもxattrコマンドも不要です。"}},
+          {"@type": "Question", "name": "GreenLightは安全ですか？", "acceptedAnswer": {"@type": "Answer", "text": "完全に安全です。MITライセンスのオープンソースソフトウェアで、ネットワーク通信ゼロ、データ収集ゼロ、テレメトリゼロ。完全にローカルで動作し、GitHubでソースコードを確認できます。"}}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+    <nav class="navbar scrolled" role="navigation">
+        <div class="container"><a href="../" class="nav-logo"><svg class="traffic-light" viewBox="0 0 36 36" fill="none"
+                    width="36" height="36">
+                    <rect width="36" height="36" rx="8" fill="#111119" />
+                    <circle cx="18" cy="8" r="4" fill="#EF4444" opacity="0.25" />
+                    <circle cx="18" cy="18" r="4" fill="#EAB308" opacity="0.25" />
+                    <circle cx="18" cy="28" r="4" fill="#22C55E" />
+                </svg><span>GreenLight</span></a>
+            <div class="nav-links"><a href="../">English</a><a href="#download" class="nav-cta">無料ダウンロード</a></div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero"
+            style="min-height:auto;padding-top:calc(var(--nav-height) + var(--space-16));padding-bottom:var(--space-16);">
+            <div class="hero-bg">
+                <div class="hero-grid"></div>
+            </div>
+            <div class="container">
+                <div class="hero-badge"><svg viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                            d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 6.28a.75.75 0 10-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l4-4z" />
+                    </svg>無料・オープンソース · macOS 13+</div>
+                <h1 class="hero-title" style="font-size:clamp(1.6rem,3.5vw,3rem);">Macアプリ<span
+                        class="highlight">「壊れているため開けません」</span>？ワンクリックで自動修復。</h1>
+                <p class="hero-subtitle">GreenLightはmacOS
+                    Gatekeeperにブロックされたアプリを自動検出し、通知からワンクリックで修復します。<strong>ターミナル不要。コマンド不要。手動操作不要。</strong>永久無料・完全オープンソース。
+                </p>
+                <div class="hero-actions"><a href="https://github.com/Neonbe/GreenLight/releases" target="_blank"
+                        rel="noopener noreferrer" class="btn-primary"><svg viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>GreenLightを無料ダウンロード</a></div>
+            </div>
+        </section>
+
+        <section class="error-messages" id="error-messages">
+            <div class="container">
+                <div class="section-header"><span class="section-label">修復するエラーメッセージ</span>
+                    <h2 class="section-title">以下のエラーが出たら？GreenLightが自動で修復します。</h2>
+                    <p class="section-desc">これらのmacOS警告はアプリが壊れていることを意味しません。GreenLightがリアルタイムで検出し、ワンクリックで修復します。</p>
+                </div>
+                <div class="error-cards">
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg></div>
+                        <h3>「アプリケーション」は壊れているため開けません。ゴミ箱に入れる必要があります。</h3>
+                        <p>macOS
+                            Gatekeeperの隔離フラグ（<code>com.apple.quarantine</code>）による「偽陽性」です。アプリは実際には壊れていません。<strong>GreenLightが自動検出し、ワンクリックで修復します。</strong>
+                        </p>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg></div>
+                        <h3>「アプリケーション」は、開発元を検証できないため開けません。</h3>
+                        <p>アプリがApple公証を受けていないため、macOSが開発元の身元を確認できません。<strong>GreenLightなら全自動で処理。インストール後は何もする必要がありません。</strong>
+                        </p>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg></div>
+                        <h3>「アプリケーション」はMacを保護するためにブロックされました。</h3>
+                        <p>アプリがマルウェアを含んでいるわけではありません。Appleが検証できないだけです。<strong>GreenLightが安全に隔離フラグを削除。一度インストールすれば、永久に自動化。</strong>
+                        </p>
+                    </div>
+                </div>
+                <div class="error-before-after">
+                    <div class="before-column">
+                        <h4>❌ 従来の方法（毎回繰り返し）</h4>
+                        <ol>
+                            <li>エラーが表示される → パニック</li>
+                            <li>解決方法を検索</li>
+                            <li>ターミナルを開く</li>
+                            <li><code>xattr -rd com.apple.quarantine /パス/アプリ.app</code> を入力</li>
+                            <li>アプリ更新 → 全部やり直し</li>
+                        </ol>
+                    </div>
+                    <div class="after-column">
+                        <h4>✅ GreenLightを使う（一度だけ）</h4>
+                        <ol>
+                            <li>GreenLightをダウンロード（一度だけ）</li>
+                            <li>アプリがブロックされる → 通知が自動表示</li>
+                            <li>「修復して開く」をクリック</li>
+                            <li>完了。以後すべて自動。</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="padding:var(--space-16) 0;background:var(--bg-secondary);">
+            <div class="container" style="max-width:800px;">
+                <h2 style="font-size:var(--text-3xl);font-weight:800;margin-bottom:var(--space-6);">GreenLightの特長</h2>
+                <ul
+                    style="list-style:none;display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-8);">
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">全自動検出</strong> — 手動チェック不要、システムイベントをリアルタイム監視</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">ワンクリック修復</strong> — システム通知から直接修復</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">永久無料</strong> — オープンソース、MITライセンス</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">プライバシー最優先</strong> — ネットワーク通信ゼロ、データ収集ゼロ</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">超軽量</strong> — メモリ30MB未満、CPU 1%未満</li>
+                </ul>
+                <div id="download" style="text-align:center;padding:var(--space-12) 0;"><a
+                        href="https://github.com/Neonbe/GreenLight/releases" target="_blank" class="btn-primary"
+                        style="font-size:var(--text-lg);padding:var(--space-5) var(--space-10);"><svg
+                            viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px;">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>GreenLightを無料ダウンロード</a>
+                    <p style="margin-top:var(--space-4);font-size:var(--text-sm);color:var(--text-muted);">macOS 13+ ·
+                        Apple Silicon & Intel · MITライセンス</p>
+                </div>
+                <h2 style="font-size:var(--text-3xl);font-weight:800;margin-bottom:var(--space-6);">よくある質問</h2>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>「壊れているため開けません」と表示されたら？</span><svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>このエラーはアプリが実際に壊れているわけではありません。macOS
+                        Gatekeeperがダウンロードファイルに<code>com.apple.quarantine</code>属性を付与し、Apple公証のないアプリをブロックしています。GreenLight（無料・オープンソース）をインストールすれば、自動検出・ワンクリック修復できます。
+                    </p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>ターミナルなしでブロックされたアプリを開く方法は？</span><svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>GreenLightをインストールしてください。メニューバーで静かに動作し、Gatekeeperがアプリをブロックすると即座に通知を送信します。「修復して開く」をクリックするだけで、ターミナルもxattrコマンドも不要です。
+                    </p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>GreenLightは安全ですか？</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>完全に安全です。MITライセンスのオープンソースソフトウェアで、ネットワーク通信ゼロ、データ収集ゼロ。完全にローカルで動作します。GitHubでソースコードを確認できます。</p>
+                </details>
+            </div>
+        </section>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none">
+                    <rect width="24" height="24" rx="5" fill="#111119" />
+                    <circle cx="12" cy="5.5" r="2.5" fill="#EF4444" opacity="0.25" />
+                    <circle cx="12" cy="12" r="2.5" fill="#EAB308" opacity="0.25" />
+                    <circle cx="12" cy="18.5" r="2.5" fill="#22C55E" />
+                </svg>GreenLight</div>
+            <div class="footer-links"><a href="../">English</a><a href="https://github.com/Neonbe/GreenLight"
+                    target="_blank">GitHub</a><a href="https://github.com/Neonbe/GreenLight/releases"
+                    target="_blank">ダウンロード</a></div>
+            <p class="footer-copy">&copy; 2026 GreenLight · 永久無料 · トラッキングなし</p>
+        </div>
+    </footer>
+</body>
+
+</html>

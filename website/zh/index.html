@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复 Mac"应用已损坏，无法打开" — 全自动解决方案（免费开源）| GreenLight</title>
+    <meta name="description" content="Mac 提示" 应用程序已损坏，无法打开"？"无法验证开发者"？不需要终端命令。GreenLight 自动检测被 Gatekeeper
+        拦截的应用，一键修复，永久免费开源。">
+    <meta name="keywords"
+        content="应用已损坏无法打开, mac应用打不开, 无法验证开发者, macOS无法验证恶意软件, com.apple.quarantine, xattr命令, mac应用被阻止, Gatekeeper修复, 隔离属性移除, mac下载软件打不开">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://greenlight.notedock.app/zh/">
+    <link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/">
+    <link rel="alternate" hreflang="zh" href="https://greenlight.notedock.app/zh/">
+    <link rel="alternate" hreflang="x-default" href="https://greenlight.notedock.app/">
+    <meta property="og:title" content="GreenLight — 自动修复 Mac 应用被 Gatekeeper 拦截（免费开源）">
+    <meta property="og:description" content="再也不用在终端输入 xattr 命令了。GreenLight 自动检测被 macOS 拦截的应用，一键修复。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://greenlight.notedock.app/zh/">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "GreenLight",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13+",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"},
+        "description": "GreenLight 是一款免费开源的 macOS 工具，自动检测被 Gatekeeper 拦截的应用，一键移除 com.apple.quarantine 隔离属性。无需终端命令，无需手动操作。"
+      },
+      {
+        "@type": "HowTo",
+        "name": "如何修复 Mac 提示"应用程序已损坏，无法打开"",
+        "description": "使用 GreenLight 自动检测并修复 macOS Gatekeeper 拦截的应用。",
+        "step": [
+          {"@type": "HowToStep", "name": "下载 GreenLight", "text": "从 GitHub Releases 免费下载 GreenLight。MIT 开源许可，完全免费。"},
+          {"@type": "HowToStep", "name": "安装即忘", "text": "将 GreenLight 拖入应用程序文件夹。它会静默运行在菜单栏，无需任何配置。"},
+          {"@type": "HowToStep", "name": "自动修复", "text": "当任何应用被 Gatekeeper 拦截时，GreenLight 会在 5 秒内弹出通知，点击"修复并打开"即可。"}
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {"@type": "Question", "name": "Mac 提示"应用程序已损坏，无法打开"怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "这个弹窗不代表应用真的损坏了。macOS 的 Gatekeeper 给下载的应用添加了 com.apple.quarantine 隔离标志，阻止它运行。安装 GreenLight（免费开源），它会自动检测被拦截的应用并弹窗提示一键修复，无需终端命令。"}},
+          {"@type": "Question", "name": "Mac 提示"无法验证开发者"如何解决？", "acceptedAnswer": {"@type": "Answer", "text": "macOS 会拦截未经 Apple 公证的应用。传统方法需要打终端命令或在系统设置中寻找"仍要打开"。GreenLight 自动检测、自动提醒、一键修复，装好后什么都不用管。"}},
+          {"@type": "Question", "name": "有比 xattr -rd com.apple.quarantine 更简单的方法吗？", "acceptedAnswer": {"@type": "Answer", "text": "有。GreenLight 是一款免费开源的 macOS 菜单栏工具，自动检测被 Gatekeeper 拦截的应用并一键修复。你不再需要记任何终端命令，下载一次即可永久自动化。"}},
+          {"@type": "Question", "name": "GreenLight 安全吗？会收集隐私吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全安全。GreenLight 是 MIT 开源许可的软件，0 网络请求、0 数据采集、0 遥测。完全本地运行，你可以在 GitHub 上审查每一行源代码。"}}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+    <nav class="navbar scrolled" role="navigation">
+        <div class="container"><a href="../" class="nav-logo"><svg class="traffic-light" viewBox="0 0 36 36" fill="none"
+                    width="36" height="36">
+                    <rect width="36" height="36" rx="8" fill="#111119" />
+                    <circle cx="18" cy="8" r="4" fill="#EF4444" opacity="0.25" />
+                    <circle cx="18" cy="18" r="4" fill="#EAB308" opacity="0.25" />
+                    <circle cx="18" cy="28" r="4" fill="#22C55E" />
+                </svg><span>GreenLight</span></a>
+            <div class="nav-links"><a href="../">English</a><a href="../#features">功能</a><a href="#download"
+                    class="nav-cta">免费下载</a></div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero"
+            style="min-height:auto;padding-top:calc(var(--nav-height) + var(--space-16));padding-bottom:var(--space-16);">
+            <div class="hero-bg">
+                <div class="hero-grid"></div>
+            </div>
+            <div class="container">
+                <div class="hero-badge"><svg viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                            d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 6.28a.75.75 0 10-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l4-4z" />
+                    </svg>免费开源 · macOS 13+</div>
+                <h1 class="hero-title" style="font-size:clamp(1.8rem,4vw,3.5rem);">Mac 应用<span
+                        class="highlight">"已损坏，无法打开"</span>？一键自动修复。</h1>
+                <p class="hero-subtitle">GreenLight 自动检测被 macOS Gatekeeper
+                    拦截的应用，弹窗提示一键修复。<strong>无需终端、无需命令、无需手动操作。</strong>永久免费，完全开源。</p>
+                <div class="hero-actions"><a href="https://github.com/Neonbe/GreenLight/releases" target="_blank"
+                        rel="noopener noreferrer" class="btn-primary"><svg viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>免费下载 GreenLight</a><a href="https://github.com/Neonbe/GreenLight" target="_blank"
+                        rel="noopener noreferrer" class="btn-secondary"><svg viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V19c0 .27.16.59.67.5C17.14 18.16 20 14.42 20 10A10 10 0 0010 0z"
+                                clip-rule="evenodd" />
+                        </svg>GitHub 源码</a></div>
+            </div>
+        </section>
+
+        <!-- Error Messages Section (Chinese) -->
+        <section class="error-messages" id="error-messages">
+            <div class="container">
+                <div class="section-header"><span class="section-label">我们修复的系统弹窗</span>
+                    <h2 class="section-title">看到以下弹窗？GreenLight 自动搞定。</h2>
+                    <p class="section-desc">这些 macOS 弹窗不代表应用真的有问题。GreenLight 实时检测，一键修复。</p>
+                </div>
+                <div class="error-cards">
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg></div>
+                        <h3>"应用程序"已损坏，无法打开。您应该将它移到废纸篓。</h3>
+                        <p>这是 macOS Gatekeeper
+                            的隔离标志（<code>com.apple.quarantine</code>）导致的"假阳性"，应用并没有真的损坏。<strong>GreenLight
+                                自动检测并弹窗提示一键修复。</strong></p>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg></div>
+                        <h3>无法打开"应用程序"，因为无法验证开发者。</h3>
+                        <p>应用未经 Apple 公证，macOS 无法确认开发者身份。传统方法需要在终端输入命令或到系统设置操作。<strong>GreenLight
+                                全自动处理，装好就不用管了。</strong></p>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg></div>
+                        <h3>打不开"应用程序"，因为 Apple 无法检查其是否包含恶意软件。</h3>
+                        <p>这不代表应用包含恶意软件，只是 Apple 无法验证。<strong>GreenLight 安全地移除隔离标志，一次安装，永久自动化。</strong>完全免费，完全开源。</p>
+                    </div>
+                </div>
+
+                <div class="error-before-after">
+                    <div class="before-column">
+                        <h4>❌ 传统方法（每次都要重复）</h4>
+                        <ol>
+                            <li>看到弹窗 → 慌了</li>
+                            <li>搜索"mac 应用已损坏怎么办"</li>
+                            <li>打开终端</li>
+                            <li>输入 <code>xattr -rd com.apple.quarantine /路径/应用.app</code></li>
+                            <li>应用更新 → 以上全部重来</li>
+                        </ol>
+                    </div>
+                    <div class="after-column">
+                        <h4>✅ 使用 GreenLight（一次搞定）</h4>
+                        <ol>
+                            <li>下载 GreenLight（一次）</li>
+                            <li>应用被拦截 → 通知自动弹出</li>
+                            <li>点击「修复并打开」</li>
+                            <li>搞定。以后全自动。</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works (Chinese) -->
+        <section style="padding:var(--space-16) 0;background:var(--bg-secondary);">
+            <div class="container" style="max-width:800px;">
+                <h2 style="font-size:var(--text-3xl);font-weight:800;margin-bottom:var(--space-6);">GreenLight 的独特之处
+                </h2>
+                <p
+                    style="font-size:var(--text-lg);color:var(--text-secondary);line-height:1.8;margin-bottom:var(--space-8);">
+                    市面上的其他工具（如 Sentinel）需要你<strong
+                        style="color:var(--text-primary);">先知道应用被拦截了</strong>，然后手动把应用拖到工具里。<strong
+                        style="color:var(--green);">GreenLight 是全自动的。</strong>它实时监控系统，在 Gatekeeper
+                    拦截应用的瞬间自动弹出修复通知。你什么都不用操心。</p>
+                <ul
+                    style="list-style:none;display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-8);">
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">全自动检测</strong> — 无需手动查看，实时监控系统事件</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">一键修复</strong> — 直接在系统通知中点击修复</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">永久免费</strong> — 开源，MIT 许可证</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">隐私至上</strong> — 0 网络请求，0 数据采集，纯本地运行</li>
+                    <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
+                        <span style="color:var(--green);font-weight:700;">✓</span> <strong
+                            style="color:var(--text-primary);">极致轻量</strong> — 内存低于 30MB，CPU 空闲时低于 1%</li>
+                </ul>
+
+                <div id="download" style="text-align:center;padding:var(--space-12) 0;"><a
+                        href="https://github.com/Neonbe/GreenLight/releases" target="_blank" class="btn-primary"
+                        style="font-size:var(--text-lg);padding:var(--space-5) var(--space-10);"><svg
+                            viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px;">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>免费下载 GreenLight</a>
+                    <p style="margin-top:var(--space-4);font-size:var(--text-sm);color:var(--text-muted);">macOS 13+ ·
+                        Apple Silicon & Intel · MIT 开源许可</p>
+                </div>
+
+                <h2 style="font-size:var(--text-3xl);font-weight:800;margin-bottom:var(--space-6);">常见问题</h2>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>Mac 提示"应用程序已损坏，无法打开"怎么办？</span><svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>这个弹窗不代表应用真的损坏了。macOS 的 Gatekeeper 给下载的应用添加了 <code>com.apple.quarantine</code> 隔离标志，阻止它运行。安装
+                        GreenLight（免费开源），它会自动检测被拦截的应用并弹窗提示一键修复，无需终端命令。</p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>Mac 提示"无法验证开发者"如何解决？</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>macOS 会拦截未经 Apple 公证的应用。传统方法需要在终端输入 <code>xattr</code> 命令或到系统设置中找"仍要打开"。GreenLight
+                        自动检测、自动提醒、一键修复，装好后什么都不用管。</p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>有比 xattr -rd com.apple.quarantine 更简单的方法吗？</span><svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>有。GreenLight 是一款免费开源的 macOS 菜单栏工具，自动检测被 Gatekeeper 拦截的应用并一键修复。你不再需要记任何终端命令，下载一次即可永久自动化。</p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>GreenLight 安全吗？会收集隐私吗？</span><svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>完全安全。GreenLight 是 MIT 开源许可的软件，0 网络请求、0 数据采集、0 遥测。完全本地运行，你可以在 GitHub 上审查每一行源代码。</p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>和 Sentinel 有什么区别？</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>Sentinel 是优秀的拖放式工具——但前提是你得先知道有应用被拦了，然后手动把它拖进去。GreenLight
+                        是<strong>全自动</strong>的：实时监控系统，拦截瞬间通知你，一键修复。完全不需要手动操作。</p>
+                </details>
+            </div>
+        </section>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none">
+                    <rect width="24" height="24" rx="5" fill="#111119" />
+                    <circle cx="12" cy="5.5" r="2.5" fill="#EF4444" opacity="0.25" />
+                    <circle cx="12" cy="12" r="2.5" fill="#EAB308" opacity="0.25" />
+                    <circle cx="12" cy="18.5" r="2.5" fill="#22C55E" />
+                </svg>GreenLight</div>
+            <div class="footer-links"><a href="../">English</a><a href="https://github.com/Neonbe/GreenLight"
+                    target="_blank">GitHub</a><a href="https://github.com/Neonbe/GreenLight/releases"
+                    target="_blank">下载</a></div>
+            <p class="footer-copy">&copy; 2026 GreenLight · 永久免费 · 无追踪 · 无废话</p>
+        </div>
+    </footer>
+</body>
+
+</html>

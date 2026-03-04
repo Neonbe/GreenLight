@@ -1546,3 +1546,146 @@ section {
     max-width: 1280px;
   }
 }
+
+/* ========================================================================
+   ERROR MESSAGES SECTION (SEO/GEO Landing Content)
+   ======================================================================== */
+.error-messages {
+  position: relative;
+  background: var(--bg-primary);
+}
+
+.error-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.error-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.error-card:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.08);
+  transform: translateY(-4px);
+}
+
+.error-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+  background: var(--red-soft);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.error-card-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--red);
+}
+
+.error-card h3 {
+  font-size: var(--text-base);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  line-height: 1.5;
+  color: var(--red);
+  font-family: var(--font-mono);
+  font-style: italic;
+}
+
+.error-card p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.error-card code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--yellow);
+}
+
+/* Before / After Comparison */
+.error-before-after {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-12);
+}
+
+.before-column,
+.after-column {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+}
+
+.before-column {
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.after-column {
+  border-color: rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.05);
+}
+
+.before-column h4,
+.after-column h4 {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-6);
+}
+
+.before-column ol,
+.after-column ol {
+  list-style: decimal;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.before-column li,
+.after-column li {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.before-column code,
+.after-column code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--yellow);
+  word-break: break-all;
+}
+
+/* Responsive error cards */
+@media (max-width: 1024px) {
+  .error-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .error-before-after {
+    grid-template-columns: 1fr;
+  }
+}

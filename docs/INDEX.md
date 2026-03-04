@@ -14,7 +14,10 @@
 
 - **定位**：正在进行中、等待被开发的 PRD / 任务文档。
 - **命名**：`Vx.x.x-rNN-{描述}-{YYYY.MM.DD}.md`
-- **当前**：无活跃文档（全部已归档或升级为 spec）
+- **当前**：
+  - `V1.0.0-r09-部分开源与发布方案-2026.03.04.md` — 部分开源策略、模块划分、xcframework 闭源方案、许可证与发布 To-Do
+  - `V1.0.0-r10-检测验签优化方案-2026.03.04.md` — SecCSFlags 升级 + Team ID 白名单 + 缓存版本化，提高 proactiveScan 检出率
+  - `V1.0.0-r11-SEO与GEO深度优化方案-2026.03.04.md` — 基于 Gatekeeper 弹窗文案的 SEO/GEO 场景化截流方案，含多语言弹窗矩阵 + 社区分发模板
 
 ### 2. `docs/spec/` —— 规范区（长期契约）
 
@@ -25,6 +28,7 @@
   - `experiment_results_and_tech_spec.md` — 实验结果与初版技术方案
   - `interaction_flow_spec.md` — 交互流程规范
   - `ui_design_spec.md` — UI 设计规范
+  - `release_pipeline_spec.md` — 发版流程规格书（签名 + 公证 + DMG + Sparkle + GitHub Release 全链路）
 
 ### 3. `docs/research/` —— 调研区（纯知识）
 

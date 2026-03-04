@@ -1,9 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- English Homepage -->
   <url>
     <loc>https://greenlight.notedock.app/</loc>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://greenlight.notedock.app/zh/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://greenlight.notedock.app/ja/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://greenlight.notedock.app/ko/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://greenlight.notedock.app/de/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://greenlight.notedock.app/fr/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://greenlight.notedock.app/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://greenlight.notedock.app/"/>
   </url>
+
+  <!-- Chinese Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/zh/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://greenlight.notedock.app/zh/"/>
+  </url>
+
+  <!-- Japanese Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/ja/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://greenlight.notedock.app/ja/"/>
+  </url>
+
+  <!-- Korean Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/ko/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://greenlight.notedock.app/ko/"/>
+  </url>
+
+  <!-- German Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/de/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://greenlight.notedock.app/de/"/>
+  </url>
+
+  <!-- French Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/fr/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://greenlight.notedock.app/fr/"/>
+  </url>
+
+  <!-- Spanish Homepage -->
+  <url>
+    <loc>https://greenlight.notedock.app/es/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://greenlight.notedock.app/es/"/>
+  </url>
+
+  <!-- EN Fix: App Damaged -->
+  <url>
+    <loc>https://greenlight.notedock.app/fix/app-damaged-cant-be-opened/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/fix/app-damaged-cant-be-opened/"/>
+  </url>
+
+  <!-- EN Fix: Developer Cannot Be Verified -->
+  <url>
+    <loc>https://greenlight.notedock.app/fix/developer-cannot-be-verified/</loc>
+    <lastmod>2026-03-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/fix/developer-cannot-be-verified/"/>
+  </url>
+
 </urlset>

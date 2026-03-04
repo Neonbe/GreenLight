@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>„App ist beschädigt und kann nicht geöffnet werden" auf dem Mac beheben — GreenLight (Kostenlos)</title>
+    <meta name="description"
+        content="macOS zeigt ‚App ist beschädigt und kann nicht geöffnet werden' oder ‚nicht identifizierter Entwickler'? GreenLight erkennt blockierte Apps automatisch und repariert sie mit einem Klick. Kostenlos, Open Source, kein Terminal nötig.">
+    <meta name="keywords"
+        content="App beschädigt kann nicht geöffnet werden mac, nicht identifizierter Entwickler mac, macOS Gatekeeper reparieren, xattr entfernen, com.apple.quarantine fix, Mac App blockiert">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://greenlight.notedock.app/de/">
+    <link rel="alternate" hreflang="en" href="https://greenlight.notedock.app/">
+    <link rel="alternate" hreflang="de" href="https://greenlight.notedock.app/de/">
+    <link rel="alternate" hreflang="x-default" href="https://greenlight.notedock.app/">
+    <meta property="og:title"
+        content="GreenLight — macOS Gatekeeper-Blockaden automatisch beheben (Kostenlos & Open Source)">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://greenlight.notedock.app/de/">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {"@type": "SoftwareApplication", "name": "GreenLight", "applicationCategory": "UtilitiesApplication", "operatingSystem": "macOS 13+", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "description": "GreenLight ist ein kostenloses Open-Source-macOS-Tool, das von Gatekeeper blockierte Apps automatisch erkennt und mit einem Klick das com.apple.quarantine-Attribut entfernt."},
+      {"@type": "HowTo", "name": "Wie man ‚App ist beschädigt und kann nicht geöffnet werden' auf macOS behebt", "step": [
+        {"@type": "HowToStep", "name": "GreenLight herunterladen", "text": "GreenLight kostenlos von GitHub Releases herunterladen. MIT Open-Source-Lizenz."},
+        {"@type": "HowToStep", "name": "Installieren und vergessen", "text": "GreenLight in den Programme-Ordner ziehen. Läuft leise in der Menüleiste ohne Konfiguration."},
+        {"@type": "HowToStep", "name": "Automatisch repariert", "text": "Wenn Gatekeeper eine App blockiert, zeigt GreenLight innerhalb von 5 Sekunden eine Benachrichtigung mit einem ‚Reparieren & Öffnen'-Button an."}
+      ]},
+      {"@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": "Was bedeutet ‚App ist beschädigt und kann nicht geöffnet werden'?", "acceptedAnswer": {"@type": "Answer", "text": "Dieser macOS-Fehler bedeutet NICHT, dass die App tatsächlich beschädigt ist. macOS Gatekeeper hat das com.apple.quarantine-Attribut auf die heruntergeladene Datei gesetzt, was Apps ohne Apple-Notarisierung blockiert. Installieren Sie GreenLight (kostenlos, Open Source) für automatische Erkennung und Ein-Klick-Reparatur."}},
+        {"@type": "Question", "name": "Wie öffne ich blockierte Apps ohne Terminal?", "acceptedAnswer": {"@type": "Answer", "text": "Installieren Sie GreenLight. Dieses kostenlose Open-Source-Tool läuft in der Menüleiste und erkennt blockierte Apps in Echtzeit. Klicken Sie in der Benachrichtigung auf ‚Reparieren & Öffnen' – kein Terminal, kein xattr nötig."}},
+        {"@type": "Question", "name": "Ist GreenLight sicher?", "acceptedAnswer": {"@type": "Answer", "text": "Vollkommen sicher. MIT-lizenzierte Open-Source-Software ohne Netzwerkverbindungen, ohne Datenerhebung. Läuft vollständig lokal. Der Quellcode ist auf GitHub einsehbar."}}
+      ]}
+    ]
+  }
+  </script>
+</head>
+
+<body>
+    <nav class="navbar scrolled" role="navigation">
+        <div class="container"><a href="../" class="nav-logo"><svg class="traffic-light" viewBox="0 0 36 36" fill="none"
+                    width="36" height="36">
+                    <rect width="36" height="36" rx="8" fill="#111119" />
+                    <circle cx="18" cy="8" r="4" fill="#EF4444" opacity="0.25" />
+                    <circle cx="18" cy="18" r="4" fill="#EAB308" opacity="0.25" />
+                    <circle cx="18" cy="28" r="4" fill="#22C55E" />
+                </svg><span>GreenLight</span></a>
+            <div class="nav-links"><a href="../">English</a><a href="#download" class="nav-cta">Kostenlos laden</a>
+            </div>
+        </div>
+    </nav>
+    <main>
+        <section class="hero"
+            style="min-height:auto;padding-top:calc(var(--nav-height) + var(--space-16));padding-bottom:var(--space-16);">
+            <div class="hero-bg">
+                <div class="hero-grid"></div>
+            </div>
+            <div class="container">
+                <div class="hero-badge"><svg viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                            d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 6.28a.75.75 0 10-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l4-4z" />
+                    </svg>Kostenlos · Open Source · macOS 13+</div>
+                <h1 class="hero-title" style="font-size:clamp(1.5rem,3.5vw,2.8rem);">Mac-App <span
+                        class="highlight">„ist beschädigt und kann nicht geöffnet werden"</span>? Automatisch repariert.
+                </h1>
+                <p class="hero-subtitle">GreenLight erkennt von macOS Gatekeeper blockierte Apps automatisch und
+                    repariert sie per Benachrichtigung mit einem Klick. <strong>Kein Terminal. Keine Befehle. Kein
+                        manueller Aufwand.</strong></p>
+                <div class="hero-actions"><a href="https://github.com/Neonbe/GreenLight/releases" target="_blank"
+                        rel="noopener noreferrer" class="btn-primary"><svg viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>GreenLight kostenlos laden</a></div>
+            </div>
+        </section>
+        <section class="error-messages">
+            <div class="container">
+                <div class="section-header"><span class="section-label">Fehlermeldungen, die wir beheben</span>
+                    <h2 class="section-title">Diese Meldung gesehen? GreenLight behebt sie automatisch.</h2>
+                </div>
+                <div class="error-cards">
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg></div>
+                        <h3>„App" ist beschädigt und kann nicht geöffnet werden. Sie sollten sie in den Papierkorb
+                            legen.</h3>
+                        <p>Ein „False Positive" des <code>com.apple.quarantine</code>-Flags. Die App ist nicht wirklich
+                            beschädigt. <strong>GreenLight erkennt und repariert dies automatisch mit einem
+                                Klick.</strong></p>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg></div>
+                        <h3>„App" kann nicht geöffnet werden, da es von einem nicht identifizierten Entwickler stammt.
+                        </h3>
+                        <p>Die App hat keine Apple-Notarisierung. <strong>Mit GreenLight brauchen Sie nie wieder
+                                Systemeinstellungen durchsuchen oder Terminal-Befehle eingeben.</strong></p>
+                    </div>
+                </div>
+                <div class="error-before-after">
+                    <div class="before-column">
+                        <h4>❌ Bisherige Methode</h4>
+                        <ol>
+                            <li>Fehlermeldung → Panik</li>
+                            <li>Lösung googeln</li>
+                            <li>Terminal öffnen</li>
+                            <li><code>xattr -rd com.apple.quarantine /Pfad/App.app</code> eingeben</li>
+                            <li>App-Update → alles wiederholen</li>
+                        </ol>
+                    </div>
+                    <div class="after-column">
+                        <h4>✅ Mit GreenLight</h4>
+                        <ol>
+                            <li>GreenLight herunterladen (einmalig)</li>
+                            <li>App blockiert → Benachrichtigung erscheint</li>
+                            <li>„Reparieren & Öffnen" klicken</li>
+                            <li>Fertig. Für immer. Automatisch.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section style="padding:var(--space-16) 0;background:var(--bg-secondary);">
+            <div class="container" style="max-width:800px;">
+                <div id="download" style="text-align:center;padding:var(--space-12) 0;"><a
+                        href="https://github.com/Neonbe/GreenLight/releases" target="_blank" class="btn-primary"
+                        style="font-size:var(--text-lg);padding:var(--space-5) var(--space-10);"><svg
+                            viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px;">
+                            <path
+                                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+                            <path
+                                d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+                        </svg>GreenLight kostenlos laden</a>
+                    <p style="margin-top:var(--space-4);font-size:var(--text-sm);color:var(--text-muted);">macOS 13+ ·
+                        Apple Silicon & Intel · MIT-Lizenz</p>
+                </div>
+                <h2 style="font-size:var(--text-3xl);font-weight:800;margin-bottom:var(--space-6);">Häufig gestellte
+                    Fragen</h2>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>Was bedeutet „App ist beschädigt und kann nicht geöffnet werden"?</span><svg
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>Die App ist NICHT wirklich beschädigt. macOS Gatekeeper setzt das
+                        <code>com.apple.quarantine</code>-Attribut auf heruntergeladene Dateien und blockiert Apps ohne
+                        Apple-Notarisierung. Installieren Sie GreenLight für automatische Erkennung und
+                        Ein-Klick-Reparatur.</p>
+                </details>
+                <details class="faq-item" style="margin-bottom:var(--space-4);">
+                    <summary><span>Wie öffne ich blockierte Apps ohne Terminal?</span><svg viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg></summary>
+                    <p>Installieren Sie GreenLight. Es läuft leise in der Menüleiste und erkennt blockierte Apps in
+                        Echtzeit. Klicken Sie auf „Reparieren & Öffnen" – kein Terminal, kein xattr nötig.</p>
+                </details>
+            </div>
+        </section>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none">
+                    <rect width="24" height="24" rx="5" fill="#111119" />
+                    <circle cx="12" cy="5.5" r="2.5" fill="#EF4444" opacity="0.25" />
+                    <circle cx="12" cy="12" r="2.5" fill="#EAB308" opacity="0.25" />
+                    <circle cx="12" cy="18.5" r="2.5" fill="#22C55E" />
+                </svg>GreenLight</div>
+            <div class="footer-links"><a href="../">English</a><a href="https://github.com/Neonbe/GreenLight"
+                    target="_blank">GitHub</a><a href="https://github.com/Neonbe/GreenLight/releases"
+                    target="_blank">Download</a></div>
+            <p class="footer-copy">&copy; 2026 GreenLight · Für immer kostenlos · Kein Tracking</p>
+        </div>
+    </footer>
+</body>
+
+</html>
