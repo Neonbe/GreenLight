@@ -1,0 +1,32 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSDesktopFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight monitors your Desktop for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 会监控你的桌面文件夹中被 macOS Gatekeeper 拦截的应用，以便即时检测并帮助你修复。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 會監控你的桌面資料夾中被 macOS Gatekeeper 攔截的應用程式，以便即時偵測並協助你修復。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight は、macOS Gatekeeper によってブロックされたデスクトップ上のアプリを監視し、即座に検出して修復を支援します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight은 macOS Gatekeeper에 의해 차단된 데스크탑의 앱을 모니터링하여 즉시 감지하고 수정을 도와줍니다." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight supervisa tu Escritorio en busca de apps bloqueadas por macOS Gatekeeper para detectarlas y ayudarte a repararlas al instante." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight surveille votre Bureau à la recherche d'apps bloquées par macOS Gatekeeper afin de les détecter et vous aider à les réparer instantanément." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight überwacht deinen Schreibtisch auf Apps, die von macOS Gatekeeper blockiert wurden, um sie sofort zu erkennen und dir bei der Reparatur zu helfen." } }
+      }
+    },
+    "NSDownloadsFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight monitors your Downloads for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 会监控你的下载文件夹中被 macOS Gatekeeper 拦截的应用，以便即时检测并帮助你修复。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight 會監控你的下載項目資料夾中被 macOS Gatekeeper 攔截的應用程式，以便即時偵測並協助你修復。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight は、macOS Gatekeeper によってブロックされたダウンロードフォルダ内のアプリを監視し、即座に検出して修復を支援します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight은 macOS Gatekeeper에 의해 차단된 다운로드 폴더의 앱을 모니터링하여 즉시 감지하고 수정을 도와줍니다." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight supervisa tus Descargas en busca de apps bloqueadas por macOS Gatekeeper para detectarlas y ayudarte a repararlas al instante." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight surveille vos Téléchargements à la recherche d'apps bloquées par macOS Gatekeeper afin de les détecter et vous aider à les réparer instantanément." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "GreenLight überwacht deinen Downloads-Ordner auf Apps, die von macOS Gatekeeper blockiert wurden, um sie sofort zu erkennen und dir bei der Reparatur zu helfen." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

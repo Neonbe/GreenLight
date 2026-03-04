@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenLight — Never Fight macOS Gatekeeper Again</title>
+  <meta name="description"
+    content="GreenLight automatically detects apps blocked by macOS Gatekeeper and lets you clear them with one click. Free, open-source, and runs silently in your menu bar. Built with Swift and SwiftUI, under 2,000 lines of code.">
+  <meta name="keywords"
+    content="macOS Gatekeeper fix, remove quarantine attribute, xattr remove, macOS app blocked, Gatekeeper bypass tool, macOS security tool, open source macOS utility, menu bar app">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+  <meta name="author" content="GreenLight">
+  <link rel="canonical" href="https://greenlight.notedock.app/">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="GreenLight — Never Fight macOS Gatekeeper Again">
+  <meta property="og:description"
+    content="GreenLight automatically detects apps blocked by macOS Gatekeeper and lets you clear them with one click. Free, open-source macOS utility built with Swift.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://greenlight.notedock.app/">
+  <meta property="og:site_name" content="GreenLight">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GreenLight — Never Fight macOS Gatekeeper Again">
+  <meta name="twitter:description"
+    content="GreenLight automatically detects apps blocked by macOS Gatekeeper and lets you clear them with one click. Free, open-source macOS utility.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- JSON-LD Structured Data (@graph pattern for rich results) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://greenlight.notedock.app/#organization",
+        "name": "GreenLight",
+        "url": "https://greenlight.notedock.app",
+        "logo": "https://greenlight.notedock.app/favicon.svg",
+        "sameAs": [
+          "https://github.com/greenlight"
+        ],
+        "description": "Open-source macOS security tools"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://greenlight.notedock.app/#website",
+        "name": "GreenLight",
+        "url": "https://greenlight.notedock.app",
+        "publisher": { "@id": "https://greenlight.notedock.app/#organization" },
+        "description": "GreenLight — macOS background guardian that automatically detects apps blocked by Gatekeeper and lets you clear them with one click."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://greenlight.notedock.app/#software",
+        "name": "GreenLight",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13 Ventura or later",
+        "softwareVersion": "1.0.0",
+        "license": "https://opensource.org/licenses/MIT",
+        "downloadUrl": "https://github.com/greenlight/releases",
+        "fileSize": "5MB",
+        "memoryRequirements": "30MB",
+        "processorRequirements": "Apple Silicon or Intel",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        },
+        "author": { "@id": "https://greenlight.notedock.app/#organization" },
+        "description": "GreenLight is a free, open-source macOS utility that automatically detects apps blocked by Gatekeeper's quarantine system and removes the com.apple.quarantine extended attribute with one click. It runs silently in your menu bar using dual-channel detection (LogStream + FSEvents) and sends native macOS notifications when blocked apps are found. No Terminal, no sudo, no manual xattr commands needed. Built with Swift and SwiftUI, under 2,000 lines of code.",
+        "featureList": [
+          "Automatic detection of Gatekeeper-blocked apps via dual-channel monitoring",
+          "One-click quarantine attribute removal without sudo or Terminal",
+          "Native macOS notifications with Fix & Open action buttons",
+          "Always-on menu bar guardian with status indicator",
+          "First-run scan of Downloads, Desktop, and Applications",
+          "Smart event deduplication (3-second window)",
+          "Privacy-first: no analytics, no telemetry, no network calls",
+          "Under 30MB memory, under 1% CPU when idle"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://greenlight.notedock.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is GreenLight?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GreenLight is a free, open-source macOS utility that automatically detects apps blocked by macOS Gatekeeper and removes the quarantine attribute with one click. It runs silently in your menu bar and uses dual-channel detection to monitor your system in real-time."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does GreenLight require admin or sudo privileges?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. GreenLight removes the com.apple.quarantine extended attribute using xattr without requiring sudo or admin privileges for apps in standard locations like ~/Downloads, ~/Desktop, and /Applications. Only root-owned system apps would need elevated permissions, which is extremely rare."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does GreenLight detect blocked apps?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GreenLight uses two independent detection channels: Channel A monitors macOS system logs (syspolicyd) via LogStream for real-time Gatekeeper events, and Channel B watches file system changes via FSEvents to detect new .app files with quarantine attributes. Both channels feed into a 3-second deduplication window that merges events into a single notification."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is GreenLight safe to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. GreenLight is fully open-source under the MIT license, so anyone can inspect the source code. It makes no network calls, collects no analytics or telemetry, and runs entirely on your local machine. It uses less than 30MB of memory and under 1% CPU when idle."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What macOS versions does GreenLight support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GreenLight requires macOS 13 Ventura or later. It is built with Swift 5.9+ and SwiftUI, using the native MenuBarExtra API introduced in macOS 13."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is GreenLight different from Sentinel?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sentinel is an excellent manual tool for removing quarantine attributes via drag-and-drop. GreenLight focuses on automatic detection — it monitors your system in real-time and proactively notifies you when an app is blocked. Sentinel requires you to know an app is blocked and manually drag it; GreenLight detects and alerts you automatically."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+
+  <!-- ================================================================
+       NAVBAR
+       ================================================================ -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <a href="#" class="nav-logo" aria-label="GreenLight Home">
+        <svg class="traffic-light" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" width="36"
+          height="36">
+          <rect width="36" height="36" rx="8" fill="#111119" />
+          <circle cx="18" cy="8" r="4" fill="#EF4444" opacity="0.25" />
+          <circle cx="18" cy="18" r="4" fill="#EAB308" opacity="0.25" />
+          <circle cx="18" cy="28" r="4" fill="#22C55E" />
+        </svg>
+        <span>GreenLight</span>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#comparison">Compare</a>
+        <a href="#faq">FAQ</a>
+        <a href="#download" class="nav-cta">
+          <svg viewBox="0 0 20 20" fill="currentColor">
+            <path
+              d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+            <path d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+          </svg>
+          Download
+        </a>
+      </div>
+
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ================================================================
+         HERO SECTION
+         ================================================================ -->
+    <section class="hero" id="hero">
+      <div class="hero-bg">
+        <div class="hero-grid"></div>
+      </div>
+
+      <div class="container">
+        <div class="hero-badge">
+          <svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 6.28a.75.75 0 10-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l4-4z" />
+          </svg>
+          Free &amp; Open Source · macOS 13+
+        </div>
+
+        <h1 class="hero-title">
+          Never fight <span class="highlight">Gatekeeper</span> again.
+        </h1>
+
+        <p class="hero-subtitle">
+          GreenLight lives in your menu bar, automatically detects apps blocked by macOS Gatekeeper, and lets you clear
+          them with one click.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#download" class="btn-primary" id="heroCta">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path
+                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+              <path d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+            </svg>
+            Download Free
+          </a>
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V19c0 .27.16.59.67.5C17.14 18.16 20 14.42 20 10A10 10 0 0010 0z"
+                clip-rule="evenodd" />
+            </svg>
+            View on GitHub
+          </a>
+        </div>
+
+        <!-- App Mockup -->
+        <div class="hero-mockup">
+          <div class="hero-mockup-window">
+            <div class="mockup-titlebar">
+              <span class="mockup-dot red"></span>
+              <span class="mockup-dot yellow"></span>
+              <span class="mockup-dot green"></span>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-header">
+                <div class="mockup-status">
+                  <span class="mockup-status-dot"></span>
+                  GreenLight Active
+                </div>
+                <div class="mockup-stats">42 apps cleared</div>
+              </div>
+              <div class="mockup-divider"></div>
+
+              <div class="mockup-section-title">Blocked (1)</div>
+              <div class="mockup-app-row">
+                <div class="mockup-app-icon blocked">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="#EF4444">
+                    <path fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="mockup-app-info">
+                  <div class="mockup-app-name">Sketch.app</div>
+                  <div class="mockup-app-path">/Applications/Sketch.app</div>
+                </div>
+                <button class="mockup-btn fix">Fix &amp; Open</button>
+              </div>
+
+              <div class="mockup-section-title">Cleared (3)</div>
+              <div class="mockup-app-row">
+                <div class="mockup-app-icon cleared">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="#22C55E">
+                    <path fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="mockup-app-info">
+                  <div class="mockup-app-name">VS Code.app</div>
+                  <div class="mockup-app-path">/Applications/Visual Studio Code.app</div>
+                </div>
+                <span class="mockup-btn cleared-badge">Cleared ×3</span>
+              </div>
+
+              <div class="mockup-app-row">
+                <div class="mockup-app-icon cleared">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="#22C55E">
+                    <path fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="mockup-app-info">
+                  <div class="mockup-app-name">Figma.app</div>
+                  <div class="mockup-app-path">~/Downloads/Figma.app</div>
+                </div>
+                <span class="mockup-btn cleared-badge">Cleared ×1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-glow"></div>
+    </section>
+
+    <!-- ================================================================
+         PROBLEM SECTION
+         ================================================================ -->
+    <section class="problem" id="problem">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">The Problem</span>
+          <h2 class="section-title">Every developer knows this pain.</h2>
+          <p class="section-desc">
+            You download an app, double-click it, and macOS tells you it "can't be opened." Then begins a ritual you
+            never signed up for.
+          </p>
+        </div>
+
+        <div class="problem-steps">
+          <div class="problem-step reveal reveal-delay-1">
+            <div class="problem-step-number">1</div>
+            <h3>The Gatekeeper Wall</h3>
+            <p>You download a perfectly safe app. macOS blocks it with a vague warning because it's "not from the App
+              Store."</p>
+          </div>
+
+          <div class="problem-step reveal reveal-delay-2">
+            <div class="problem-step-number">2</div>
+            <h3>The Terminal Ritual</h3>
+            <p>You open Terminal, type a cryptic command you Googled, and pray you got the path right.</p>
+            <div class="problem-code">
+              <code>$ sudo xattr -rd com.apple.quarantine /Applications/MyApp.app</code>
+            </div>
+          </div>
+
+          <div class="problem-step reveal reveal-delay-3">
+            <div class="problem-step-number">3</div>
+            <h3>Rinse &amp; Repeat</h3>
+            <p>The app updates? Blocked again. Downloaded another tool? Same dance. Every. Single. Time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         SOLUTION / HOW IT WORKS SECTION
+         ================================================================ -->
+    <section class="solution" id="how-it-works">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">How It Works</span>
+          <h2 class="section-title">Three steps. Zero Terminal.</h2>
+          <p class="section-desc">
+            GreenLight runs silently in your menu bar and handles everything automatically.
+          </p>
+        </div>
+
+        <div class="solution-flow">
+          <div class="solution-step reveal reveal-delay-1">
+            <div class="solution-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </div>
+            <h3>Auto-Detect</h3>
+            <p>Dual-channel detection monitors your system in real-time. The instant Gatekeeper blocks an app,
+              GreenLight knows.</p>
+            <span class="step-tag">Automatic</span>
+          </div>
+
+          <div class="solution-step reveal reveal-delay-2">
+            <div class="solution-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+            <h3>Instant Notify</h3>
+            <p>A native macOS notification appears with the app name and action buttons. No extra window, no
+              interruption.</p>
+            <span class="step-tag">&lt; 5 seconds</span>
+          </div>
+
+          <div class="solution-step reveal reveal-delay-3">
+            <div class="solution-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </div>
+            <h3>One-Click Fix</h3>
+            <p>Tap "Fix &amp; Open" right from the notification. GreenLight removes the quarantine flag and launches the
+              app. Done.</p>
+            <span class="step-tag">No sudo needed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         FEATURES SECTION (BENTO GRID)
+         ================================================================ -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">Features</span>
+          <h2 class="section-title">Built for power users who value their time.</h2>
+          <p class="section-desc">
+            Every feature is designed to get out of your way and just work.
+          </p>
+        </div>
+
+        <div class="bento-grid">
+          <!-- Card 1: Dual-Channel Detection (span 2) -->
+          <div class="bento-card span-2 reveal reveal-delay-1">
+            <div class="bento-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M6 3v12" />
+                <path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                <path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                <path d="M15 6a9 9 0 0 1-9 9" />
+              </svg>
+            </div>
+            <h3>Dual-Channel Detection</h3>
+            <p>Two independent detection channels work simultaneously — LogStream monitors system logs in real-time
+              while FSEvents watches file system changes. If one misses it, the other catches it. Zero gaps.</p>
+          </div>
+
+          <!-- Card 2: Menu Bar Guardian -->
+          <div class="bento-card reveal reveal-delay-2">
+            <div class="bento-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M9 21V9" />
+              </svg>
+            </div>
+            <h3>Menu Bar Guardian</h3>
+            <p>Always-on indicator in your menu bar. Green when clear, red when something needs attention. Click to see
+              your full dashboard.</p>
+          </div>
+
+          <!-- Card 3: Native Notifications -->
+          <div class="bento-card reveal reveal-delay-3">
+            <div class="bento-icon yellow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+            <h3>Native Notifications</h3>
+            <p>Real macOS notifications with action buttons — Dismiss, Fix, or Fix &amp; Open. Works even when you're
+              deep in focus.</p>
+          </div>
+
+          <!-- Card 4: Smart Deduplication -->
+          <div class="bento-card reveal reveal-delay-4">
+            <div class="bento-icon yellow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 3v3" />
+                <path d="M18.5 5.5l-2.12 2.12" />
+                <path d="M21 12h-3" />
+                <path d="M18.5 18.5l-2.12-2.12" />
+                <path d="M12 18v3" />
+                <path d="M7.62 16.38L5.5 18.5" />
+                <path d="M6 12H3" />
+                <path d="M7.62 7.62L5.5 5.5" />
+              </svg>
+            </div>
+            <h3>Smart Deduplication</h3>
+            <p>Installing one app can trigger 7+ system events. GreenLight merges them into a single notification. No
+              alert fatigue.</p>
+          </div>
+
+          <!-- Card 5: First-Run Scan (span 2) -->
+          <div class="bento-card span-2 reveal reveal-delay-5">
+            <div class="bento-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <h3>First-Run Quick Scan</h3>
+            <p>The moment you install GreenLight, it scans Downloads, Desktop, and Applications to find every blocked
+              app on your system. Instant value, no waiting.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         COMPARISON SECTION
+         ================================================================ -->
+    <section class="comparison" id="comparison">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">Compare</span>
+          <h2 class="section-title">Stop doing it the hard way.</h2>
+          <p class="section-desc">
+            See how GreenLight compares to the alternatives.
+          </p>
+        </div>
+
+        <div class="reveal">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>Terminal (Manual)</th>
+                <th>Sentinel</th>
+                <th class="greenlight-col">GreenLight</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Auto-detect blocked apps</td>
+                <td class="cross">—</td>
+                <td class="cross">—</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>Push notifications</td>
+                <td class="cross">—</td>
+                <td class="cross">—</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>One-click fix from notification</td>
+                <td class="cross">—</td>
+                <td class="cross">—</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>Menu bar always-on guardian</td>
+                <td class="cross">—</td>
+                <td class="cross">—</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>First-run system scan</td>
+                <td class="cross">—</td>
+                <td class="cross">—</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>No Terminal needed</td>
+                <td class="cross">—</td>
+                <td class="check">&#10003;</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+              <tr>
+                <td>Drag &amp; drop fix</td>
+                <td class="cross">—</td>
+                <td class="check">&#10003;</td>
+                <td class="cross">—</td>
+              </tr>
+              <tr>
+                <td>Free &amp; open source</td>
+                <td class="check">&#10003;</td>
+                <td class="check">&#10003;</td>
+                <td class="greenlight-col check">&#10003;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         OPEN SOURCE SECTION
+         ================================================================ -->
+    <section class="opensource" id="open-source">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">Open Source</span>
+          <h2 class="section-title">Built in public. Inspectable by anyone.</h2>
+          <p class="section-desc">
+            Security tools should be transparent. GreenLight is fully open-source under MIT license.
+          </p>
+        </div>
+
+        <div class="os-cards">
+          <div class="os-card reveal reveal-delay-1">
+            <div class="os-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M16 18l6-6-6-6" />
+                <path d="M8 6l-6 6 6 6" />
+              </svg>
+            </div>
+            <h3>100% Swift</h3>
+            <p>Built natively with SwiftUI — no Electron, no web views. Under 2,000 lines of code.</p>
+          </div>
+
+          <div class="os-card reveal reveal-delay-2">
+            <div class="os-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+              </svg>
+            </div>
+            <h3>Privacy First</h3>
+            <p>No analytics. No telemetry. No network calls. Everything runs locally on your Mac, period.</p>
+          </div>
+
+          <div class="os-card reveal reveal-delay-3">
+            <div class="os-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+            </div>
+            <h3>Minimal Footprint</h3>
+            <p>Less than 30 MB memory, under 1% CPU when idle. One external dependency. That's it.</p>
+          </div>
+        </div>
+
+        <div class="os-techstack reveal">
+          <span class="tech-tag">Swift 5.9+</span>
+          <span class="tech-tag">SwiftUI</span>
+          <span class="tech-tag">MenuBarExtra</span>
+          <span class="tech-tag">FSEvents</span>
+          <span class="tech-tag">UserNotifications</span>
+          <span class="tech-tag">No Sandbox</span>
+          <span class="tech-tag">MIT License</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         FAQ SECTION (AI SEO: Visible, extractable Q&A content)
+         ================================================================ -->
+    <section class="faq" id="faq">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">FAQ</span>
+          <h2 class="section-title">Frequently asked questions</h2>
+          <p class="section-desc">
+            Everything you need to know about GreenLight.
+          </p>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item reveal reveal-delay-1">
+            <summary>
+              <span>What is GreenLight?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>GreenLight is a free, open-source macOS utility that automatically detects apps blocked by macOS
+              Gatekeeper and removes the <code>com.apple.quarantine</code> extended attribute with one click. It runs
+              silently in your menu bar and uses dual-channel detection (LogStream + FSEvents) to monitor your system in
+              real-time. Built with Swift and SwiftUI, it's under 2,000 lines of code.</p>
+          </details>
+
+          <details class="faq-item reveal reveal-delay-2">
+            <summary>
+              <span>Does GreenLight require admin or sudo privileges?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>No. GreenLight removes the <code>com.apple.quarantine</code> extended attribute using <code>xattr</code>
+              without requiring <code>sudo</code> or admin privileges for apps in standard locations like
+              <code>~/Downloads</code>, <code>~/Desktop</code>, and <code>/Applications</code>. Only root-owned system
+              apps would need elevated permissions, which is extremely rare in practice.</p>
+          </details>
+
+          <details class="faq-item reveal reveal-delay-3">
+            <summary>
+              <span>How does GreenLight detect blocked apps?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>GreenLight uses two independent detection channels working simultaneously. Channel A monitors macOS
+              system logs (<code>syspolicyd</code>) via LogStream for real-time Gatekeeper denial events. Channel B
+              watches file system changes via FSEvents to detect new <code>.app</code> files with quarantine attributes.
+              Both channels feed into a 3-second deduplication window that merges duplicate events into a single
+              notification.</p>
+          </details>
+
+          <details class="faq-item reveal reveal-delay-4">
+            <summary>
+              <span>Is GreenLight safe to use?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>Yes. GreenLight is fully open-source under the MIT license — anyone can inspect the complete source code
+              on GitHub. It makes zero network calls, collects no analytics or telemetry, and runs entirely on your
+              local machine. Resource usage is minimal: less than 30 MB memory and under 1% CPU when idle.</p>
+          </details>
+
+          <details class="faq-item reveal reveal-delay-5">
+            <summary>
+              <span>What macOS versions does GreenLight support?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>GreenLight requires macOS 13 Ventura or later. It is built with Swift 5.9+ and SwiftUI, using the native
+              <code>MenuBarExtra</code> API introduced in macOS 13. It runs on both Apple Silicon (M1/M2/M3) and
+              Intel-based Macs.</p>
+          </details>
+
+          <details class="faq-item reveal reveal-delay-6">
+            <summary>
+              <span>How is GreenLight different from Sentinel?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <p>Sentinel is an excellent manual tool for removing quarantine attributes via drag-and-drop. GreenLight
+              takes a fundamentally different approach: <strong>automatic detection</strong>. It monitors your system in
+              real-time and proactively sends you a native macOS notification the moment Gatekeeper blocks an app. With
+              Sentinel, you need to know an app is blocked and manually drag it into the tool. With GreenLight, you're
+              alerted automatically and can fix it with one click directly from the notification.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         DOWNLOAD / FINAL CTA SECTION
+         ================================================================ -->
+    <section class="download" id="download">
+      <div class="download-bg"></div>
+      <div class="container">
+        <div class="download-traffic-light reveal">
+          <div class="traffic-dot red"></div>
+          <div class="traffic-dot yellow"></div>
+          <div class="traffic-dot green"></div>
+        </div>
+
+        <h2 class="download-title reveal reveal-delay-1">
+          Ready to clear the way?
+        </h2>
+        <p class="download-desc reveal reveal-delay-2">
+          Download GreenLight and never wrestle with Gatekeeper again. Free forever, because security tools should be.
+        </p>
+
+        <div class="download-actions reveal reveal-delay-3">
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn-primary">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path
+                d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z" />
+              <path d="M4 14a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+            </svg>
+            Download for macOS
+          </a>
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V19c0 .27.16.59.67.5C17.14 18.16 20 14.42 20 10A10 10 0 0010 0z"
+                clip-rule="evenodd" />
+            </svg>
+            Star on GitHub
+          </a>
+        </div>
+
+        <div class="download-meta reveal reveal-delay-4">
+          <span>
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                clip-rule="evenodd" />
+            </svg>
+            macOS 13 Ventura+
+          </span>
+          <span>
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                clip-rule="evenodd" />
+            </svg>
+            No admin rights needed
+          </span>
+          <span>
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                clip-rule="evenodd" />
+            </svg>
+            v1.0.0 · MIT License
+          </span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================================================================
+       FOOTER
+       ================================================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="5" fill="#111119" />
+          <circle cx="12" cy="5.5" r="2.5" fill="#EF4444" opacity="0.25" />
+          <circle cx="12" cy="12" r="2.5" fill="#EAB308" opacity="0.25" />
+          <circle cx="12" cy="18.5" r="2.5" fill="#22C55E" />
+        </svg>
+        GreenLight
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">Releases</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">Issues</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">MIT License</a>
+      </div>
+
+      <p class="footer-copy">&copy; 2026 GreenLight. Made with care for macOS users.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="script.js"></script>
+</body>
+
+</html>

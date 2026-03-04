@@ -1,0 +1,39 @@
+# GreenLight Website
+# https://greenlight.notedock.app
+
+# Allow all standard search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Allow AI search crawlers (AI SEO: Pillar 3 - Presence)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Block training-only crawlers (not search-related)
+User-agent: CCBot
+Disallow: /
+
+# Default: allow everything
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://greenlight.notedock.app/sitemap.xml

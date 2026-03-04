@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>GreenLight</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.greenlight.app</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>GreenLight</string>
+    <key>CFBundleDisplayName</key>
+    <string>GreenLight</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>GreenLight monitors your Desktop for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>GreenLight monitors your Downloads for apps blocked by macOS Gatekeeper, so it can detect and help you fix them instantly.</string>
+    <!-- Sparkle 自动更新配置 -->
+    <key>SUFeedURL</key>
+    <string>https://greenlight.app/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>YOUR_EDDSA_PUBLIC_KEY_HERE</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <!-- 拖拽修复：接受 .app Bundle 拖放到 Dock 图标 -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Application Bundle</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.apple.application-bundle</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>None</string>
+        </dict>
+    </array>
+</dict>
+</plist>
