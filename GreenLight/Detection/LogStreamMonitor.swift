@@ -25,11 +25,16 @@ class LogStreamMonitor: ObservableObject {
     /// GK 活动但无法提取路径时的回调（用于触发兜底扫描）
     var onGKActivity: (() -> Void)?
     
+    /// §r09 Pipeline 2: GK 拦截已知 app 时的回调（evaluateScanResult result=0 + bundleId）
+    var onGKBlocked: ((_ bundleId: String) -> Void)?
+    
     // MARK: - GK 事件时间线（§r04 实验）
     
     /// 最近 60s 的 GK 事件记录（供 FSEvents 关联查询）
     private(set) var recentGKEvents: [GKEventRecord] = []
     private var lastGKEventTime: Date?
+    /// §r09 方案A: 最近一次 evaluateScanResult result=0 的时间戳（供 FSEvents 反向关联）
+    private(set) var lastGKBlockResult0Time: Date?
     private let gkEventWindow: TimeInterval = 60
     
     // MARK: - 正则（基于实验 A 真实日志）
@@ -44,6 +49,14 @@ class LogStreamMonitor: ObservableObject {
     static let bundleIdPattern = try! NSRegularExpression(
         pattern: #"bundle_id:\s*([^\s\)]+)"#,
         options: []
+    )
+    
+    // §r09: evaluateScanResult 精确解析（提取 result_code + bundle_id）
+    // 实际日志格式（r07 实证）：
+    // evaluateScanResult: 0, PST: (path: 3e00aa4), (team: (null)),
+    //   (id: TestUnsigned), (bundle_id: com.test.unsigned), 1, 0, 1, 0, 8, 0, 0
+    static let evalResultPattern = try! NSRegularExpression(
+        pattern: #"evaluateScanResult:\s*(\d+).*?bundle_id:\s*([^,\s\)]+)"#
     )
     
     // 看门狗参数
@@ -210,8 +223,33 @@ class LogStreamMonitor: ObservableObject {
             GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)), privacy: .public)")
         } else if line.contains("evaluateScanResult") {
             category = .evaluate
-            GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)), privacy: .public)")
-            onGKActivity?()  // §r05: evaluate 也触发主动扫描
+            // §r09 Pipeline 2: 精细解析 evaluateScanResult
+            let evalMatch = Self.evalResultPattern.firstMatch(in: line, range: lineRange)
+            if let evalMatch = evalMatch,
+               let codeRange = Range(evalMatch.range(at: 1), in: line),
+               let bundleRange = Range(evalMatch.range(at: 2), in: line) {
+                let resultCode = Int(line[codeRange]) ?? -1
+                let rawBundleId = String(line[bundleRange])
+                // "(null" → syspolicyd 对无签名 app 的输出，视为 null
+                let bundleId: String? = rawBundleId.hasPrefix("(") ? nil : rawBundleId
+                if resultCode == 0 {
+                    // GK 拦截 → 记录时间戳（方案A: 供 FSEvents 反向关联）
+                    lastGKBlockResult0Time = now
+                    if let bundleId = bundleId {
+                        GLLog.logStream.info("GK blocked: result=0, bundleId=\(bundleId, privacy: .public)")
+                        onGKBlocked?(bundleId)
+                    } else {
+                        GLLog.logStream.info("GK blocked: result=0, bundleId=null, awaiting FSEvents correlation")
+                    }
+                } else {
+                    // result=2（GK 通过）或其他 → 静默，不触发任何扫描
+                    GLLog.logStream.debug("GK passed: bundleId=\(rawBundleId, privacy: .public), result=\(resultCode), skipped")
+                }
+            } else {
+                // 解析失败 → 降级走现有 onGKActivity 流程
+                GLLog.logStream.debug("GK evaluate parse failed, fallback: \(String(line.prefix(120)), privacy: .public)")
+                onGKActivity?()
+            }
         } else if line.contains("<private>") {
             category = .unrecognized
             GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)), privacy: .public)")

@@ -146,8 +146,12 @@ struct GreenLightApp: App {
             }
         }
         
+        // §r09 方案A: FSEvents 反向关联需要的冷却（按 app path 维度 60s）
+        var pipeline2ACooldownByPath: [String: Date] = [:]
+        let pipeline2ACooldownInterval: TimeInterval = 60
+        
         // EventDeduplicator → 浮动面板 + 状态更新
-        deduplicator.onEvent = { event in
+        deduplicator.onEvent = { [logMonitor] event in
             Task { @MainActor in
                 let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
                 GLLog.pipeline.info("Pipeline received: \(event.appName, privacy: .public), sources=\(event.sources.map { String(describing: $0) }, privacy: .public), latency=\(latencyMs)ms")
@@ -158,6 +162,25 @@ struct GreenLightApp: App {
                 // §3.2 优化：已 blocked 的 App 跳过重复弹窗
                 if let existing = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
                    existing.status == .detected {
+                    
+                    // §r09 方案A: 最近有 GK 拦截信号 + FSEvents 确认是哪个已知 app → 弹面板
+                    let now = Date()
+                    if let lastBlock = logMonitor.lastGKBlockResult0Time,
+                       now.timeIntervalSince(lastBlock) < 30 {
+                        // 冷却检查
+                        if let lastPanel = pipeline2ACooldownByPath[event.appPath.path],
+                           now.timeIntervalSince(lastPanel) < pipeline2ACooldownInterval {
+                            let remaining = String(format: "%.0f", pipeline2ACooldownInterval - now.timeIntervalSince(lastPanel))
+                            GLLog.pipeline.debug("Pipeline 2A: \(event.appName, privacy: .public), cooldown (\(remaining)s remaining)")
+                        } else {
+                            pipeline2ACooldownByPath[event.appPath.path] = now
+                            GLLog.pipeline.notice("GK blocked + FSEvents confirmed: \(event.appName, privacy: .public), showing panel")
+                            DetectionPanelController.shared.show(event: event)
+                            NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: event)
+                        }
+                        return
+                    }
+                    
                     GLLog.pipeline.info("Already detected, skip panel: \(event.appName, privacy: .public)")
                     // 但如果确认态面板还在等，仍然要替换
                     if DetectionPanelController.shared.isConfirming {
@@ -211,6 +234,45 @@ struct GreenLightApp: App {
             initialDetectionScan(fsWatcher: fsWatcher)
         }
         // 首次启动：由 OnboardingView onAppear 触发（见 onWarmup 回调）
+        
+        // §r09 Pipeline 2: GK 拦截已知 app → 直接弹面板
+        var gkBlockedCooldown: [String: Date] = [:]
+        let gkBlockedCooldownInterval: TimeInterval = 60
+        
+        logMonitor.onGKBlocked = { [logMonitor] bundleId in
+            Task { @MainActor in
+                let appState = AppState.shared
+                let now = Date()
+                
+                // 60s 冷却去重
+                if let lastTime = gkBlockedCooldown[bundleId],
+                   now.timeIntervalSince(lastTime) < gkBlockedCooldownInterval {
+                    let remaining = String(format: "%.0f", gkBlockedCooldownInterval - now.timeIntervalSince(lastTime))
+                    GLLog.pipeline.debug("GK blocked: bundleId=\(bundleId), cooldown (\(remaining)s remaining)")
+                    return
+                }
+                
+                // 匹配 blockedApps（仅 .detected 状态）
+                guard let matched = appState.blockedApps.first(where: { $0.bundleId == bundleId && $0.status == .detected }) else {
+                    GLLog.pipeline.info("GK blocked: bundleId=\(bundleId), no match in blockedApps, fallback to proactiveScan")
+                    logMonitor.onGKActivity?()
+                    return
+                }
+                
+                // 弹面板
+                gkBlockedCooldown[bundleId] = now
+                let event = GreenLightEvent(
+                    appPath: URL(fileURLWithPath: matched.path),
+                    appName: matched.appName,
+                    bundleId: matched.bundleId,
+                    sources: [.logStream],
+                    timestamp: now
+                )
+                GLLog.pipeline.notice("GK blocked: bundleId=\(bundleId), matched app=\(matched.appName), showing panel")
+                DetectionPanelController.shared.show(event: event)
+                NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: event)
+            }
+        }
         
         // onGKActivity → §r06 确认态流程 + 置信度记录 + fallback 兜底
         var lastProactiveScanTime: Date?

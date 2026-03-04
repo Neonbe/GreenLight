@@ -1,0 +1,57 @@
+[2026-03-04T09:37:02.855Z] USER_MARK step=1 ts=1772617022843 target=TestUnsigned
+[2026-03-04T09:37:33.873Z] GK_EVENT category=scan interval=-1ms total=1
+[2026-03-04T09:37:34.438Z] GK_EVENT category=other interval=565ms total=2
+[2026-03-04T09:37:34.543Z] GK_EVENT category=evaluate interval=104ms total=3
+[2026-03-04T09:37:43.994Z] QUARANTINE app=TestUnsigned.app xattr=0083;66a5c3b5;Safari;AAAA-BBBB
+[2026-03-04T09:37:43.996Z] SIGNING_INFO app=TestUnsigned id=TestUnsigned team=nil flags=131074
+[2026-03-04T09:37:43.998Z] SECSTATICCODE_FAILED app=TestUnsigned OSStatus=-67056
+[2026-03-04T09:37:43.998Z] FSEVENTS_DETECTED app=TestUnsigned.app result=rejected bundleId=com.test.unsigned path=/Applications/TestUnsigned.app
+[2026-03-04T09:37:45.065Z] PIPELINE_RECEIVED app=TestUnsigned bundleId=com.test.unsigned sources=["fsEvents"] latency=1072ms path=/Applications/TestUnsigned.app
+[2026-03-04T09:37:45.545Z] GK_TIMELINE events=3 timeline=scan(-1ms) → other(565ms) → evaluate(104ms)
+[2026-03-04T09:38:41.647Z] USER_MARK step=2 ts=1772617121646 target=TestAdHoc
+[2026-03-04T09:38:45.346Z] GK_EVENT category=scan interval=70803ms total=1
+[2026-03-04T09:38:45.544Z] GK_TIMELINE events=1 timeline=scan(70803ms)
+[2026-03-04T09:38:46.275Z] GK_EVENT category=other interval=929ms total=2
+[2026-03-04T09:38:46.364Z] GK_EVENT category=evaluate interval=89ms total=3
+[2026-03-04T09:38:51.509Z] QUARANTINE app=TestAdHoc.app xattr=0083;66a5c3b5;Safari;AAAA-BBBB
+[2026-03-04T09:38:51.510Z] SIGNING_INFO app=TestAdHoc id=com.test.adhoc team=nil flags=2
+[2026-03-04T09:38:51.775Z] SPCTL_ASSESS app=TestAdHoc exitCode=3 result=rejected
+[2026-03-04T09:38:51.775Z] FSEVENTS_DETECTED app=TestAdHoc.app result=rejected bundleId=com.test.adhoc path=/Applications/TestAdHoc.app
+[2026-03-04T09:38:52.842Z] PIPELINE_RECEIVED app=TestAdHoc bundleId=com.test.adhoc sources=["fsEvents"] latency=1333ms path=/Applications/TestAdHoc.app
+[2026-03-04T09:39:45.544Z] GK_TIMELINE events=3 timeline=scan(70803ms) → other(929ms) → evaluate(89ms)
+[2026-03-04T09:40:16.442Z] USER_MARK step=2 ts=1772617216441 target=TestAdHoc
+[2026-03-04T09:40:26.575Z] GK_EVENT category=scan interval=100210ms total=1
+[2026-03-04T09:40:27.464Z] GK_EVENT category=other interval=888ms total=2
+[2026-03-04T09:40:27.551Z] GK_EVENT category=evaluate interval=86ms total=3
+[2026-03-04T09:40:32.708Z] QUARANTINE app=TestDamaged.app xattr=0083;66a5c3b5;Safari;AAAA-BBBB
+[2026-03-04T09:40:32.710Z] SIGNING_INFO app=TestDamaged id=com.test.damaged team=nil flags=2
+[2026-03-04T09:40:32.907Z] SPCTL_ASSESS app=TestDamaged exitCode=3 result=rejected
+[2026-03-04T09:40:32.908Z] FSEVENTS_DETECTED app=TestDamaged.app result=rejected bundleId=com.test.damaged path=/Applications/TestDamaged.app
+[2026-03-04T09:40:33.975Z] PIPELINE_RECEIVED app=TestDamaged bundleId=com.test.damaged sources=["fsEvents"] latency=1267ms path=/Applications/TestDamaged.app
+[2026-03-04T09:40:45.545Z] GK_TIMELINE events=3 timeline=scan(100210ms) → other(888ms) → evaluate(86ms)
+[2026-03-04T09:41:29.683Z] USER_MARK step=2 ts=1772617289682 target=TestAdHoc
+[2026-03-04T09:41:33.994Z] GK_EVENT category=scan interval=66442ms total=1
+[2026-03-04T09:41:34.461Z] GK_EVENT category=other interval=467ms total=2
+[2026-03-04T09:41:34.566Z] GK_EVENT category=evaluate interval=105ms total=3
+[2026-03-04T09:41:45.546Z] GK_TIMELINE events=3 timeline=scan(66442ms) → other(467ms) → evaluate(105ms)
+[2026-03-04T09:42:29.728Z] USER_MARK step=2 ts=1772617349727 target=TestAdHoc
+[2026-03-04T09:42:36.333Z] GK_EVENT category=other interval=61766ms total=1
+[2026-03-04T09:42:36.335Z] GK_EVENT category=scan interval=1ms total=2
+[2026-03-04T09:42:36.954Z] GK_EVENT category=other interval=619ms total=3
+[2026-03-04T09:42:37.257Z] GK_EVENT category=evaluate interval=302ms total=4
+[2026-03-04T09:42:45.545Z] GK_TIMELINE events=4 timeline=other(61766ms) → scan(1ms) → other(619ms) → evaluate(302ms)
+[2026-03-04T09:42:45.770Z] QUARANTINE app=Antigravity Tools.app xattr=0181;69a463ee;Chrome;CF12EE58-571A-4A49-92FA-8FE137A9387C
+[2026-03-04T09:42:45.772Z] SIGNING_INFO app=Antigravity Tools id=antigravity_tools-9b93f988f6e9d4d0 team=nil flags=131074
+[2026-03-04T09:42:45.831Z] SECSTATICCODE_FAILED app=Antigravity Tools OSStatus=-67056
+[2026-03-04T09:42:45.831Z] FSEVENTS_DETECTED app=Antigravity Tools.app result=rejected bundleId=com.lbjlaq.antigravity-tools path=/Applications/Antigravity Tools.app
+[2026-03-04T09:42:46.899Z] PIPELINE_RECEIVED app=Antigravity Tools bundleId=com.lbjlaq.antigravity-tools sources=["fsEvents"] latency=1129ms path=/Applications/Antigravity Tools.app
+[2026-03-04T09:43:22.463Z] USER_MARK step=6 ts=1772617402462 target=SubLime
+[2026-03-04T09:43:34.937Z] GK_EVENT category=evaluate interval=57679ms total=5
+[2026-03-04T09:43:45.546Z] GK_TIMELINE events=5 timeline=other(61766ms) → scan(1ms) → other(619ms) → evaluate(302ms) → evaluate(57679ms)
+[2026-03-04T09:44:26.618Z] USER_MARK step=7 ts=1772617466617 target=CCSwitch
+[2026-03-04T09:44:36.064Z] GK_EVENT category=evaluate interval=61125ms total=1
+[2026-03-04T09:44:45.546Z] GK_TIMELINE events=1 timeline=evaluate(61125ms)
+[2026-03-04T09:45:45.547Z] GK_TIMELINE events=1 timeline=evaluate(61125ms)
+[2026-03-04T09:46:45.546Z] GK_TIMELINE events=1 timeline=evaluate(61125ms)
+[2026-03-04T09:47:45.548Z] GK_TIMELINE events=1 timeline=evaluate(61125ms)
+[2026-03-04T09:48:45.547Z] GK_TIMELINE events=1 timeline=evaluate(61125ms)

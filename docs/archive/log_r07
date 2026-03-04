@@ -1,0 +1,300 @@
+Last login: Wed Mar  4 17:25:26 on ttys026
+/Users/neobott/.zshrc:source:22: no such file or directory: /Users/neobott/.openclaw/completions/openclaw.zsh
+neobott@Mac-mini ~ % cd /Users/neobott/Desktop/GreenLight
+chmod +x create_test_apps.sh && sudo ./create_test_apps.sh
+Password:
+🧪 创建 4 种测试 blocked App...
+
+📦 Type A: 完全未签名 (no signature)
+   ✅ /Applications/TestUnsigned.app (预期: SecStaticCode CREATE/VALIDITY 失败 → 秒判)
+📦 Type B: Ad-hoc 签名 (signed with '-', not notarized)
+   ✅ /Applications/TestAdHoc.app (预期: SecStaticCode 通过 → spctl rejected)
+📦 Type C: 签名后篡改 (valid signature then corrupted)
+   ✅ /Applications/TestDamaged.app (预期: SecStaticCode VALIDITY 失败 → 秒判)
+📦 Type D: 正常签名 + 无 quarantine（对照组）
+   ✅ /Applications/TestNormal.app (预期: 无 quarantine → FSEvents 跳过)
+
+🎯 已创建 4 个测试 App:
+   A. TestUnsigned.app   — 无签名 + quarantine
+   B. TestAdHoc.app      — ad-hoc 签名 + quarantine
+   C. TestDamaged.app    — 篡改签名 + quarantine
+   D. TestNormal.app     — 正常签名，无 quarantine（对照）
+
+⚠️ 实验完成后清理: sudo rm -rf /Applications/Test{Unsigned,AdHoc,Damaged,Normal}.app
+neobott@Mac-mini GreenLight % ls -la /Applications/Test*.app
+
+/Applications/TestAdHoc.app:
+total 0
+drwxr-xr-x@  3 root  admin    96  4 Mar 17:28 .
+drwxrwxr-x  88 root  admin  2816  4 Mar 17:28 ..
+drwxr-xr-x@  5 root  admin   160  4 Mar 17:28 Contents
+
+/Applications/TestDamaged.app:
+total 0
+drwxr-xr-x@  3 root  admin    96  4 Mar 17:28 .
+drwxrwxr-x  88 root  admin  2816  4 Mar 17:28 ..
+drwxr-xr-x@  5 root  admin   160  4 Mar 17:28 Contents
+
+/Applications/TestFlight.app:
+total 0
+drwxr-xr-x@  3 root  wheel    96 11 Dec 21:42 .
+drwxrwxr-x  88 root  admin  2816  4 Mar 17:28 ..
+drwxr-xr-x  11 root  wheel   352 11 Dec 21:42 Contents
+
+/Applications/TestNormal.app:
+total 0
+drwxr-xr-x@  3 root  admin    96  4 Mar 17:28 .
+drwxrwxr-x  88 root  admin  2816  4 Mar 17:28 ..
+drwxr-xr-x@  5 root  admin   160  4 Mar 17:28 Contents
+
+/Applications/TestUnsigned.app:
+total 0
+drwxr-xr-x@  3 root  admin    96  4 Mar 17:28 .
+drwxrwxr-x  88 root  admin  2816  4 Mar 17:28 ..
+drwxr-xr-x@  4 root  admin   128  4 Mar 17:28 Contents
+neobott@Mac-mini GreenLight % xattr -l /Applications/TestUnsigned.app | grep quarantine  # 应有
+xattr -l /Applications/TestAdHoc.app | grep quarantine     # 应有
+xattr -l /Applications/TestDamaged.app | grep quarantine   # 应有
+xattr -l /Applications/TestNormal.app | grep quarantine    # 应无
+grep: #: No such file or directory
+grep: 应有: No such file or directory
+grep: #: No such file or directory
+grep: 应有: No such file or directory
+grep: #: No such file or directory
+grep: 应有: No such file or directory
+grep: #: No such file or directory
+grep: 应无: No such file or directory
+neobott@Mac-mini GreenLight % # 检查 SubLime（找到它的路径后）
+mdfind -name "SubLime" -onlyin /Applications
+xattr -l <SubLime路径> | grep quarantine
+zsh: parse error near `|'
+neobott@Mac-mini GreenLight % mdfind -name "CCSwitch" -onlyin /Applications
+xattr -l <CCSwitch路径> | grep quarantine
+zsh: parse error near `|'
+neobott@Mac-mini GreenLight % /Application
+zsh: no such file or directory: /Application
+neobott@Mac-mini GreenLight % mdfind -name "SubLime" -onlyin /Applications
+xattr -l </Applications/Sublime\ Text.app> | grep quarantine
+zsh: parse error near `|'
+neobott@Mac-mini GreenLight % /Applications/CC\ Switch\ 2.app
+zsh: permission denied: /Applications/CC Switch 2.app
+neobott@Mac-mini GreenLight % xattr -l "/Applications/Sublime Text.app" | grep quarantine
+
+com.apple.quarantine: 01c1;67e0b15f;Chrome;
+neobott@Mac-mini GreenLight % xattr -l "/Applications/CC Switch 2.app" | grep quarantine
+
+com.apple.quarantine: 01c1;696291fa;Chrome;0EBF8C71-C95E-48FC-AC97-FAC6AEEA2F77
+neobott@Mac-mini GreenLight % gg
+🚦 GreenLight — 构建中...
+[1/1] Planning build
+Building for debugging...
+[1/1] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.21s)
+📦 打包 .app Bundle...
+🌐 编译本地化资源...
+  ✅ Localizable: 79 keys × 8 languages
+  ✅ InfoPlist: 2 keys × 8 languages
+🔄 嵌入 Sparkle.framework...
+/Users/neobott/Desktop/GreenLight/.build/GreenLight.app: replacing existing signature
+🚀 启动 GreenLight...
+
+✅ GreenLight 已启动！
+   按 Ctrl+C 退出日志监听（App 仍在后台运行）
+   要关闭 App: pkill -f 'GreenLight.app'
+
+📋 开始监听日志...
+
+Filtering the log data using "subsystem == "com.greenlight.app""
+Timestamp               Ty Process[PID:TID]
+2026-03-04 17:34:45.541 Df GreenLight[28445:19540c] [com.greenlight.app:logStream] log stream process started, pid=28455
+2026-03-04 17:34:45.542 Df GreenLight[28445:19540c] [com.greenlight.app:fsEvents] FSEvents started, directories=1, paths=["/Applications"]
+2026-03-04 17:34:45.546 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] Pipeline started: logStream=true, fsEvents=true
+2026-03-04 17:34:45.546 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Monitoring directories: ["/Applications"]
+2026-03-04 17:34:45.609 E  GreenLight[28445:19540c] [com.greenlight.app:state] Sparkle: EdDSA key not configured, updater disabled
+2026-03-04 17:34:45.871 I  GreenLight[28445:1955f5] [com.greenlight.app:fsEvents] proactiveScan found: TestUnsigned.app, OSStatus=-67056
+2026-03-04 17:34:47.636 I  GreenLight[28445:1955f4] [com.greenlight.app:fsEvents] proactiveScan found: CC Switch.app, OSStatus=-67056
+2026-03-04 17:34:48.520 I  GreenLight[28445:19540c] [com.greenlight.app:onboarding] Onboarding step: 2
+2026-03-04 17:34:49.237 I  GreenLight[28445:1955d8] [com.greenlight.app:fsEvents] proactiveScan found: CC Switch 2.app, OSStatus=-67056
+2026-03-04 17:34:49.613 I  GreenLight[28445:1955f6] [com.greenlight.app:fsEvents] proactiveScan found: Antigravity Tools.app, OSStatus=-67056
+2026-03-04 17:34:50.044 I  GreenLight[28445:19540c] [com.greenlight.app:onboarding] Login item set: true
+2026-03-04 17:34:50.044 I  GreenLight[28445:19540c] [com.greenlight.app:onboarding] Onboarding step: 3
+2026-03-04 17:34:50.939 Df GreenLight[28445:1955d8] [com.greenlight.app:fsEvents] proactiveScan: 4 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:34:51.217 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=1
+2026-03-04 17:34:51.218 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 1 records, totalGreenLights=0
+2026-03-04 17:34:51.627 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=2
+2026-03-04 17:34:51.631 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 2 records, totalGreenLights=0
+2026-03-04 17:34:52.001 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=3
+2026-03-04 17:34:52.012 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 3 records, totalGreenLights=0
+2026-03-04 17:34:52.654 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=4
+2026-03-04 17:34:52.669 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 4 records, totalGreenLights=0
+2026-03-04 17:34:52.669 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] Initial scan: 4 unsigned apps detected, total=4
+2026-03-04 17:34:56.378 Df GreenLight[28445:19540c] [com.greenlight.app:onboarding] Onboarding completed
+2026-03-04 17:35:45.542 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 60s, lines=113, gkHits=0, detections=0
+2026-03-04 17:36:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 120s, lines=167, gkHits=0, detections=0
+2026-03-04 17:37:02.844 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=1 ts=1772617022843 target=TestUnsigned — user action NOW
+2026-03-04 17:37:33.871 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line: 2026-03-04 17:37:33.871 Df syspolicyd[477:195cd9] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 3e00aa41bc9baaf), (team: (null)), (id: (null)), (bundle_id: (null))
+2026-03-04 17:37:33.872 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK scan initiated: 2026-03-04 17:37:33.871 Df syspolicyd[477:195cd9] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 3e00aa4
+2026-03-04 17:37:33.872 I  GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK event: scan, interval=-1ms, total_recent=1
+2026-03-04 17:37:34.437 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line: 2026-03-04 17:37:34.436 Df syspolicyd[477:195cd9] [com.apple.xpc:connection] [0x9797475c0] activating connection: mach=false listener=false peer=false name=com.apple.XprotectFramework.AnalysisService
+2026-03-04 17:37:34.437 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:37:34.436 Df syspolicyd[477:195cd9] [com.apple.xpc:connection] [0x9797475c0] activating connection: mach=f
+2026-03-04 17:37:34.437 I  GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK event: other, interval=565ms, total_recent=2
+2026-03-04 17:37:34.541 Db GreenLight[28445:195b92] [com.greenlight.app:logStream] GK line: 2026-03-04 17:37:34.541 Df syspolicyd[477:1961d9] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (path: 3e00aa41bc9baaf), (team: (null)), (id: TestUnsigned), (bundle_id: com.test.unsigned), 1, 0, 1, 0, 8, 0, 0
+2026-03-04 17:37:34.541 Db GreenLight[28445:195b92] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:37:34.541 Df syspolicyd[477:1961d9] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (pat
+2026-03-04 17:37:34.541 I  GreenLight[28445:195b92] [com.greenlight.app:logStream] GK event: evaluate, interval=104ms, total_recent=3
+2026-03-04 17:37:34.552 Df GreenLight[28445:195b92] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:37:35.074 I  GreenLight[28445:195b92] [com.greenlight.app:pipeline] Fallback scan triggered by GK activity
+2026-03-04 17:37:35.074 I  GreenLight[28445:195b92] [com.greenlight.app:fsEvents] Fallback scan: 0 recent candidates
+2026-03-04 17:37:43.992 Db GreenLight[28445:19540c] [com.greenlight.app:fsEvents] FS event: /Applications/TestUnsigned.app, flags=163840
+2026-03-04 17:37:43.992 Df GreenLight[28445:19540c] [com.greenlight.app:fsEvents] Quarantine xattr: TestUnsigned.app, value=0083;66a5c3b5;Safari;AAAA-BBBB
+2026-03-04 17:37:43.994 Df GreenLight[28445:195b92] [com.greenlight.app:gkAssess] SecStaticCode signingInfo: TestUnsigned, id=TestUnsigned, team=nil, flags=131074
+2026-03-04 17:37:43.997 Df GreenLight[28445:195b92] [com.greenlight.app:gkAssess] SecStaticCode VALIDITY failed: TestUnsigned, OSStatus=-67056
+2026-03-04 17:37:43.997 I  GreenLight[28445:195b92] [com.greenlight.app:gkAssess] GK assess (SecStaticCode→rejected): TestUnsigned
+2026-03-04 17:37:43.997 I  GreenLight[28445:195b92] [com.greenlight.app:fsEvents] FSEvents detected + assess: TestUnsigned.app, result=rejected, bundleId=com.test.unsigned
+2026-03-04 17:37:43.998 Df GreenLight[28445:195b92] [com.greenlight.app:pipeline] FS↔GK correlation: 2 GK events in last 10s (scan=0 eval=1 prompt=0 other=1), oldest=9560ms ago
+2026-03-04 17:37:43.998 I  GreenLight[28445:195d1e] [com.greenlight.app:dedup] Dedup new: /Applications/TestUnsigned.app, source=fsEvents, window=1.000000s
+2026-03-04 17:37:45.064 I  GreenLight[28445:195d1f] [com.greenlight.app:dedup] Dedup flush: TestUnsigned, sources=["fsEvents"], bundleId=com.test.unsigned
+2026-03-04 17:37:45.064 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Pipeline received: TestUnsigned, sources=["fsEvents"], latency=1072ms
+2026-03-04 17:37:45.064 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Already detected, skip panel: TestUnsigned
+2026-03-04 17:37:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 180s, lines=479, gkHits=3, detections=0
+2026-03-04 17:37:45.543 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (3 events): scan(-1ms) → other(565ms) → evaluate(104ms)
+2026-03-04 17:38:41.646 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=2 ts=1772617121646 target=TestAdHoc — user action NOW
+2026-03-04 17:38:45.344 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line: 2026-03-04 17:38:45.344 Df syspolicyd[477:195cd9] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 121cd3bcf61e562e), (team: (null)), (id: (null)), (bundle_id: (null))
+2026-03-04 17:38:45.344 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK scan initiated: 2026-03-04 17:38:45.344 Df syspolicyd[477:195cd9] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 121cd3b
+2026-03-04 17:38:45.344 I  GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK event: scan, interval=70803ms, total_recent=1
+2026-03-04 17:38:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 240s, lines=602, gkHits=4, detections=0
+2026-03-04 17:38:45.543 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): scan(70803ms)
+2026-03-04 17:38:46.274 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line: 2026-03-04 17:38:46.273 Df syspolicyd[477:195cd9] [com.apple.xpc:connection] [0x979746300] activating connection: mach=false listener=false peer=false name=com.apple.XprotectFramework.AnalysisService
+2026-03-04 17:38:46.274 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:38:46.273 Df syspolicyd[477:195cd9] [com.apple.xpc:connection] [0x979746300] activating connection: mach=f
+2026-03-04 17:38:46.274 I  GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK event: other, interval=929ms, total_recent=2
+2026-03-04 17:38:46.363 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK line: 2026-03-04 17:38:46.360 Df syspolicyd[477:1966a4] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (path: 121cd3bcf61e562e), (team: (null)), (id: com.test.adhoc), (bundle_id: com.test.adhoc), 1, 0, 1, 0, 0, 0, 0
+2026-03-04 17:38:46.363 Db GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:38:46.360 Df syspolicyd[477:1966a4] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (pat
+2026-03-04 17:38:46.363 I  GreenLight[28445:195d1e] [com.greenlight.app:logStream] GK event: evaluate, interval=89ms, total_recent=3
+2026-03-04 17:38:46.393 Df GreenLight[28445:195b92] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:38:51.507 Db GreenLight[28445:19540c] [com.greenlight.app:fsEvents] FS event: /Applications/TestAdHoc.app, flags=163840
+2026-03-04 17:38:51.507 Df GreenLight[28445:19540c] [com.greenlight.app:fsEvents] Quarantine xattr: TestAdHoc.app, value=0083;66a5c3b5;Safari;AAAA-BBBB
+2026-03-04 17:38:51.509 Df GreenLight[28445:195d1e] [com.greenlight.app:gkAssess] SecStaticCode signingInfo: TestAdHoc, id=com.test.adhoc, team=nil, flags=2
+2026-03-04 17:38:51.513 I  GreenLight[28445:195d1e] [com.greenlight.app:gkAssess] SecStaticCode passed: TestAdHoc, signature valid
+2026-03-04 17:38:51.513 I  GreenLight[28445:195d1e] [com.greenlight.app:gkAssess] GK assess: SecStaticCode passed for TestAdHoc, falling through to spctl
+2026-03-04 17:38:51.774 I  GreenLight[28445:195d1e] [com.greenlight.app:gkAssess] GK assess (spctl): TestAdHoc, exitCode=3, result=rejected
+2026-03-04 17:38:51.774 I  GreenLight[28445:195d1e] [com.greenlight.app:fsEvents] FSEvents detected + assess: TestAdHoc.app, result=rejected, bundleId=com.test.adhoc
+2026-03-04 17:38:51.774 Df GreenLight[28445:195d1e] [com.greenlight.app:pipeline] FS↔GK correlation: 3 GK events in last 10s (scan=1 eval=1 prompt=0 other=1), oldest=6430ms ago
+2026-03-04 17:38:51.775 I  GreenLight[28445:196207] [com.greenlight.app:dedup] Dedup new: /Applications/TestAdHoc.app, source=fsEvents, window=1.000000s
+2026-03-04 17:38:52.840 I  GreenLight[28445:195b92] [com.greenlight.app:dedup] Dedup flush: TestAdHoc, sources=["fsEvents"], bundleId=com.test.adhoc
+2026-03-04 17:38:52.840 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Pipeline received: TestAdHoc, sources=["fsEvents"], latency=1333ms
+2026-03-04 17:38:53.109 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=5
+2026-03-04 17:38:53.129 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 5 records, totalGreenLights=0
+2026-03-04 17:38:53.129 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Showing panel for: TestAdHoc
+2026-03-04 17:38:53.129 Df GreenLight[28445:19540c] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-04 17:38:53.142 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel positioned at: (2303.000000, 1401.000000)
+2026-03-04 17:38:53.147 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel positioned at: (2303.000000, 1218.000000)
+2026-03-04 17:38:53.148 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Sending system notification for: TestAdHoc
+2026-03-04 17:38:53.148 Db GreenLight[28445:19540c] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-04 17:39:08.149 I  GreenLight[28445:19540c] [com.greenlight.app:panel] Panel auto-dismissed (timeout)
+2026-03-04 17:39:08.261 I  GreenLight[28445:19540c] [com.greenlight.app:panel] User dismissed panel (no state change)
+2026-03-04 17:39:08.338 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel closed
+2026-03-04 17:39:08.338 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel closed
+2026-03-04 17:39:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 300s, lines=799, gkHits=6, detections=0
+2026-03-04 17:39:45.543 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (3 events): scan(70803ms) → other(929ms) → evaluate(89ms)
+2026-03-04 17:40:16.441 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=2 ts=1772617216441 target=TestAdHoc — user action NOW
+2026-03-04 17:40:26.574 Db GreenLight[28445:196a2a] [com.greenlight.app:logStream] GK line: 2026-03-04 17:40:26.573 Df syspolicyd[477:196e1a] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 17fe3c4106c67914), (team: (null)), (id: (null)), (bundle_id: (null))
+2026-03-04 17:40:26.574 Db GreenLight[28445:196a2a] [com.greenlight.app:logStream] GK scan initiated: 2026-03-04 17:40:26.573 Df syspolicyd[477:196e1a] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 17fe3c4
+2026-03-04 17:40:26.574 I  GreenLight[28445:196a2a] [com.greenlight.app:logStream] GK event: scan, interval=100210ms, total_recent=1
+2026-03-04 17:40:27.463 Db GreenLight[28445:196e70] [com.greenlight.app:logStream] GK line: 2026-03-04 17:40:27.462 Df syspolicyd[477:196e1a] [com.apple.xpc:connection] [0x9797443c0] activating connection: mach=false listener=false peer=false name=com.apple.XprotectFramework.AnalysisService
+2026-03-04 17:40:27.463 Db GreenLight[28445:196e70] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:40:27.462 Df syspolicyd[477:196e1a] [com.apple.xpc:connection] [0x9797443c0] activating connection: mach=f
+2026-03-04 17:40:27.463 I  GreenLight[28445:196e70] [com.greenlight.app:logStream] GK event: other, interval=888ms, total_recent=2
+2026-03-04 17:40:27.549 Db GreenLight[28445:196e70] [com.greenlight.app:logStream] GK line: 2026-03-04 17:40:27.548 Df syspolicyd[477:1972c6] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (path: 17fe3c4106c67914), (team: (null)), (id: com.test.damaged), (bundle_id: com.test.damaged), 1, 0, 1, 0, 11, 0, 0
+2026-03-04 17:40:27.550 Db GreenLight[28445:196e70] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:40:27.548 Df syspolicyd[477:1972c6] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (pat
+2026-03-04 17:40:27.550 I  GreenLight[28445:196e70] [com.greenlight.app:logStream] GK event: evaluate, interval=86ms, total_recent=3
+2026-03-04 17:40:27.580 Df GreenLight[28445:197064] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:40:28.083 I  GreenLight[28445:196a2a] [com.greenlight.app:pipeline] Fallback scan triggered by GK activity
+2026-03-04 17:40:28.083 I  GreenLight[28445:196a2a] [com.greenlight.app:fsEvents] Fallback scan: 0 recent candidates
+2026-03-04 17:40:32.706 Db GreenLight[28445:19540c] [com.greenlight.app:fsEvents] FS event: /Applications/TestDamaged.app, flags=163840
+2026-03-04 17:40:32.707 Df GreenLight[28445:19540c] [com.greenlight.app:fsEvents] Quarantine xattr: TestDamaged.app, value=0083;66a5c3b5;Safari;AAAA-BBBB
+2026-03-04 17:40:32.709 Df GreenLight[28445:196e70] [com.greenlight.app:gkAssess] SecStaticCode signingInfo: TestDamaged, id=com.test.damaged, team=nil, flags=2
+2026-03-04 17:40:32.711 I  GreenLight[28445:196e70] [com.greenlight.app:gkAssess] SecStaticCode passed: TestDamaged, signature valid
+2026-03-04 17:40:32.711 I  GreenLight[28445:196e70] [com.greenlight.app:gkAssess] GK assess: SecStaticCode passed for TestDamaged, falling through to spctl
+2026-03-04 17:40:32.906 I  GreenLight[28445:196e70] [com.greenlight.app:gkAssess] GK assess (spctl): TestDamaged, exitCode=3, result=rejected
+2026-03-04 17:40:32.907 I  GreenLight[28445:196e70] [com.greenlight.app:fsEvents] FSEvents detected + assess: TestDamaged.app, result=rejected, bundleId=com.test.damaged
+2026-03-04 17:40:32.907 Df GreenLight[28445:196e70] [com.greenlight.app:pipeline] FS↔GK correlation: 3 GK events in last 10s (scan=1 eval=1 prompt=0 other=1), oldest=6333ms ago
+2026-03-04 17:40:32.907 I  GreenLight[28445:196a2a] [com.greenlight.app:dedup] Dedup new: /Applications/TestDamaged.app, source=fsEvents, window=1.000000s
+2026-03-04 17:40:33.974 I  GreenLight[28445:197064] [com.greenlight.app:dedup] Dedup flush: TestDamaged, sources=["fsEvents"], bundleId=com.test.damaged
+2026-03-04 17:40:33.974 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Pipeline received: TestDamaged, sources=["fsEvents"], latency=1267ms
+2026-03-04 17:40:34.236 Df GreenLight[28445:19540c] [com.greenlight.app:state] Detected: <private>, total=6
+2026-03-04 17:40:34.259 Db GreenLight[28445:19540c] [com.greenlight.app:state] Saved 6 records, totalGreenLights=0
+2026-03-04 17:40:34.259 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Showing panel for: TestDamaged
+2026-03-04 17:40:34.259 Df GreenLight[28445:19540c] [com.greenlight.app:panel] Panel created for: <private>
+2026-03-04 17:40:34.262 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel positioned at: (2303.000000, 1401.000000)
+2026-03-04 17:40:34.265 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel positioned at: (2303.000000, 1218.000000)
+2026-03-04 17:40:34.265 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Sending system notification for: TestDamaged
+2026-03-04 17:40:34.265 Db GreenLight[28445:19540c] [com.greenlight.app:notification] System notification skipped (not authorized)
+2026-03-04 17:40:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 360s, lines=2076, gkHits=9, detections=0
+2026-03-04 17:40:45.544 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (3 events): scan(100210ms) → other(888ms) → evaluate(86ms)
+2026-03-04 17:40:49.268 I  GreenLight[28445:19540c] [com.greenlight.app:panel] Panel auto-dismissed (timeout)
+2026-03-04 17:40:49.378 I  GreenLight[28445:19540c] [com.greenlight.app:panel] User dismissed panel (no state change)
+2026-03-04 17:40:49.460 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel closed
+2026-03-04 17:40:49.460 Db GreenLight[28445:19540c] [com.greenlight.app:panel] Panel closed
+2026-03-04 17:41:29.682 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=2 ts=1772617289682 target=TestAdHoc — user action NOW
+2026-03-04 17:41:33.991 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line: 2026-03-04 17:41:33.991 Df syspolicyd[477:197654] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: c5e65b47fc04bed9), (team: (null)), (id: (null)), (bundle_id: (null))
+2026-03-04 17:41:33.992 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK scan initiated: 2026-03-04 17:41:33.991 Df syspolicyd[477:197654] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: c5e65b4
+2026-03-04 17:41:33.992 I  GreenLight[28445:197064] [com.greenlight.app:logStream] GK event: scan, interval=66442ms, total_recent=1
+2026-03-04 17:41:34.459 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line: 2026-03-04 17:41:34.459 Df syspolicyd[477:197654] [com.apple.xpc:connection] [0x9797443c0] activating connection: mach=false listener=false peer=false name=com.apple.XprotectFramework.AnalysisService
+2026-03-04 17:41:34.459 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:41:34.459 Df syspolicyd[477:197654] [com.apple.xpc:connection] [0x9797443c0] activating connection: mach=f
+2026-03-04 17:41:34.459 I  GreenLight[28445:197064] [com.greenlight.app:logStream] GK event: other, interval=467ms, total_recent=2
+2026-03-04 17:41:34.565 Db GreenLight[28445:197407] [com.greenlight.app:logStream] GK line: 2026-03-04 17:41:34.564 Df syspolicyd[477:1977ff] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (path: c5e65b47fc04bed9), (team: (null)), (id: com.test.normal), (bundle_id: com.test.normal), 0, 0, 1, 0, 0, 0, 0
+2026-03-04 17:41:34.565 Db GreenLight[28445:197407] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:41:34.564 Df syspolicyd[477:1977ff] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (pat
+2026-03-04 17:41:34.565 I  GreenLight[28445:197407] [com.greenlight.app:logStream] GK event: evaluate, interval=105ms, total_recent=3
+2026-03-04 17:41:34.595 Df GreenLight[28445:197064] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:41:45.543 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 420s, lines=2271, gkHits=12, detections=0
+2026-03-04 17:41:45.544 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (3 events): scan(66442ms) → other(467ms) → evaluate(105ms)
+2026-03-04 17:42:29.727 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=2 ts=1772617349727 target=TestAdHoc — user action NOW
+2026-03-04 17:42:36.332 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line: 2026-03-04 17:42:36.331 Df syspolicyd[477:197b44] [com.apple.syspolicy.exec:default] Discovered stale cache entry for quarantined item: PST: (path: 804c5314cf0d406a), (team: (null)), (id: (null)), (bundle_id: (null)) -95147.331592
+2026-03-04 17:42:36.332 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:42:36.331 Df syspolicyd[477:197b44] [com.apple.syspolicy.exec:default] Discovered stale cache entry for qu
+2026-03-04 17:42:36.332 I  GreenLight[28445:197064] [com.greenlight.app:logStream] GK event: other, interval=61766ms, total_recent=1
+2026-03-04 17:42:36.333 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK line: 2026-03-04 17:42:36.333 Df syspolicyd[477:197de0] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 804c5314cf0d406a), (team: (null)), (id: (null)), (bundle_id: (null))
+2026-03-04 17:42:36.333 Db GreenLight[28445:197064] [com.greenlight.app:logStream] GK scan initiated: 2026-03-04 17:42:36.333 Df syspolicyd[477:197de0] [com.apple.syspolicy.exec:default] GK performScan: PST: (path: 804c531
+2026-03-04 17:42:36.333 I  GreenLight[28445:197064] [com.greenlight.app:logStream] GK event: scan, interval=1ms, total_recent=2
+2026-03-04 17:42:36.953 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK line: 2026-03-04 17:42:36.953 Df syspolicyd[477:197de0] [com.apple.xpc:connection] [0x9797466c0] activating connection: mach=false listener=false peer=false name=com.apple.XprotectFramework.AnalysisService
+2026-03-04 17:42:36.953 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK line unrecognized: 2026-03-04 17:42:36.953 Df syspolicyd[477:197de0] [com.apple.xpc:connection] [0x9797466c0] activating connection: mach=f
+2026-03-04 17:42:36.953 I  GreenLight[28445:197af4] [com.greenlight.app:logStream] GK event: other, interval=619ms, total_recent=3
+2026-03-04 17:42:37.256 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK line: 2026-03-04 17:42:37.256 Df syspolicyd[477:197b44] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (path: 804c5314cf0d406a), (team: (null)), (id: antigravity_tools-9b93f988f6e9d4d0), (bundle_id: com.lbjlaq.antigravity-tools), 1, 0, 1, 0, 8, 0, 0
+2026-03-04 17:42:37.256 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:42:37.256 Df syspolicyd[477:197b44] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 0, PST: (pat
+2026-03-04 17:42:37.256 I  GreenLight[28445:197af4] [com.greenlight.app:logStream] GK event: evaluate, interval=302ms, total_recent=4
+2026-03-04 17:42:37.292 Df GreenLight[28445:197dd0] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:42:37.789 I  GreenLight[28445:197dd0] [com.greenlight.app:pipeline] Fallback scan triggered by GK activity
+2026-03-04 17:42:37.789 I  GreenLight[28445:197dd0] [com.greenlight.app:fsEvents] Fallback scan: 0 recent candidates
+2026-03-04 17:42:45.544 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 480s, lines=2625, gkHits=16, detections=0
+2026-03-04 17:42:45.544 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (4 events): other(61766ms) → scan(1ms) → other(619ms) → evaluate(302ms)
+2026-03-04 17:42:45.769 Db GreenLight[28445:19540c] [com.greenlight.app:fsEvents] FS event: /Applications/Antigravity Tools.app, flags=163840
+2026-03-04 17:42:45.769 Df GreenLight[28445:19540c] [com.greenlight.app:fsEvents] Quarantine xattr: Antigravity Tools.app, value=0181;69a463ee;Chrome;CF12EE58-571A-4A49-92FA-8FE137A9387C
+2026-03-04 17:42:45.772 Df GreenLight[28445:197af4] [com.greenlight.app:gkAssess] SecStaticCode signingInfo: Antigravity Tools, id=antigravity_tools-9b93f988f6e9d4d0, team=nil, flags=131074
+2026-03-04 17:42:45.830 Df GreenLight[28445:197af4] [com.greenlight.app:gkAssess] SecStaticCode VALIDITY failed: Antigravity Tools, OSStatus=-67056
+2026-03-04 17:42:45.830 I  GreenLight[28445:197af4] [com.greenlight.app:gkAssess] GK assess (SecStaticCode→rejected): Antigravity Tools
+2026-03-04 17:42:45.830 I  GreenLight[28445:197af4] [com.greenlight.app:fsEvents] FSEvents detected + assess: Antigravity Tools.app, result=rejected, bundleId=com.lbjlaq.antigravity-tools
+2026-03-04 17:42:45.830 Df GreenLight[28445:197af4] [com.greenlight.app:pipeline] FS↔GK correlation: 4 GK events in last 10s (scan=1 eval=1 prompt=0 other=2), oldest=9498ms ago
+2026-03-04 17:42:45.830 I  GreenLight[28445:197af4] [com.greenlight.app:dedup] Dedup new: /Applications/Antigravity Tools.app, source=fsEvents, window=1.000000s
+2026-03-04 17:42:46.897 I  GreenLight[28445:197fb4] [com.greenlight.app:dedup] Dedup flush: Antigravity Tools, sources=["fsEvents"], bundleId=com.lbjlaq.antigravity-tools
+2026-03-04 17:42:46.898 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Pipeline received: Antigravity Tools, sources=["fsEvents"], latency=1129ms
+2026-03-04 17:42:46.898 I  GreenLight[28445:19540c] [com.greenlight.app:pipeline] Already detected, skip panel: Antigravity Tools
+2026-03-04 17:43:22.462 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=6 ts=1772617402462 target=SubLime — user action NOW
+2026-03-04 17:43:34.935 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK line: 2026-03-04 17:43:34.935 Df syspolicyd[477:197de0] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (path: c946b987fb033e68), (team: Z6D26JE4Y4), (id: (null)), (bundle_id: (null)), 1, 1, 1, 0, 9, 0, 0
+2026-03-04 17:43:34.935 Db GreenLight[28445:197af4] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:43:34.935 Df syspolicyd[477:197de0] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (pat
+2026-03-04 17:43:34.936 I  GreenLight[28445:197af4] [com.greenlight.app:logStream] GK event: evaluate, interval=57679ms, total_recent=5
+2026-03-04 17:43:34.964 Df GreenLight[28445:197fb4] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:43:45.544 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 540s, lines=3093, gkHits=17, detections=0
+2026-03-04 17:43:45.545 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (5 events): other(61766ms) → scan(1ms) → other(619ms) → evaluate(302ms) → evaluate(57679ms)
+2026-03-04 17:44:26.617 Df GreenLight[28445:19540c] [com.greenlight.app:pipeline] ⏱ USER_MARK step=7 ts=1772617466617 target=CCSwitch — user action NOW
+2026-03-04 17:44:36.061 Db GreenLight[28445:197dd0] [com.greenlight.app:logStream] GK line: 2026-03-04 17:44:36.060 Df syspolicyd[477:1989b8] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (path: 79e5ae2df010f23b), (team: (null)), (id: (null)), (bundle_id: (null)), 1, 1, 1, 0, 7, 7, 0
+2026-03-04 17:44:36.061 Db GreenLight[28445:197dd0] [com.greenlight.app:logStream] GK evaluate (no scan trigger): 2026-03-04 17:44:36.060 Df syspolicyd[477:1989b8] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 2, PST: (pat
+2026-03-04 17:44:36.061 I  GreenLight[28445:197dd0] [com.greenlight.app:logStream] GK event: evaluate, interval=61125ms, total_recent=1
+2026-03-04 17:44:36.075 Df GreenLight[28445:198a93] [com.greenlight.app:fsEvents] proactiveScan: 0 found, <private>ms, quarantined=18, dirs=1, L2cache=14
+2026-03-04 17:44:45.545 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 600s, lines=3364, gkHits=18, detections=0
+2026-03-04 17:44:45.545 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): evaluate(61125ms)
+2026-03-04 17:45:45.545 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 660s, lines=3441, gkHits=18, detections=0
+2026-03-04 17:45:45.545 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): evaluate(61125ms)
+cat /tmp/greenlight_r07.log
+2026-03-04 17:46:45.545 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 720s, lines=3601, gkHits=18, detections=0
+2026-03-04 17:46:45.545 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): evaluate(61125ms)
+2026-03-04 17:47:45.545 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 780s, lines=4146, gkHits=18, detections=0
+2026-03-04 17:47:45.546 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): evaluate(61125ms)
+2026-03-04 17:48:45.545 Db GreenLight[28445:19540c] [com.greenlight.app:logStream] logStream heartbeat: alive 840s, lines=5004, gkHits=18, detections=0
+2026-03-04 17:48:45.545 I  GreenLight[28445:19540c] [com.greenlight.app:logStream] GK timeline (1 events): evaluate(61125ms)

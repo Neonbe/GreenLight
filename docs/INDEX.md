@@ -21,7 +21,7 @@
 - **定位**：长期稳定的架构设计、技术方案、交互规范。原地维护，不移动。
 - **命名**：`{snake_case_主题}.md`
 - **文档清单**：
-  - `detection_pipeline_spec.md` — 检测管线规格（预热扫描 + 主动扫描 + 确认态 + 过滤链 + 状态机 + 完整时序）
+  - `detection_pipeline_spec.md` — 检测管线规格（预热扫描 + 主动扫描 + 确认态 + **Pipeline 2** + 过滤链 + 状态机 + 完整时序）
   - `experiment_results_and_tech_spec.md` — 实验结果与初版技术方案
   - `interaction_flow_spec.md` — 交互流程规范
   - `ui_design_spec.md` — UI 设计规范
@@ -41,3 +41,4 @@
   - r04：延迟链路实验方案
   - r05：主动扫描加速方案
   - r06：主动扫描 v2 — 确认态与预热优化
+  - r07：延迟链路实验结论报告

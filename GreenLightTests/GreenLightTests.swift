@@ -613,16 +613,115 @@ struct ProactiveScanTests {
         }
     }
     
-    @Test("evaluateScanResult 日志行触发 onGKActivity")
-    func evaluateScanResultTriggersGKActivity() {
+    @Test("evaluateScanResult 解析失败 → 降级触发 onGKActivity")
+    func evaluateScanResultFallbackTriggersGKActivity() {
         let monitor = LogStreamMonitor()
         var activityTriggered = false
         monitor.onGKActivity = { activityTriggered = true }
         
-        let line = "syspolicyd: GK evaluateScanResult: granted(bundle_id: com.example.test)"
+        // 格式异常（无 result_code / bundle_id）→ 正则匹配失败 → 降级
+        let line = "syspolicyd: GK evaluateScanResult: <private>"
         _ = monitor.parseLogLine(line)
         
         #expect(activityTriggered == true)
     }
 }
 
+// MARK: - §r09 Pipeline 2 测试
+
+@Suite("Pipeline 2: evaluateScanResult 精细解析")
+struct Pipeline2Tests {
+    
+    @Test("result=0 + bundleId → 触发 onGKBlocked")
+    func resultZeroTriggersGKBlocked() {
+        let monitor = LogStreamMonitor()
+        var blockedBundleId: String?
+        var activityTriggered = false
+        monitor.onGKBlocked = { bundleId in blockedBundleId = bundleId }
+        monitor.onGKActivity = { activityTriggered = true }
+        
+        // 真实日志格式（r07 实证）
+        let line = "syspolicyd: GK evaluateScanResult: 0, PST: (path: 3e00aa4), (team: (null)), (id: TestUnsigned), (bundle_id: com.test.unsigned), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(line)
+        
+        #expect(blockedBundleId == "com.test.unsigned")
+        #expect(activityTriggered == false)  // 不触发 onGKActivity
+    }
+    
+    @Test("result=2 → 静默，不触发 onGKActivity")
+    func resultTwoSkipsActivity() {
+        let monitor = LogStreamMonitor()
+        var activityTriggered = false
+        var blockedCalled = false
+        monitor.onGKActivity = { activityTriggered = true }
+        monitor.onGKBlocked = { _ in blockedCalled = true }
+        
+        let line = "syspolicyd: GK evaluateScanResult: 2, PST: (path: abcdef1), (team: ABCD1234), (id: Safari), (bundle_id: com.apple.Safari), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(line)
+        
+        #expect(activityTriggered == false)
+        #expect(blockedCalled == false)
+    }
+    
+    @Test("解析失败 → 降级触发 onGKActivity")
+    func parseFailureFallsBack() {
+        let monitor = LogStreamMonitor()
+        var activityTriggered = false
+        var blockedCalled = false
+        monitor.onGKActivity = { activityTriggered = true }
+        monitor.onGKBlocked = { _ in blockedCalled = true }
+        
+        // 无 bundle_id 字段的异常格式
+        let line = "syspolicyd: GK evaluateScanResult: unknown format here"
+        _ = monitor.parseLogLine(line)
+        
+        #expect(activityTriggered == true)
+        #expect(blockedCalled == false)
+    }
+    
+    @Test("result=0 + bundleId 连续两次 → onGKBlocked 调用两次（冷却由上层处理）")
+    func resultZeroCalledTwice() {
+        let monitor = LogStreamMonitor()
+        var callCount = 0
+        monitor.onGKBlocked = { _ in callCount += 1 }
+        
+        let line = "syspolicyd: GK evaluateScanResult: 0, PST: (path: 3e00aa4), (team: (null)), (id: Test), (bundle_id: com.test.app), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(line)
+        _ = monitor.parseLogLine(line)
+        
+        // LogStreamMonitor 本身不做冷却，每次都调用回调
+        #expect(callCount == 2)
+    }
+    
+    @Test("result=0 + bundle_id=(null) → 不调用 onGKBlocked，设置 lastGKBlockResult0Time")
+    func resultZeroNullBundleId() {
+        let monitor = LogStreamMonitor()
+        var blockedCalled = false
+        var activityTriggered = false
+        monitor.onGKBlocked = { _ in blockedCalled = true }
+        monitor.onGKActivity = { activityTriggered = true }
+        
+        // 真实日志：完全无签名 app 的 bundle_id 是 (null)
+        let line = "syspolicyd: GK evaluateScanResult: 0, PST: (path: 804c5314cf0d406a), (team: (null)), (id: (null)), (bundle_id: (null)), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(line)
+        
+        #expect(blockedCalled == false)       // (null) 不是有效 bundleId
+        #expect(activityTriggered == false)   // 也不降级到 onGKActivity
+        #expect(monitor.lastGKBlockResult0Time != nil)  // 方案A 时间戳已设置
+    }
+    
+    @Test("result=0 设置 lastGKBlockResult0Time，result=2 不设置")
+    func lastGKBlockResult0TimeTracking() {
+        let monitor = LogStreamMonitor()
+        
+        // result=2 → 不设置
+        let passLine = "syspolicyd: GK evaluateScanResult: 2, PST: (path: abc), (team: X), (id: Y), (bundle_id: com.apple.Safari), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(passLine)
+        #expect(monitor.lastGKBlockResult0Time == nil)
+        
+        // result=0 → 设置
+        let blockLine = "syspolicyd: GK evaluateScanResult: 0, PST: (path: def), (team: (null)), (id: Test), (bundle_id: com.test.app), 1, 0, 1, 0, 8, 0, 0"
+        _ = monitor.parseLogLine(blockLine)
+        #expect(monitor.lastGKBlockResult0Time != nil)
+    }
+}
