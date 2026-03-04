@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🚦 GreenLight
+# 🚦 GreenLight — Fix Apps Blocked by macOS Gatekeeper
 
-**Never fight macOS Gatekeeper again.**
+**Never run `xattr -rd com.apple.quarantine` in Terminal again.**
 
-**再也不用和 macOS Gatekeeper 搏斗了。**
+**再也不用在终端里输入 `xattr -rd com.apple.quarantine` 了。**
 
 [**⬇️ Download Free**](https://github.com/Neonbe/GreenLight/releases/latest) · [**🌐 Website**](https://greenlight.notedock.app) · [**🐛 Report Bug**](https://github.com/Neonbe/GreenLight/issues)
 
@@ -17,15 +17,27 @@
 
 ---
 
+## What is GreenLight? | GreenLight 是什么？
+
+GreenLight is a free, open-source macOS utility that **automatically detects apps blocked by Gatekeeper** and removes the `com.apple.quarantine` extended attribute with one click. It runs silently in your menu bar, monitors your system in real-time, and sends you a native notification the moment an app is blocked — no Terminal, no `sudo`, no manual `xattr` commands needed.
+
+GreenLight 是一款免费开源的 macOS 工具，**自动检测被 Gatekeeper 拦截的应用**，一键移除 `com.apple.quarantine` 扩展属性。它静默运行在菜单栏，实时监控系统，在应用被拦截的瞬间发送原生通知——无需终端，无需 `sudo`，无需手动输入 `xattr` 命令。
+
+---
+
 ## The Problem | 问题
 
-You download an app, double-click it, and macOS says it "can't be opened." So you open Terminal, Google the `xattr` command, carefully type a path, and hope for the best. Next week, the app updates — blocked again. Every. Single. Time.
+When you download apps outside the Mac App Store, macOS Gatekeeper adds a quarantine flag (`com.apple.quarantine`) that blocks them from opening. The standard fix? Open Terminal and run:
 
-你下载一个应用，双击打开，macOS 说「无法打开」。于是你打开终端，搜索 `xattr` 命令，小心翼翼地输入路径，祈祷它能生效。下周应用更新——又被拦了。每一次都是如此。
+当你从 Mac App Store 以外下载应用时，macOS Gatekeeper 会添加隔离标志（`com.apple.quarantine`）阻止其打开。通常的解决办法？打开终端输入：
 
-**GreenLight runs silently in your menu bar and handles all of this for you — automatically.**
+```bash
+xattr -rd com.apple.quarantine /Applications/YourApp.app
+```
 
-**GreenLight 静默运行在菜单栏，自动帮你搞定这一切。**
+Then the app updates next week — blocked again. **GreenLight automates this entire process.**
+
+然后下周应用更新——又被拦了。**GreenLight 自动化了整个流程。**
 
 ---
 
@@ -35,7 +47,7 @@ You download an app, double-click it, and macOS says it "can't be opened." So yo
 |:---:|---|---|
 | 🔍 | **Auto-Detect** — Monitors your system in real-time. The instant Gatekeeper blocks an app, GreenLight knows. | **自动检测** — 实时监控系统。Gatekeeper 拦截应用的瞬间，GreenLight 就知道了。 |
 | 🔔 | **Instant Alert** — A floating panel and native macOS notification pop up with the app name and action buttons. Under 5 seconds. | **即时提醒** — 浮动面板 + 系统通知弹出，显示应用名和操作按钮。5 秒内响应。 |
-| 🛡️ | **One-Click Fix** — Hit "Fix & Open." Quarantine flag removed, app launched. No Terminal, no sudo, no Googling. | **一键修复** — 点击「修复并打开」。隔离标志移除，应用启动。无需终端，无需 sudo，无需搜索。 |
+| 🛡️ | **One-Click Fix** — Hit "Fix & Open." Quarantine attribute removed, app launched. No Terminal, no sudo, no Googling. | **一键修复** — 点击「修复并打开」。隔离属性移除，应用启动。无需终端，无需 sudo，无需搜索。 |
 
 ---
 
@@ -43,14 +55,29 @@ You download an app, double-click it, and macOS says it "can't be opened." So yo
 
 | | Feature | What it means for you |
 |---|---|---|
-| 🔍 | **Real-time Detection** | Blocked apps found in under 5 seconds — you never have to check manually |
-| 🚦 | **Traffic Light Dashboard** | Red / Yellow / Green — see your system's security status at one glance |
+| 🔍 | **Real-time Gatekeeper Detection** | Blocked apps found in under 5 seconds — you never have to check manually |
+| 🚦 | **Traffic Light Dashboard** | Red / Yellow / Green — see your Mac's security status at one glance |
 | 📡 | **Menu Bar Guardian** | Always-on shield icon in your menu bar, click to open the full dashboard |
 | 🔔 | **Floating Panel + Notification** | Two ways to get alerted — a floating panel at your screen corner + a standard macOS notification |
-| 🔄 | **Smart Deduplication** | Installing one app triggers 7+ system events. GreenLight merges them into a single alert — no notification spam |
+| 🔄 | **Smart Deduplication** | Installing one app triggers 7+ quarantine events. GreenLight merges them into a single alert — no notification spam |
 | 🔐 | **Privacy First** | Zero analytics, zero telemetry, zero network calls. Everything stays on your Mac |
 | ⚡ | **Lightweight** | Under 30 MB memory, under 1% CPU when idle. You won't notice it's running |
 | 🌍 | **Multilingual** | English & 中文 (more languages welcome via PR) |
+
+---
+
+## GreenLight vs Alternatives | 对比
+
+| Capability | Terminal (`xattr`) | Sentinel | **GreenLight** |
+|---|:---:|:---:|:---:|
+| Auto-detect blocked apps | ❌ | ❌ | ✅ |
+| Real-time notifications | ❌ | ❌ | ✅ |
+| One-click fix from notification | ❌ | ❌ | ✅ |
+| Menu bar guardian | ❌ | ❌ | ✅ |
+| First-run system scan | ❌ | ❌ | ✅ |
+| No Terminal needed | ❌ | ✅ | ✅ |
+| Drag & drop fix | ❌ | ✅ | ❌ |
+| Free & open source | ✅ | ✅ | ✅ |
 
 ---
 
@@ -60,7 +87,7 @@ You download an app, double-click it, and macOS says it "can't be opened." So yo
 2. Open it, drag GreenLight to `/Applications` | 打开后将 GreenLight 拖到「应用程序」
 3. Launch — GreenLight now lives in your menu bar 🚦 | 启动后常驻菜单栏 🚦
 
-**Requirements**: macOS 13 Ventura+ · Apple Silicon or Intel
+**Requirements**: macOS 13 Ventura+ · Apple Silicon (M1/M2/M3/M4) or Intel
 
 ---
 
@@ -103,11 +130,19 @@ Contributions welcome in these areas | 以下方向欢迎贡献：
 ## FAQ
 
 <details>
+<summary><b>What does GreenLight actually do?</b> | <b>GreenLight 具体做什么？</b></summary>
+<br>
+When you download an app from outside the Mac App Store, macOS adds a <code>com.apple.quarantine</code> extended attribute to the file. This attribute triggers Gatekeeper to block the app from opening. Normally you'd need to open Terminal and run <code>xattr -rd com.apple.quarantine /path/to/App.app</code> to remove it. GreenLight automates this — it detects blocked apps in real-time and removes the quarantine attribute with one click.
+<br><br>
+当你从 Mac App Store 以外下载应用时，macOS 会给文件添加 <code>com.apple.quarantine</code> 扩展属性，触发 Gatekeeper 阻止应用打开。通常你需要打开终端运行 <code>xattr -rd com.apple.quarantine /path/to/App.app</code> 来移除它。GreenLight 自动完成这一切——实时检测被拦截的应用，一键移除隔离属性。
+</details>
+
+<details>
 <summary><b>Does GreenLight need admin/sudo?</b> | <b>需要管理员权限吗？</b></summary>
 <br>
-No. GreenLight removes <code>com.apple.quarantine</code> without <code>sudo</code> for apps in standard locations (<code>~/Downloads</code>, <code>~/Desktop</code>, <code>/Applications</code>).
+No. GreenLight removes <code>com.apple.quarantine</code> using the <code>xattr</code> API without <code>sudo</code> for apps in standard locations (<code>~/Downloads</code>, <code>~/Desktop</code>, <code>/Applications</code>).
 <br><br>
-不需要。对于标准位置下的应用（下载、桌面、应用程序），无需 <code>sudo</code> 即可移除隔离属性。
+不需要。对于标准位置下的应用（下载、桌面、应用程序），GreenLight 通过 <code>xattr</code> API 移除隔离属性，无需 <code>sudo</code>。
 </details>
 
 <details>
@@ -121,9 +156,9 @@ Yes. Open-source under MIT. Zero network calls, zero analytics, zero telemetry. 
 <details>
 <summary><b>How is it different from Sentinel?</b> | <b>和 Sentinel 有什么区别？</b></summary>
 <br>
-Sentinel is a great drag-and-drop tool — but you have to know an app is blocked first. GreenLight <b>detects blocked apps automatically</b> and alerts you the moment it happens. You don't need to check anything.
+<a href="https://github.com/alienator88/Sentinel">Sentinel</a> is a great drag-and-drop quarantine removal tool — but you have to know an app is blocked first. GreenLight <b>detects blocked apps automatically</b> via real-time system monitoring and alerts you the moment it happens. You don't need to check anything manually.
 <br><br>
-Sentinel 是优秀的拖放工具——但前提是你得知道有应用被拦了。GreenLight <b>自动检测</b>被拦截的应用，在它发生的瞬间通知你。你什么都不用查。
+<a href="https://github.com/alienator88/Sentinel">Sentinel</a> 是优秀的拖放式隔离移除工具——但前提是你得知道有应用被拦了。GreenLight 通过实时系统监控<b>自动检测</b>被拦截的应用，在它发生的瞬间通知你。你什么都不用手动查。
 </details>
 
 <details>
