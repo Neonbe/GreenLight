@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- GreenLight 需要 xattr / FSEvents / LogStream 等系统 API，不能开 Sandbox -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>

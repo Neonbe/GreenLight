@@ -8,6 +8,7 @@ import SwiftUI
 /// - 底部：品牌特色统计
 struct PopoverView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var updaterManager: UpdaterManager
     
     // Design Tokens（与主窗口一致）
     private let bgColor     = Color(red: 15/255, green: 23/255, blue: 42/255)
@@ -147,6 +148,16 @@ struct PopoverView: View {
         VStack(spacing: 0) {
             actionButton(icon: "macwindow", label: String(localized: "popover.showGreenLight")) {
                 activateMainWindow()
+            }
+            
+            // Plan B：有新版本时显示更新按钮
+            if let version = updaterManager.availableUpdateVersion {
+                actionButton(
+                    icon: "arrow.down.circle",
+                    label: String(localized: "popover.updateAvailable \(version)")
+                ) {
+                    updaterManager.installUpdate()
+                }
             }
             
             actionButton(icon: "gearshape", label: String(localized: "popover.settings")) {

@@ -121,33 +121,62 @@ struct SettingsPageView: View {
                                 .background(Color.white.opacity(0.06))
                                 .padding(.vertical, 4)
                             
-                            HStack {
-                                Label("settings.checkForUpdates", systemImage: "arrow.clockwise.circle")
-                                    .font(.system(size: 13, weight: .regular))
-                                    .foregroundColor(textPrimary)
-                                
-                                Spacer()
-                                
-                                if let lastCheck = updaterManager.lastUpdateCheckDate {
-                                    Text(lastCheck, style: .relative)
-                                        .font(.system(size: 11, weight: .light))
-                                        .foregroundColor(textPrimary.opacity(0.4))
+                            if let version = updaterManager.availableUpdateVersion {
+                                // Plan B：有新版本可用
+                                HStack {
+                                    Label {
+                                        Text("settings.updateAvailable \(version)")
+                                    } icon: {
+                                        Image(systemName: "arrow.down.circle.fill")
+                                    }
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(greenColor)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: { updaterManager.installUpdate() }) {
+                                        Text("settings.installUpdate")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 5)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(greenColor)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                
-                                Button(action: { updaterManager.checkForUpdates() }) {
-                                    Text("settings.check")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 5)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(greenColor.opacity(0.8))
-                                        )
+                            } else {
+                                // 常规态：检查更新
+                                HStack {
+                                    Label("settings.checkForUpdates", systemImage: "arrow.clockwise.circle")
+                                        .font(.system(size: 13, weight: .regular))
+                                        .foregroundColor(textPrimary)
+                                    
+                                    Spacer()
+                                    
+                                    if let lastCheck = updaterManager.lastUpdateCheckDate {
+                                        Text(lastCheck, style: .relative)
+                                            .font(.system(size: 11, weight: .light))
+                                            .foregroundColor(textPrimary.opacity(0.4))
+                                    }
+                                    
+                                    Button(action: { updaterManager.checkForUpdates() }) {
+                                        Text("settings.check")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 5)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(greenColor.opacity(0.8))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(!updaterManager.canCheckForUpdates)
+                                    .opacity(updaterManager.canCheckForUpdates ? 1 : 0.5)
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(!updaterManager.canCheckForUpdates)
-                                .opacity(updaterManager.canCheckForUpdates ? 1 : 0.5)
                             }
                         }
                     }
