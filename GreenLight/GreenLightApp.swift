@@ -35,13 +35,56 @@ struct GreenLightApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {} // 单窗口 App，禁止 Cmd+N
             
-            // §r04: 用户操作打点器
+            // §r07: 用户操作打点器（步骤编号化）
             CommandGroup(after: .toolbar) {
-                Button("⛱ User Timestamp") {
+                Button("⏱ Step 1 — TestUnsigned") {
                     let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK: \(ts) — user action NOW")
+                    GLLog.pipeline.notice("⏱ USER_MARK step=1 ts=\(ts) target=TestUnsigned — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=1 ts=\(ts) target=TestUnsigned")
                 }
-                .keyboardShortcut("t", modifiers: [.command, .shift])
+                .keyboardShortcut("1", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 2 — TestAdHoc") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=2 ts=\(ts) target=TestAdHoc — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=2 ts=\(ts) target=TestAdHoc")
+                }
+                .keyboardShortcut("2", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 3 — TestDamaged") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=3 ts=\(ts) target=TestDamaged — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=3 ts=\(ts) target=TestDamaged")
+                }
+                .keyboardShortcut("3", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 4 — TestNormal") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=4 ts=\(ts) target=TestNormal — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=4 ts=\(ts) target=TestNormal")
+                }
+                .keyboardShortcut("4", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 5 — BlockedApp") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=5 ts=\(ts) target=BlockedApp — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=5 ts=\(ts) target=BlockedApp")
+                }
+                .keyboardShortcut("5", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 6 — SubLime") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=6 ts=\(ts) target=SubLime — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=6 ts=\(ts) target=SubLime")
+                }
+                .keyboardShortcut("6", modifiers: [.command, .shift])
+                
+                Button("⏱ Step 7 — CCSwitch") {
+                    let ts = Int(Date().timeIntervalSince1970 * 1000)
+                    GLLog.pipeline.notice("⏱ USER_MARK step=7 ts=\(ts) target=CCSwitch — user action NOW")
+                    ExperimentLogger.log("USER_MARK step=7 ts=\(ts) target=CCSwitch")
+                }
+                .keyboardShortcut("7", modifiers: [.command, .shift])
             }
         }
         
@@ -107,14 +150,15 @@ struct GreenLightApp: App {
         deduplicator.onEvent = { event in
             Task { @MainActor in
                 let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
-                GLLog.pipeline.info("Pipeline received: \(event.appName), sources=\(event.sources.map { String(describing: $0) }), latency=\(latencyMs)ms")
+                GLLog.pipeline.info("Pipeline received: \(event.appName, privacy: .public), sources=\(event.sources.map { String(describing: $0) }, privacy: .public), latency=\(latencyMs)ms")
+                ExperimentLogger.log("PIPELINE_RECEIVED app=\(event.appName) bundleId=\(event.bundleId ?? "nil") sources=\(event.sources.map { String(describing: $0) }) latency=\(latencyMs)ms path=\(event.appPath.path)")
                 
                 let appState = AppState.shared
                 
                 // §3.2 优化：已 blocked 的 App 跳过重复弹窗
                 if let existing = appState.blockedApps.first(where: { $0.path == event.appPath.path }),
                    existing.status == .detected {
-                    GLLog.pipeline.info("Already detected, skip panel: \(event.appName)")
+                    GLLog.pipeline.info("Already detected, skip panel: \(event.appName, privacy: .public)")
                     // 但如果确认态面板还在等，仍然要替换
                     if DetectionPanelController.shared.isConfirming {
                         appState.isScanning = false
@@ -128,16 +172,16 @@ struct GreenLightApp: App {
                 
                 // §r06: 如果确认态面板正在等 → 无缝替换
                 if DetectionPanelController.shared.isConfirming {
-                    GLLog.pipeline.info("Confirming → confirmed: \(event.appName)")
+                    GLLog.pipeline.info("Confirming → confirmed: \(event.appName, privacy: .public)")
                     DetectionPanelController.shared.confirmWith(event: event)
                 } else {
                     // 弹出检测浮动面板
-                    GLLog.pipeline.info("Showing panel for: \(event.appName)")
+                    GLLog.pipeline.info("Showing panel for: \(event.appName, privacy: .public)")
                     DetectionPanelController.shared.show(event: event)
                 }
                 
                 // 可选：如有系统通知权限，同时发送系统通知
-                GLLog.pipeline.info("Sending system notification for: \(event.appName)")
+                GLLog.pipeline.info("Sending system notification for: \(event.appName, privacy: .public)")
                 NotificationManager.shared.sendDetectionNotificationIfAuthorized(for: event)
             }
         }
@@ -159,7 +203,7 @@ struct GreenLightApp: App {
         }
         
         GLLog.pipeline.notice("Pipeline started: logStream=\(logMonitor.isRunning), fsEvents=\(fsWatcher.isRunning)")
-        GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path))")
+        GLLog.pipeline.info("Monitoring directories: \(fsWatcher.currentMonitoredDirectories.map(\.path), privacy: .public)")
         
         // 初始扫描：发现所有 unsigned app → 加入 detectedApps + 填充 L2 缓存
         if Persistence.hasCompletedOnboarding {

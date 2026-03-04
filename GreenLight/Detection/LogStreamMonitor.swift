@@ -144,7 +144,8 @@ class LogStreamMonitor: ObservableObject {
             // §r04: 输出最近 60s 的 GK 事件时间线
             if !self.recentGKEvents.isEmpty {
                 let timeline = self.recentGKEvents.map { "\($0.category.rawValue)(\($0.intervalMs)ms)" }.joined(separator: " → ")
-                GLLog.logStream.info("GK timeline (\(self.recentGKEvents.count) events): \(timeline)")
+                GLLog.logStream.info("GK timeline (\(self.recentGKEvents.count) events): \(timeline, privacy: .public)")
+                ExperimentLogger.log("GK_TIMELINE events=\(self.recentGKEvents.count) timeline=\(timeline)")
             }
         }
     }
@@ -159,7 +160,7 @@ class LogStreamMonitor: ObservableObject {
         
         // GK 行命中
         gkHitCount += 1
-        GLLog.logStream.debug("GK line: \(line)")
+        GLLog.logStream.debug("GK line: \(line, privacy: .public)")
         
         // §r04: 清理过期事件
         let now = Date()
@@ -180,7 +181,7 @@ class LogStreamMonitor: ObservableObject {
                 bundleId = String(line[bundleRange])
             }
             
-            GLLog.logStream.info("Detected: \(appURL.lastPathComponent), bundleId=\(bundleId ?? "nil")")
+            GLLog.logStream.info("Detected: \(appURL.lastPathComponent, privacy: .public), bundleId=\(bundleId ?? "nil", privacy: .public)")
             
             return DetectionEvent(
                 source: .logStream,
@@ -199,24 +200,24 @@ class LogStreamMonitor: ObservableObject {
                let bundleRange = Range(bundleMatch.range(at: 1), in: line) {
                 bundleId = String(line[bundleRange])
             }
-            GLLog.logStream.info("GK prompt shown, bundleId=\(bundleId ?? "unknown")")
+            GLLog.logStream.info("GK prompt shown, bundleId=\(bundleId ?? "unknown", privacy: .public)")
             onGKActivity?()
         } else if line.contains("performScan") {
             category = .scan
-            GLLog.logStream.debug("GK scan initiated: \(String(line.prefix(120)))")
+            GLLog.logStream.debug("GK scan initiated: \(String(line.prefix(120)), privacy: .public)")
         } else if line.contains("scan complete") {
             category = .scan
-            GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)))")
+            GLLog.logStream.debug("GK scan completed: \(String(line.prefix(120)), privacy: .public)")
         } else if line.contains("evaluateScanResult") {
             category = .evaluate
-            GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)))")
+            GLLog.logStream.debug("GK evaluate (no scan trigger): \(String(line.prefix(120)), privacy: .public)")
             onGKActivity?()  // §r05: evaluate 也触发主动扫描
         } else if line.contains("<private>") {
             category = .unrecognized
-            GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)))")
+            GLLog.logStream.debug("GK line contains <private>, skipped: \(String(line.prefix(80)), privacy: .public)")
         } else {
             category = .unrecognized
-            GLLog.logStream.debug("GK line unrecognized: \(String(line.prefix(120)))")
+            GLLog.logStream.debug("GK line unrecognized: \(String(line.prefix(120)), privacy: .public)")
         }
         
         // §r04: 记录 GK 事件到时间线
@@ -228,7 +229,8 @@ class LogStreamMonitor: ObservableObject {
         }
         lastGKEventTime = now
         recentGKEvents.append(GKEventRecord(timestamp: now, category: category, intervalMs: intervalMs))
-        GLLog.logStream.info("GK event: \(category.rawValue), interval=\(intervalMs)ms, total_recent=\(self.recentGKEvents.count)")
+        GLLog.logStream.info("GK event: \(category.rawValue, privacy: .public), interval=\(intervalMs)ms, total_recent=\(self.recentGKEvents.count)")
+        ExperimentLogger.log("GK_EVENT category=\(category.rawValue) interval=\(intervalMs)ms total=\(self.recentGKEvents.count)")
         
         return nil
     }

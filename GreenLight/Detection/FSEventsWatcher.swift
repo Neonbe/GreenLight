@@ -82,7 +82,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
         FSEventStreamStart(stream)
         isRunning = true
-        GLLog.fsEvents.notice("FSEvents started, directories=\(dirs.count), paths=\(dirs.map(\.path))")
+        GLLog.fsEvents.notice("FSEvents started, directories=\(dirs.count), paths=\(dirs.map(\.path), privacy: .public)")
     }
     
     func stopWatching() {
@@ -122,12 +122,12 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
             
             let gkResult = assessor.assess(appPath: path)
             guard gkResult == .rejected else {
-                GLLog.fsEvents.debug("Fallback scan: \(URL(fileURLWithPath: path).lastPathComponent), GK=\(String(describing: gkResult)), skipped")
+                GLLog.fsEvents.debug("Fallback scan: \(URL(fileURLWithPath: path).lastPathComponent, privacy: .public), GK=\(String(describing: gkResult), privacy: .public), skipped")
                 continue
             }
             
             let appURL = URL(fileURLWithPath: path)
-            GLLog.fsEvents.info("Fallback scan found rejected: \(appURL.lastPathComponent)")
+            GLLog.fsEvents.info("Fallback scan found rejected: \(appURL.lastPathComponent, privacy: .public)")
             results.append(DetectionEvent(
                 source: .scan,
                 appPath: appURL,
@@ -189,7 +189,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
             var codeRef: SecStaticCode?
             let createStatus = SecStaticCodeCreateWithPath(cfURL, [], &codeRef)
             guard createStatus == errSecSuccess, let code = codeRef else {
-                GLLog.fsEvents.info("proactiveScan found (no code): \(item.lastPathComponent)")
+                GLLog.fsEvents.info("proactiveScan found (no code): \(item.lastPathComponent, privacy: .public)")
                 let event = DetectionEvent(
                     source: .proactiveScan, appPath: item,
                     bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
@@ -202,7 +202,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
             
             let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
             if checkStatus != errSecSuccess {
-                GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent), OSStatus=\(checkStatus)")
+                GLLog.fsEvents.info("proactiveScan found: \(item.lastPathComponent, privacy: .public), OSStatus=\(checkStatus)")
                 let event = DetectionEvent(
                     source: .proactiveScan, appPath: item,
                     bundleId: Bundle(url: item)?.bundleIdentifier, timestamp: scanStart
@@ -227,11 +227,11 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         // 只关注 .app
         guard path.contains(".app") else { return }
         
-        GLLog.fsEvents.debug("FS event: \(path), flags=\(flags)")
+        GLLog.fsEvents.debug("FS event: \(path, privacy: .public), flags=\(flags)")
         
         // 提取 .app 路径
         guard let appPath = extractAppPath(from: path) else {
-            GLLog.fsEvents.debug("FS event: failed to extract .app path from: \(path)")
+            GLLog.fsEvents.debug("FS event: failed to extract .app path from: \(path, privacy: .public)")
             return
         }
         
@@ -244,7 +244,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         // 内部去重（3 秒窗口）
         if let lastSeen = recentPaths[appPath], now.timeIntervalSince(lastSeen) < deduplicationWindow {
             let elapsed = String(format: "%.1f", now.timeIntervalSince(lastSeen))
-            GLLog.fsEvents.debug("FSEvents dedup: skipped \(appPath) (\(elapsed)s < 3s window)")
+            GLLog.fsEvents.debug("FSEvents dedup: skipped \(appPath, privacy: .public) (\(elapsed)s < 3s window)")
             return
         }
         recentPaths[appPath] = now
@@ -254,10 +254,19 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         
         // §3.1 P1: quarantine 预过滤（排除无 quarantine 的 app，getxattr 纳秒级不阻塞）
         guard Self.hasQuarantine(at: appPath) else {
-            GLLog.fsEvents.debug("Quarantine check: \(appPath), hasQuarantine=false, skipped")
+            GLLog.fsEvents.debug("Quarantine check: \(appPath, privacy: .public), hasQuarantine=false, skipped")
             // 文件可能被移到了 Trash，通知上层 reconcile
             onDirectoryChange?()
             return
+        }
+        
+        // §r07: 读取 quarantine xattr 内容
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        let xattrSize = getxattr(appPath, "com.apple.quarantine", &buffer, 1024, 0, XATTR_NOFOLLOW)
+        if xattrSize > 0 {
+            let quarantineValue = String(bytes: buffer[0..<xattrSize], encoding: .utf8) ?? "binary"
+            GLLog.fsEvents.notice("Quarantine xattr: \(URL(fileURLWithPath: appPath).lastPathComponent, privacy: .public), value=\(quarantineValue, privacy: .public)")
+            ExperimentLogger.log("QUARANTINE app=\(URL(fileURLWithPath: appPath).lastPathComponent) xattr=\(quarantineValue)")
         }
         
         // §3.2: spctl --assess 二次确认（异步执行，避免阻塞主线程 ~3 秒）
@@ -267,13 +276,14 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
             let gkResult = assessor.assess(appPath: appPath)
             guard gkResult == .rejected else {
                 let appName = URL(fileURLWithPath: appPath).lastPathComponent
-                GLLog.fsEvents.info("FSEvents detected + assess: \(appName), result=\(String(describing: gkResult)), not blocked")
+                GLLog.fsEvents.info("FSEvents detected + assess: \(appName, privacy: .public), result=\(String(describing: gkResult), privacy: .public), not blocked")
                 return
             }
             
             let appURL = URL(fileURLWithPath: appPath)
             let bundleId = Bundle(url: appURL)?.bundleIdentifier
-            GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent), result=rejected, bundleId=\(bundleId ?? "nil")")
+            GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent, privacy: .public), result=rejected, bundleId=\(bundleId ?? "nil", privacy: .public)")
+            ExperimentLogger.log("FSEVENTS_DETECTED app=\(appURL.lastPathComponent) result=rejected bundleId=\(bundleId ?? "nil") path=\(appPath)")
             
             let event = DetectionEvent(
                 source: .fsEvents,
@@ -306,7 +316,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         stopWatching()
         let allDirs = currentDirs + dirsToAdd
         startWatching(directories: allDirs)
-        GLLog.fsEvents.notice("Directories upgraded: \(allDirs.map(\.path))")
+        GLLog.fsEvents.notice("Directories upgraded: \(allDirs.map(\.path), privacy: .public)")
     }
     
     /// TCC 权限探测：尝试枚举目录内容判断是否有读取权限

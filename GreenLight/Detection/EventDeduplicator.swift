@@ -46,7 +46,7 @@ class EventDeduplicator {
                 )
             }
             pending[key] = existing
-            GLLog.dedup.info("Dedup merge: \(key), added source=\(String(describing: event.source)), total=\(existing.sources.count)")
+            GLLog.dedup.info("Dedup merge: \(key, privacy: .public), added source=\(String(describing: event.source), privacy: .public), total=\(existing.sources.count)")
         } else {
             // 新路径，开始窗口
             let timer = DispatchWorkItem { [weak self] in
@@ -60,7 +60,7 @@ class EventDeduplicator {
             )
             // timer 也在同一串行队列上触发，保证线程安全
             queue.asyncAfter(deadline: .now() + windowDuration, execute: timer)
-            GLLog.dedup.info("Dedup new: \(key), source=\(String(describing: event.source)), window=\(self.windowDuration)s")
+            GLLog.dedup.info("Dedup new: \(key, privacy: .public), source=\(String(describing: event.source), privacy: .public), window=\(self.windowDuration)s")
         }
     }
     
@@ -78,7 +78,7 @@ class EventDeduplicator {
             sources: entry.sources,
             timestamp: entry.timestamp
         )
-        GLLog.dedup.info("Dedup flush: \(appName), sources=\(entry.sources.map { String(describing: $0) }), bundleId=\(entry.event.bundleId ?? "nil")")
+        GLLog.dedup.info("Dedup flush: \(appName, privacy: .public), sources=\(entry.sources.map { String(describing: $0) }, privacy: .public), bundleId=\(entry.event.bundleId ?? "nil", privacy: .public)")
         onEvent?(greenLightEvent)
     }
     

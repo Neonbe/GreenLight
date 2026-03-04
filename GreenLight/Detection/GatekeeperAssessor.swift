@@ -38,7 +38,7 @@ struct GatekeeperAssessor: GatekeeperAssessing {
             let key = CacheKey(path: appPath, modDate: modDate)
             let cached = Self.cacheQueue.sync { Self.cache[key] }
             if let cached = cached {
-                GLLog.gkAssess.info("GK assess (cached): \(appName), result=\(String(describing: cached))")
+                GLLog.gkAssess.info("GK assess (cached): \(appName, privacy: .public), result=\(String(describing: cached), privacy: .public)")
                 return cached
             }
         }
@@ -46,13 +46,13 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         // §3.3: SecStaticCode 快速排除
         let quickResult = quickReject(appPath: appPath, appName: appName)
         if let quickResult = quickResult {
-            GLLog.gkAssess.info("GK assess (SecStaticCode→rejected): \(appName)")
+            GLLog.gkAssess.info("GK assess (SecStaticCode→rejected): \(appName, privacy: .public)")
             cacheResult(appPath: appPath, result: quickResult)
             return quickResult
         }
         
         // 签名正常 → spctl 兜底确认
-        GLLog.gkAssess.info("GK assess: SecStaticCode passed for \(appName), falling through to spctl")
+        GLLog.gkAssess.info("GK assess: SecStaticCode passed for \(appName, privacy: .public), falling through to spctl")
         let result = ShellExecutor.run("/usr/sbin/spctl",
             arguments: ["--assess", "--type", "exec", appPath])
         
@@ -64,7 +64,8 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         default: gkResult = .unknown    // exitCode=2(参数错误)/-1(启动失败)/其他
         }
         
-        GLLog.gkAssess.info("GK assess (spctl): \(appName), exitCode=\(result.exitCode), result=\(String(describing: gkResult))")
+        GLLog.gkAssess.info("GK assess (spctl): \(appName, privacy: .public), exitCode=\(result.exitCode), result=\(String(describing: gkResult), privacy: .public)")
+        ExperimentLogger.log("SPCTL_ASSESS app=\(appName) exitCode=\(result.exitCode) result=\(gkResult)")
         cacheResult(appPath: appPath, result: gkResult)
         return gkResult
     }
@@ -80,18 +81,30 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         
         let createStatus = SecStaticCodeCreateWithPath(url, [], &codeRef)
         guard createStatus == errSecSuccess, let code = codeRef else {
-            GLLog.gkAssess.notice("SecStaticCode CREATE failed: \(appName), OSStatus=\(createStatus)")
+            GLLog.gkAssess.notice("SecStaticCode CREATE failed: \(appName, privacy: .public), OSStatus=\(createStatus)")
             return .rejected  // 无法创建代码对象 → 视为异常
+        }
+        
+        // §r07: 提取签名详情
+        var signingInfo: CFDictionary?
+        SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &signingInfo)
+        if let info = signingInfo as? [String: Any] {
+            let identifier = info[kSecCodeInfoIdentifier as String] as? String ?? "nil"
+            let teamId = info[kSecCodeInfoTeamIdentifier as String] as? String ?? "nil"
+            let flags = info["flags"] as? UInt32 ?? 0
+            GLLog.gkAssess.notice("SecStaticCode signingInfo: \(appName, privacy: .public), id=\(identifier, privacy: .public), team=\(teamId, privacy: .public), flags=\(flags)")
+            ExperimentLogger.log("SIGNING_INFO app=\(appName) id=\(identifier) team=\(teamId) flags=\(flags)")
         }
         
         let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
         if checkStatus != errSecSuccess {
-            GLLog.gkAssess.notice("SecStaticCode VALIDITY failed: \(appName), OSStatus=\(checkStatus)")
+            GLLog.gkAssess.notice("SecStaticCode VALIDITY failed: \(appName, privacy: .public), OSStatus=\(checkStatus)")
+            ExperimentLogger.log("SECSTATICCODE_FAILED app=\(appName) OSStatus=\(checkStatus)")
             return .rejected  // 签名无效/损坏
         }
         
         // 签名正常，不能判定 → 需要 spctl 兜底
-        GLLog.gkAssess.info("SecStaticCode passed: \(appName), signature valid")
+        GLLog.gkAssess.info("SecStaticCode passed: \(appName, privacy: .public), signature valid")
         return nil
     }
     
