@@ -65,7 +65,7 @@ struct GatekeeperAssessor: GatekeeperAssessing {
         }
         
         GLLog.gkAssess.info("GK assess (spctl): \(appName, privacy: .public), exitCode=\(result.exitCode), result=\(String(describing: gkResult), privacy: .public)")
-        ExperimentLogger.log("SPCTL_ASSESS app=\(appName) exitCode=\(result.exitCode) result=\(gkResult)")
+
         cacheResult(appPath: appPath, result: gkResult)
         return gkResult
     }
@@ -93,13 +93,13 @@ struct GatekeeperAssessor: GatekeeperAssessing {
             let teamId = info[kSecCodeInfoTeamIdentifier as String] as? String ?? "nil"
             let flags = info["flags"] as? UInt32 ?? 0
             GLLog.gkAssess.notice("SecStaticCode signingInfo: \(appName, privacy: .public), id=\(identifier, privacy: .public), team=\(teamId, privacy: .public), flags=\(flags)")
-            ExperimentLogger.log("SIGNING_INFO app=\(appName) id=\(identifier) team=\(teamId) flags=\(flags)")
+
         }
         
         let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
         if checkStatus != errSecSuccess {
             GLLog.gkAssess.notice("SecStaticCode VALIDITY failed: \(appName, privacy: .public), OSStatus=\(checkStatus)")
-            ExperimentLogger.log("SECSTATICCODE_FAILED app=\(appName) OSStatus=\(checkStatus)")
+
             return .rejected  // 签名无效/损坏
         }
         

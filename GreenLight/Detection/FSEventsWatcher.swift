@@ -266,7 +266,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
         if xattrSize > 0 {
             let quarantineValue = String(bytes: buffer[0..<xattrSize], encoding: .utf8) ?? "binary"
             GLLog.fsEvents.notice("Quarantine xattr: \(URL(fileURLWithPath: appPath).lastPathComponent, privacy: .public), value=\(quarantineValue, privacy: .public)")
-            ExperimentLogger.log("QUARANTINE app=\(URL(fileURLWithPath: appPath).lastPathComponent) xattr=\(quarantineValue)")
+
         }
         
         // §3.2: spctl --assess 二次确认（异步执行，避免阻塞主线程 ~3 秒）
@@ -283,7 +283,7 @@ class FSEventsWatcher: ObservableObject, @unchecked Sendable {
             let appURL = URL(fileURLWithPath: appPath)
             let bundleId = Bundle(url: appURL)?.bundleIdentifier
             GLLog.fsEvents.info("FSEvents detected + assess: \(appURL.lastPathComponent, privacy: .public), result=rejected, bundleId=\(bundleId ?? "nil", privacy: .public)")
-            ExperimentLogger.log("FSEVENTS_DETECTED app=\(appURL.lastPathComponent) result=rejected bundleId=\(bundleId ?? "nil") path=\(appPath)")
+
             
             let event = DetectionEvent(
                 source: .fsEvents,

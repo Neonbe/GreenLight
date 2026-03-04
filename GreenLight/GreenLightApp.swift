@@ -34,58 +34,7 @@ struct GreenLightApp: App {
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {} // 单窗口 App，禁止 Cmd+N
-            
-            // §r07: 用户操作打点器（步骤编号化）
-            CommandGroup(after: .toolbar) {
-                Button("⏱ Step 1 — TestUnsigned") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=1 ts=\(ts) target=TestUnsigned — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=1 ts=\(ts) target=TestUnsigned")
-                }
-                .keyboardShortcut("1", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 2 — TestAdHoc") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=2 ts=\(ts) target=TestAdHoc — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=2 ts=\(ts) target=TestAdHoc")
-                }
-                .keyboardShortcut("2", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 3 — TestDamaged") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=3 ts=\(ts) target=TestDamaged — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=3 ts=\(ts) target=TestDamaged")
-                }
-                .keyboardShortcut("3", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 4 — TestNormal") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=4 ts=\(ts) target=TestNormal — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=4 ts=\(ts) target=TestNormal")
-                }
-                .keyboardShortcut("4", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 5 — BlockedApp") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=5 ts=\(ts) target=BlockedApp — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=5 ts=\(ts) target=BlockedApp")
-                }
-                .keyboardShortcut("5", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 6 — SubLime") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=6 ts=\(ts) target=SubLime — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=6 ts=\(ts) target=SubLime")
-                }
-                .keyboardShortcut("6", modifiers: [.command, .shift])
-                
-                Button("⏱ Step 7 — CCSwitch") {
-                    let ts = Int(Date().timeIntervalSince1970 * 1000)
-                    GLLog.pipeline.notice("⏱ USER_MARK step=7 ts=\(ts) target=CCSwitch — user action NOW")
-                    ExperimentLogger.log("USER_MARK step=7 ts=\(ts) target=CCSwitch")
-                }
-                .keyboardShortcut("7", modifiers: [.command, .shift])
-            }
+
         }
         
         // 2. Menu Bar 常驻（轻量入口 + 状态指示器）
@@ -155,7 +104,7 @@ struct GreenLightApp: App {
             Task { @MainActor in
                 let latencyMs = Int(Date().timeIntervalSince(event.timestamp) * 1000)
                 GLLog.pipeline.info("Pipeline received: \(event.appName, privacy: .public), sources=\(event.sources.map { String(describing: $0) }, privacy: .public), latency=\(latencyMs)ms")
-                ExperimentLogger.log("PIPELINE_RECEIVED app=\(event.appName) bundleId=\(event.bundleId ?? "nil") sources=\(event.sources.map { String(describing: $0) }) latency=\(latencyMs)ms path=\(event.appPath.path)")
+
                 
                 let appState = AppState.shared
                 

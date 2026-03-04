@@ -158,7 +158,7 @@ class LogStreamMonitor: ObservableObject {
             if !self.recentGKEvents.isEmpty {
                 let timeline = self.recentGKEvents.map { "\($0.category.rawValue)(\($0.intervalMs)ms)" }.joined(separator: " → ")
                 GLLog.logStream.info("GK timeline (\(self.recentGKEvents.count) events): \(timeline, privacy: .public)")
-                ExperimentLogger.log("GK_TIMELINE events=\(self.recentGKEvents.count) timeline=\(timeline)")
+
             }
         }
     }
@@ -268,7 +268,7 @@ class LogStreamMonitor: ObservableObject {
         lastGKEventTime = now
         recentGKEvents.append(GKEventRecord(timestamp: now, category: category, intervalMs: intervalMs))
         GLLog.logStream.info("GK event: \(category.rawValue, privacy: .public), interval=\(intervalMs)ms, total_recent=\(self.recentGKEvents.count)")
-        ExperimentLogger.log("GK_EVENT category=\(category.rawValue) interval=\(intervalMs)ms total=\(self.recentGKEvents.count)")
+
         
         return nil
     }
