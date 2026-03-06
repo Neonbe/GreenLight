@@ -3,6 +3,16 @@
 
 <head>
     <meta charset="UTF-8">
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EJ9SB7HC53"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-EJ9SB7HC53');
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mac "앱이 손상되어 열 수 없습니다" 자동 수정 — GreenLight (무료)</title>
     <meta name="description"
@@ -120,7 +130,8 @@
                             </svg></div>
                         <h3>"앱"이(가) 손상되어 열 수 없습니다. 휴지통으로 이동해야 합니다.</h3>
                         <p>macOS Gatekeeper의 격리 플래그(<code>com.apple.quarantine</code>)로 인한 "오탐지"입니다. 앱은 실제로 손상되지 않았습니다.
-                            <strong>GreenLight가 자동 감지하고 원클릭으로 수정합니다.</strong></p>
+                            <strong>GreenLight가 자동 감지하고 원클릭으로 수정합니다.</strong>
+                        </p>
                     </div>
                     <div class="error-card">
                         <div class="error-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -177,19 +188,24 @@
                     style="list-style:none;display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-8);">
                     <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
                         <span style="color:var(--green);font-weight:700;">✓</span> <strong
-                            style="color:var(--text-primary);">완전 자동 감지</strong> — 수동 확인 불필요, 시스템 이벤트 실시간 모니터링</li>
+                            style="color:var(--text-primary);">완전 자동 감지</strong> — 수동 확인 불필요, 시스템 이벤트 실시간 모니터링
+                    </li>
                     <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
                         <span style="color:var(--green);font-weight:700;">✓</span> <strong
-                            style="color:var(--text-primary);">원클릭 수정</strong> — 시스템 알림에서 바로 수정</li>
+                            style="color:var(--text-primary);">원클릭 수정</strong> — 시스템 알림에서 바로 수정
+                    </li>
                     <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
                         <span style="color:var(--green);font-weight:700;">✓</span> <strong
-                            style="color:var(--text-primary);">영구 무료</strong> — 오픈소스, MIT 라이선스</li>
+                            style="color:var(--text-primary);">영구 무료</strong> — 오픈소스, MIT 라이선스
+                    </li>
                     <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
                         <span style="color:var(--green);font-weight:700;">✓</span> <strong
-                            style="color:var(--text-primary);">프라이버시 우선</strong> — 네트워크 통신 제로, 데이터 수집 제로</li>
+                            style="color:var(--text-primary);">프라이버시 우선</strong> — 네트워크 통신 제로, 데이터 수집 제로
+                    </li>
                     <li style="font-size:var(--text-base);color:var(--text-secondary);display:flex;gap:var(--space-3);">
                         <span style="color:var(--green);font-weight:700;">✓</span> <strong
-                            style="color:var(--text-primary);">초경량</strong> — 메모리 30MB 미만, CPU 1% 미만</li>
+                            style="color:var(--text-primary);">초경량</strong> — 메모리 30MB 미만, CPU 1% 미만
+                    </li>
                 </ul>
                 <div id="download" style="text-align:center;padding:var(--space-12) 0;"><a
                         href="https://github.com/Neonbe/GreenLight/releases" target="_blank" class="btn-primary"
